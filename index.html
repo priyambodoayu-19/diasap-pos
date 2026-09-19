@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🔥 DIASAP POS - Kasir & Manajemen Penjualan</title>
     <!-- Stylesheet POS -->
-    <link rel="stylesheet" href="css/style.css?v=2.3">
+    <link rel="stylesheet" href="css/style.css?v=2.4">
 </head>
 <body>
 
@@ -247,6 +247,17 @@
                         <div class="rekap-val rekap-val-highlight" id="rekapTotalRevenue">Rp 0</div>
                     </div>
                     <div class="rekap-card">
+                        <div class="rekap-label">Total Modal (HPP)</div>
+                        <div class="rekap-val rekap-val-cogs" id="rekapTotalCogs">Rp 0</div>
+                    </div>
+                    <div class="rekap-card">
+                        <div class="rekap-label">Untung Bersih (Profit)</div>
+                        <div class="rekap-val rekap-val-profit" id="rekapTotalProfit">
+                            <span id="rekapProfitNominal">Rp 0</span>
+                            <span class="margin-pill positive" id="rekapProfitMargin">0%</span>
+                        </div>
+                    </div>
+                    <div class="rekap-card">
                         <div class="rekap-label">Total Transaksi</div>
                         <div class="rekap-val" id="rekapTotalOrders">0 Transaksi</div>
                     </div>
@@ -275,12 +286,14 @@
                                 <th>Pelanggan</th>
                                 <th>Item Pesanan</th>
                                 <th>Metode</th>
-                                <th>Total</th>
+                                <th>Modal (HPP)</th>
+                                <th>Total Omset</th>
+                                <th>Untung Bersih</th>
                             </tr>
                         </thead>
                         <tbody id="historyTableBody">
                             <tr>
-                                <td colspan="7" style="text-align: center; padding: 20px;">Memuat data riwayat...</td>
+                                <td colspan="9" style="text-align: center; padding: 20px;">Memuat data riwayat...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -370,10 +383,12 @@
                     <table class="admin-table">
                         <thead>
                             <tr>
-                                <th style="width: 45px; text-align: center;">#</th>
+                                <th style="width: 40px; text-align: center;">#</th>
                                 <th>Menu & Kategori</th>
-                                <th style="width: 130px;">Harga Normal</th>
-                                <th style="width: 220px;">Harga Promo & Diskon</th>
+                                <th style="width: 110px;">Modal (HPP)</th>
+                                <th style="width: 115px;">Harga Normal</th>
+                                <th style="width: 190px;">Harga Promo & Diskon</th>
+                                <th style="width: 140px;">Untung Bersih</th>
                                 <th>Deskripsi</th>
                                 <th style="width: 175px; text-align: right;">Aksi</th>
                             </tr>
@@ -453,12 +468,23 @@
                         </div>
                     </div>
 
-                    <!-- Section Harga Normal -->
-                    <div class="form-group">
-                        <label for="adminProdPriceNormal">Harga Normal (Rp) <span class="text-danger">*</span></label>
-                        <div class="input-currency-wrapper">
-                            <span class="currency-prefix">Rp</span>
-                            <input type="number" id="adminProdPriceNormal" class="form-control price-input" placeholder="35000" min="0" step="500" required>
+                    <!-- Section Harga Modal (COGS / HPP) & Harga Jual Normal -->
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="adminProdCogs">Harga Modal / Pokok (COGS) (Rp) <span class="text-danger">*</span></label>
+                            <div class="input-currency-wrapper">
+                                <span class="currency-prefix">Rp</span>
+                                <input type="number" id="adminProdCogs" class="form-control price-input" placeholder="15000" min="0" step="500" value="0" required>
+                            </div>
+                            <small class="form-help">Biaya bahan baku per porsi (HPP)</small>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="adminProdPriceNormal">Harga Jual Normal (Rp) <span class="text-danger">*</span></label>
+                            <div class="input-currency-wrapper">
+                                <span class="currency-prefix">Rp</span>
+                                <input type="number" id="adminProdPriceNormal" class="form-control price-input" placeholder="35000" min="0" step="500" required>
+                            </div>
+                            <small class="form-help">Harga jual standar ke pelanggan</small>
                         </div>
                     </div>
 
@@ -566,14 +592,14 @@
     </div>
 
     <!-- ================= JAVASCRIPT MODULES ================= -->
-    <script src="js/config.js?v=2.3"></script>
-    <script src="js/sound.js?v=2.3"></script>
-    <script src="js/db.js?v=2.3"></script>
-    <script src="js/products.js?v=2.3"></script>
-    <script src="js/cart.js?v=2.3"></script>
-    <script src="js/payment.js?v=2.3"></script>
-    <script src="js/auth.js?v=2.3"></script>
-    <script src="js/admin.js?v=2.3"></script>
-    <script src="js/app.js?v=2.3"></script>
+    <script src="js/config.js?v=2.4"></script>
+    <script src="js/sound.js?v=2.4"></script>
+    <script src="js/db.js?v=2.4"></script>
+    <script src="js/products.js?v=2.4"></script>
+    <script src="js/cart.js?v=2.4"></script>
+    <script src="js/payment.js?v=2.4"></script>
+    <script src="js/auth.js?v=2.4"></script>
+    <script src="js/admin.js?v=2.4"></script>
+    <script src="js/app.js?v=2.4"></script>
 </body>
 </html>

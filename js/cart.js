@@ -34,6 +34,7 @@ class CartManager {
                 name: product.name,
                 emoji: product.emoji || '🍗',
                 priceLocked: priceLocked,
+                cogsLocked: Number(product.cogs) || 0,
                 isPromo: isPromoActive,
                 qty: 1
             });

@@ -1129,6 +1129,65 @@ input:checked + .slider:before {
     color: var(--primary);
 }
 
+.rekap-val-cogs {
+    color: #B45309;
+}
+
+.rekap-val-profit {
+    color: #16A34A;
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.margin-pill {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 999px;
+    line-height: 1.2;
+}
+
+.margin-pill.positive {
+    background: #DCFCE7;
+    color: #15803D;
+    border: 1px solid #86EFAC;
+}
+
+.margin-pill.warning {
+    background: #FEF3C7;
+    color: #B45309;
+    border: 1px solid #FCD34D;
+}
+
+.margin-pill.danger {
+    background: #FEE2E2;
+    color: #B91C1C;
+    border: 1px solid #FCA5A5;
+}
+
+.badge-cogs {
+    font-weight: 600;
+    color: #64748B;
+    font-size: 13px;
+}
+
+.badge-profit {
+    font-weight: 800;
+    font-size: 13px;
+}
+
+.badge-profit.profit-positive {
+    color: #16A34A;
+}
+
+.badge-profit.profit-negative {
+    color: #DC2626;
+}
+
 /* History Table */
 .history-table-container {
     overflow-x: auto;
@@ -1946,6 +2005,97 @@ input:checked + .slider:before {
     background: rgba(0,0,0,0.06);
 }
 
+/* COGS Preview & Profit Margin Box */
+.cogs-preview-card {
+    background: #F8FAFC;
+    border: 1px solid #CBD5E1;
+    border-radius: 6px;
+    padding: 9px 12px;
+    margin-top: 8px;
+    font-size: 12px;
+}
+
+.cogs-preview-card.profit-loss-alert {
+    background: #FEF2F2;
+    border-color: #FECACA;
+}
+
+.cogs-preview-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+}
+
+.cogs-prev-item {
+    color: #334155;
+}
+
+.loss-warning-tag {
+    margin-top: 6px;
+    font-weight: 800;
+    color: #DC2626;
+    font-size: 11px;
+}
+
+.admin-cogs-cell {
+    font-weight: 600;
+    color: #64748B;
+    font-size: 13px;
+}
+
+.admin-profit-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.admin-profit-val {
+    font-weight: 800;
+    font-size: 13px;
+}
+
+.admin-profit-val.profit-positive {
+    color: #16A34A;
+}
+
+.admin-profit-val.profit-negative {
+    color: #DC2626;
+}
+
+.admin-margin-badge {
+    display: inline-block;
+    width: fit-content;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+
+.admin-margin-badge.margin-good {
+    background: #DCFCE7;
+    color: #15803D;
+}
+
+.admin-margin-badge.margin-ok {
+    background: #FEF3C7;
+    color: #B45309;
+}
+
+.admin-margin-badge.margin-loss {
+    background: #FEE2E2;
+    color: #B91C1C;
+}
+
+/* Text Utility Colors */
+.text-success {
+    color: #16A34A !important;
+}
+
+.text-danger {
+    color: #DC2626 !important;
+}
+
 /* Quick Emoji Picker */
 .emoji-input-wrapper {
     display: flex;
@@ -2410,7 +2560,7 @@ input:checked + .slider:before {
     }
 
     .admin-table {
-        min-width: 620px;
+        min-width: 760px;
     }
 
     .admin-modal-footer {
@@ -2455,7 +2605,7 @@ input:checked + .slider:before {
     }
 
     .history-table {
-        min-width: 580px;
+        min-width: 720px;
     }
 }
 

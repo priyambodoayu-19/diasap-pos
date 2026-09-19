@@ -108,7 +108,7 @@ class AdminManager {
         if (filtered.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="6" style="text-align: center; padding: 36px 20px; color: #94A3B8;">
+                    <td colspan="8" style="text-align: center; padding: 36px 20px; color: #94A3B8;">
                         <div style="font-size: 32px; margin-bottom: 8px;">🔍</div>
                         <div style="font-weight: 700; font-size: 15px; color: #64748B;">Tidak ada menu yang sesuai</div>
                         <div style="font-size: 13px;">Coba ubah kata kunci pencarian atau kategori filter.</div>
@@ -121,9 +121,16 @@ class AdminManager {
         tbody.innerHTML = filtered.map((p, idx) => {
             const priceNormal = Number(p.priceNormal) || 0;
             const pricePromo = Number(p.pricePromo) || priceNormal;
+            const cogs = Number(p.cogs) || 0;
             const savings = priceNormal - pricePromo;
             const hasDiscount = savings > 0;
             const discountPct = (hasDiscount && priceNormal > 0) ? Math.round((savings / priceNormal) * 100) : 0;
+
+            const profitNormal = priceNormal - cogs;
+            const profitPromo = pricePromo - cogs;
+            const currentProfit = hasDiscount ? profitPromo : profitNormal;
+            const currentPrice = hasDiscount ? pricePromo : priceNormal;
+            const currentMargin = currentPrice > 0 ? Math.round((currentProfit / currentPrice) * 100) : 0;
 
             let catLabel = 'Makanan';
             let catBadgeClass = 'cat-makanan';
@@ -148,6 +155,9 @@ class AdminManager {
                         </div>
                     </td>
                     <td>
+                        <div class="admin-cogs-cell">${formatRupiah(cogs)}</div>
+                    </td>
+                    <td>
                         <div class="admin-price-normal">${formatRupiah(priceNormal)}</div>
                     </td>
                     <td>
@@ -161,6 +171,19 @@ class AdminManager {
                             ` : `
                                 <span class="admin-no-discount-tag">Normal (Tanpa Diskon)</span>
                             `}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="admin-profit-wrap">
+                            <span class="admin-profit-val ${currentProfit >= 0 ? 'profit-positive' : 'profit-negative'}">
+                                ${currentProfit >= 0 ? '+' : ''}${formatRupiah(currentProfit)}
+                            </span>
+                            <span class="admin-margin-badge ${currentMargin >= 30 ? 'margin-good' : (currentMargin >= 0 ? 'margin-ok' : 'margin-loss')}">
+                                ${currentMargin}%
+                            </span>
+                            ${hasDiscount ? `
+                                <div style="font-size: 10px; color: #94A3B8; margin-top: 2px;">(Normal: +${formatRupiah(profitNormal)})</div>
+                            ` : ''}
                         </div>
                     </td>
                     <td>
@@ -189,15 +212,23 @@ class AdminManager {
         }).join('');
     }
 
-    // ================= KALKULATOR DISKON INTERAKTIF =================
+    // ================= KALKULATOR DISKON & MARGIN INTERAKTIF =================
 
     setupDiscountCalculator() {
         const priceNormalInput = document.getElementById('adminProdPriceNormal');
         const pricePromoInput = document.getElementById('adminProdPricePromo');
+        const cogsInput = document.getElementById('adminProdCogs');
         const discountNominalInput = document.getElementById('adminProdDiscountNominal');
         const discountPercentInput = document.getElementById('adminProdDiscountPercent');
 
         if (!priceNormalInput || !pricePromoInput || !discountNominalInput || !discountPercentInput) return;
+
+        // 0. Saat Harga Modal (COGS) Diubah
+        if (cogsInput) {
+            cogsInput.addEventListener('input', () => {
+                this.updateDiscountPreview();
+            });
+        }
 
         // 1. Saat Harga Normal Diubah
         priceNormalInput.addEventListener('input', () => {
@@ -268,35 +299,70 @@ class AdminManager {
         const previewEl = document.getElementById('adminDiscountPreview');
         const normal = parseFloat(document.getElementById('adminProdPriceNormal')?.value) || 0;
         const promo = parseFloat(document.getElementById('adminProdPricePromo')?.value) || normal;
+        const cogs = parseFloat(document.getElementById('adminProdCogs')?.value) || 0;
 
         if (!previewEl) return;
 
         const saving = normal - promo;
+        const profitNormal = normal - cogs;
+        const marginNormal = normal > 0 ? ((profitNormal / normal) * 100).toFixed(1).replace(/\.0$/, '') : 0;
+        const profitPromo = promo - cogs;
+        const marginPromo = promo > 0 ? ((profitPromo / promo) * 100).toFixed(1).replace(/\.0$/, '') : 0;
+
+        let discountHtml = '';
         if (normal > 0 && saving > 0) {
             const pct = ((saving / normal) * 100).toFixed(1).replace(/\.0$/, '');
-            previewEl.innerHTML = `
+            discountHtml = `
                 <div class="discount-preview-card active-discount">
                     <span class="preview-tag">🔥 Diskon Aktif</span>
                     <span class="preview-text">Pelanggan hemat <strong>${formatRupiah(saving)}</strong> (Potongan <strong>${pct}%</strong>)</span>
                 </div>
             `;
         } else if (normal > 0 && saving === 0) {
-            previewEl.innerHTML = `
+            discountHtml = `
                 <div class="discount-preview-card no-discount">
                     <span class="preview-tag">Normal</span>
-                    <span class="preview-text">Harga Promo sama dengan Harga Normal (Tidak ada diskon khusus).</span>
+                    <span class="preview-text">Harga Promo sama dengan Harga Normal (Tidak ada potongan diskon).</span>
                 </div>
             `;
         } else if (promo > normal) {
-            previewEl.innerHTML = `
+            discountHtml = `
                 <div class="discount-preview-card invalid-discount">
                     <span class="preview-tag">⚠️ Perhatian</span>
                     <span class="preview-text">Harga Promo lebih tinggi dari Harga Normal!</span>
                 </div>
             `;
-        } else {
-            previewEl.innerHTML = '';
         }
+
+        // Tampilan Margin & Profit COGS
+        let profitHtml = '';
+        if (cogs > 0 || normal > 0) {
+            const isLossNormal = profitNormal < 0;
+            const isLossPromo = profitPromo < 0;
+
+            profitHtml = `
+                <div class="cogs-preview-card ${isLossPromo ? 'profit-loss-alert' : ''}">
+                    <div class="cogs-preview-row">
+                        <span class="cogs-prev-item">
+                            Modal (HPP): <strong>${formatRupiah(cogs)}</strong>
+                        </span>
+                        <span class="cogs-prev-item">
+                            Untung Normal: <strong class="${isLossNormal ? 'text-danger' : 'text-success'}">${profitNormal >= 0 ? '+' : ''}${formatRupiah(profitNormal)} (${marginNormal}%)</strong>
+                        </span>
+                        ${saving > 0 ? `
+                        <span class="cogs-prev-item">
+                            Untung Promo: <strong class="${isLossPromo ? 'text-danger' : 'text-success'}">${profitPromo >= 0 ? '+' : ''}${formatRupiah(profitPromo)} (${marginPromo}%)</strong>
+                        </span>
+                        ` : ''}
+                    </div>
+                    ${isLossPromo ? `
+                        <div class="loss-warning-tag">⚠️ Peringatan: Harga promo di bawah modal (Rugi ${formatRupiah(Math.abs(profitPromo))}/porsi)!</div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        previewEl.innerHTML = discountHtml + profitHtml;
     }
 
     // ================= MODAL TAMBAH & EDIT PRODUK =================
@@ -307,6 +373,7 @@ class AdminManager {
         const title = document.getElementById('adminProductModalTitle');
         const form = document.getElementById('adminProductForm');
         const idInput = document.getElementById('adminProdId');
+        const cogsInput = document.getElementById('adminProdCogs');
 
         if (form) form.reset();
         if (title) title.textContent = '➕ Tambah Menu Produk Baru';
@@ -314,6 +381,7 @@ class AdminManager {
             idInput.disabled = false;
             idInput.focus();
         }
+        if (cogsInput) cogsInput.value = 0;
 
         // Sembunyikan tombol hapus saat mode tambah
         const deleteBtn = document.getElementById('adminBtnDeleteProduct');
@@ -341,6 +409,7 @@ class AdminManager {
         const catSelect = document.getElementById('adminProdCategory');
         const emojiInput = document.getElementById('adminProdEmoji');
         const descInput = document.getElementById('adminProdDesc');
+        const cogsInput = document.getElementById('adminProdCogs');
         const priceNormalInput = document.getElementById('adminProdPriceNormal');
         const pricePromoInput = document.getElementById('adminProdPricePromo');
         const nominalInput = document.getElementById('adminProdDiscountNominal');
@@ -365,9 +434,11 @@ class AdminManager {
 
         const normal = Number(product.priceNormal) || 0;
         const promo = Number(product.pricePromo) || normal;
+        const cogs = Number(product.cogs) || 0;
         const saving = Math.max(0, normal - promo);
         const pct = (normal > 0 && saving > 0) ? ((saving / normal) * 100).toFixed(1).replace(/\.0$/, '') : 0;
 
+        if (cogsInput) cogsInput.value = cogs;
         if (priceNormalInput) priceNormalInput.value = normal;
         if (pricePromoInput) pricePromoInput.value = promo;
         if (nominalInput) nominalInput.value = saving;
@@ -416,6 +487,7 @@ class AdminManager {
         const category = document.getElementById('adminProdCategory').value;
         const emoji = document.getElementById('adminProdEmoji').value.trim() || '🍗';
         const desc = document.getElementById('adminProdDesc').value.trim();
+        const cogs = parseFloat(document.getElementById('adminProdCogs').value) || 0;
         const priceNormal = parseFloat(document.getElementById('adminProdPriceNormal').value) || 0;
         let pricePromo = parseFloat(document.getElementById('adminProdPricePromo').value);
 
@@ -459,6 +531,7 @@ class AdminManager {
             category,
             emoji,
             desc,
+            cogs,
             priceNormal,
             pricePromo
         };

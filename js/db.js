@@ -75,6 +75,7 @@ class DatabaseService {
                 SELECT id, name, description as "desc", category, 
                        price_normal::numeric as "priceNormal", 
                        price_promo::numeric as "pricePromo", 
+                       cogs::numeric as "cogs",
                        image_emoji as "emoji"
                 FROM products 
                 WHERE is_active = TRUE 
@@ -86,7 +87,8 @@ class DatabaseService {
                 const formatted = rows.map(r => ({
                     ...r,
                     priceNormal: Number(r.priceNormal),
-                    pricePromo: Number(r.pricePromo)
+                    pricePromo: Number(r.pricePromo),
+                    cogs: Number(r.cogs) || 0
                 }));
                 localStorage.setItem(this.storageKeyProducts, JSON.stringify(formatted));
                 return formatted;
@@ -115,14 +117,15 @@ class DatabaseService {
         // Update di Neon jika online
         try {
             await this.query(`
-                INSERT INTO products (id, name, description, category, price_normal, price_promo, image_emoji, sort_order, is_active)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE)
+                INSERT INTO products (id, name, description, category, price_normal, price_promo, cogs, image_emoji, sort_order, is_active)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, TRUE)
                 ON CONFLICT (id) DO UPDATE SET
                     name = EXCLUDED.name,
                     description = EXCLUDED.description,
                     category = EXCLUDED.category,
                     price_normal = EXCLUDED.price_normal,
                     price_promo = EXCLUDED.price_promo,
+                    cogs = EXCLUDED.cogs,
                     image_emoji = EXCLUDED.image_emoji,
                     is_active = TRUE;
             `, [
@@ -132,6 +135,7 @@ class DatabaseService {
                 product.category || 'makanan',
                 product.priceNormal,
                 product.pricePromo,
+                product.cogs || 0,
                 product.emoji || '🍗',
                 product.sortOrder || 10
             ]);
@@ -215,8 +219,8 @@ class DatabaseService {
                 // Simpan item-item transaksi
                 for (const item of items) {
                     await this.query(`
-                        INSERT INTO order_items (order_id, product_id, product_name, price_locked, is_promo, quantity, item_total)
-                        VALUES ($1, $2, $3, $4, $5, $6, $7);
+                        INSERT INTO order_items (order_id, product_id, product_name, price_locked, is_promo, quantity, item_total, cogs_locked)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
                     `, [
                         newOrderId,
                         item.id,
@@ -224,7 +228,8 @@ class DatabaseService {
                         item.priceLocked,
                         item.isPromo || false,
                         item.qty,
-                        item.priceLocked * item.qty
+                        item.priceLocked * item.qty,
+                        item.cogsLocked || item.cogs || 0
                     ]);
                 }
             }
@@ -264,10 +269,12 @@ class DatabaseService {
                        COALESCE(
                            json_agg(
                                json_build_object(
+                                   'id', oi.product_id,
                                    'name', oi.product_name,
                                    'qty', oi.quantity,
                                    'priceLocked', oi.price_locked,
-                                   'isPromo', oi.is_promo
+                                   'isPromo', oi.is_promo,
+                                   'cogsLocked', COALESCE(oi.cogs_locked, 0)
                                )
                            ) FILTER (WHERE oi.id IS NOT NULL), '[]'::json
                        ) as items

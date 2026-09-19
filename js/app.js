@@ -164,31 +164,61 @@ function closeHistoryModal() {
 async function renderHistoryData() {
     const tableBody = document.getElementById('historyTableBody');
     const totalRevenueEl = document.getElementById('rekapTotalRevenue');
+    const totalCogsEl = document.getElementById('rekapTotalCogs');
+    const profitNominalEl = document.getElementById('rekapProfitNominal');
+    const profitMarginEl = document.getElementById('rekapProfitMargin');
     const totalOrdersEl = document.getElementById('rekapTotalOrders');
     const avgOrderEl = document.getElementById('rekapAvgOrder');
     const cashTotalEl = document.getElementById('rekapCashTotal');
     const qrisTotalEl = document.getElementById('rekapQrisTotal');
 
     if (tableBody) {
-        tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px;">Memuat data riwayat...</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 20px;">Memuat data riwayat...</td></tr>`;
     }
 
     const orders = await db.getOrdersHistory(100);
 
     let totalRevenue = 0;
+    let totalCogs = 0;
     let cashRevenue = 0;
     let qrisRevenue = 0;
+
+    // Helper untuk kalkulasi HPP / COGS pesanan
+    const calculateOrderCogs = (order) => {
+        let orderCogs = 0;
+        if (order.items && order.items.length > 0) {
+            order.items.forEach(item => {
+                let itemCogs = Number(item.cogsLocked) || 0;
+                // Fallback untuk transaksi lampau yang belum tercatat cogs_locked di order_items
+                if (itemCogs === 0 && item.id) {
+                    const p = productManager.getProductById(item.id);
+                    if (p) itemCogs = Number(p.cogs) || 0;
+                }
+                orderCogs += itemCogs * (Number(item.qty) || 1);
+            });
+        }
+        return orderCogs;
+    };
 
     orders.forEach(o => {
         const val = Number(o.totalAmount) || 0;
         totalRevenue += val;
+        totalCogs += calculateOrderCogs(o);
         if (o.paymentMethod === 'cash') cashRevenue += val;
         else if (o.paymentMethod === 'qris') qrisRevenue += val;
     });
 
+    const totalProfit = totalRevenue - totalCogs;
+    const overallMargin = totalRevenue > 0 ? Math.round((totalProfit / totalRevenue) * 100) : 0;
     const avgOrder = orders.length > 0 ? Math.round(totalRevenue / orders.length) : 0;
 
     if (totalRevenueEl) totalRevenueEl.textContent = formatRupiah(totalRevenue);
+    if (totalCogsEl) totalCogsEl.textContent = formatRupiah(totalCogs);
+    if (profitNominalEl) profitNominalEl.textContent = formatRupiah(totalProfit);
+    if (profitMarginEl) {
+        profitMarginEl.textContent = `${overallMargin}% Margin`;
+        profitMarginEl.className = `margin-pill ${overallMargin >= 30 ? 'positive' : (overallMargin >= 0 ? 'warning' : 'danger')}`;
+    }
     if (totalOrdersEl) totalOrdersEl.textContent = `${orders.length} Transaksi`;
     if (avgOrderEl) avgOrderEl.textContent = formatRupiah(avgOrder);
     if (cashTotalEl) cashTotalEl.textContent = formatRupiah(cashRevenue);
@@ -197,11 +227,16 @@ async function renderHistoryData() {
     if (!tableBody) return;
 
     if (orders.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 30px; color: #95a5a6;">Belum ada transaksi tercatat.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 30px; color: #95a5a6;">Belum ada transaksi tercatat.</td></tr>`;
         return;
     }
 
     tableBody.innerHTML = orders.map((o, idx) => {
+        const orderCogs = calculateOrderCogs(o);
+        const orderRevenue = Number(o.totalAmount) || 0;
+        const orderProfit = orderRevenue - orderCogs;
+        const orderMargin = orderRevenue > 0 ? Math.round((orderProfit / orderRevenue) * 100) : 0;
+
         const itemsSummary = (o.items && o.items.length > 0)
             ? o.items.map(i => `${i.name} (x${i.qty})`).join(', ')
             : '-';
@@ -212,9 +247,18 @@ async function renderHistoryData() {
                 <td><strong>${o.invoiceNo}</strong></td>
                 <td>${formatDateTime(o.createdAt)}</td>
                 <td>${o.customerName || 'Pelanggan'} <span class="order-badge">${o.orderType === 'dine_in' ? 'Dine In' : 'Take Away'}</span></td>
-                <td style="max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${itemsSummary}">${itemsSummary}</td>
+                <td style="max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${itemsSummary}">${itemsSummary}</td>
                 <td><span class="badge-method badge-${o.paymentMethod}">${o.paymentMethod.toUpperCase()}</span></td>
-                <td><strong>${formatRupiah(o.totalAmount)}</strong></td>
+                <td><span class="badge-cogs">${formatRupiah(orderCogs)}</span></td>
+                <td><strong>${formatRupiah(orderRevenue)}</strong></td>
+                <td>
+                    <span class="badge-profit ${orderProfit >= 0 ? 'profit-positive' : 'profit-negative'}">
+                        ${orderProfit >= 0 ? '+' : ''}${formatRupiah(orderProfit)}
+                    </span>
+                    <span class="margin-pill ${orderMargin >= 30 ? 'positive' : 'warning'}" style="font-size: 10px; margin-left: 4px;">
+                        ${orderMargin}%
+                    </span>
+                </td>
             </tr>
         `;
     }).join('');
@@ -228,18 +272,43 @@ async function exportHistoryToCSV() {
         return;
     }
 
-    const headers = ['No Invoice', 'Waktu', 'Nama Pelanggan', 'Tipe Pesanan', 'Metode Bayar', 'Total Belanja', 'Bayar Diterima', 'Kembalian', 'Catatan'];
-    const rows = orders.map(o => [
-        `"${o.invoiceNo}"`,
-        `"${formatDateTime(o.createdAt)}"`,
-        `"${(o.customerName || '').replace(/"/g, '""')}"`,
-        `"${o.orderType}"`,
-        `"${o.paymentMethod}"`,
-        o.totalAmount,
-        o.cashReceived,
-        o.changeAmount,
-        `"${(o.notes || '').replace(/"/g, '""')}"`
-    ]);
+    const calculateOrderCogs = (order) => {
+        let orderCogs = 0;
+        if (order.items && order.items.length > 0) {
+            order.items.forEach(item => {
+                let itemCogs = Number(item.cogsLocked) || 0;
+                if (itemCogs === 0 && item.id) {
+                    const p = productManager.getProductById(item.id);
+                    if (p) itemCogs = Number(p.cogs) || 0;
+                }
+                orderCogs += itemCogs * (Number(item.qty) || 1);
+            });
+        }
+        return orderCogs;
+    };
+
+    const headers = ['No Invoice', 'Waktu', 'Nama Pelanggan', 'Tipe Pesanan', 'Metode Bayar', 'Total Omset', 'Total Modal (HPP)', 'Untung Bersih (Profit)', 'Margin %', 'Bayar Diterima', 'Kembalian', 'Catatan'];
+    const rows = orders.map(o => {
+        const orderRevenue = Number(o.totalAmount) || 0;
+        const orderCogs = calculateOrderCogs(o);
+        const orderProfit = orderRevenue - orderCogs;
+        const marginPct = orderRevenue > 0 ? ((orderProfit / orderRevenue) * 100).toFixed(1) : '0';
+
+        return [
+            `"${o.invoiceNo}"`,
+            `"${formatDateTime(o.createdAt)}"`,
+            `"${(o.customerName || '').replace(/"/g, '""')}"`,
+            `"${o.orderType}"`,
+            `"${o.paymentMethod}"`,
+            orderRevenue,
+            orderCogs,
+            orderProfit,
+            `"${marginPct}%"`,
+            o.cashReceived,
+            o.changeAmount,
+            `"${(o.notes || '').replace(/"/g, '""')}"`
+        ];
+    });
 
     const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
@@ -270,6 +339,8 @@ async function handleSaveNewProduct(event) {
     const name = document.getElementById('newProdName').value.trim();
     const desc = document.getElementById('newProdDesc').value.trim();
     const category = document.getElementById('newProdCategory').value;
+    const cogsInput = document.getElementById('newProdCogs');
+    const cogs = cogsInput ? (parseFloat(cogsInput.value) || 0) : 0;
     const priceNormal = parseFloat(document.getElementById('newProdPriceNormal').value) || 0;
     const pricePromo = parseFloat(document.getElementById('newProdPricePromo').value) || priceNormal;
     const emoji = document.getElementById('newProdEmoji').value.trim() || '🍗';
@@ -284,6 +355,7 @@ async function handleSaveNewProduct(event) {
         name,
         desc,
         category,
+        cogs,
         priceNormal,
         pricePromo,
         emoji
