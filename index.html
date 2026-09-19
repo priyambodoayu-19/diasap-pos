@@ -3,10 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔥 DIASAP POS - Kasir & Manajemen Penjualan</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔥</text></svg>">
+    <title>DIASAP POS - Kasir & Manajemen Penjualan</title>
+    <link id="appFavicon" rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔥</text></svg>">
+    <!-- Google Fonts: Urbanist (Sesuai Referensi Visual) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
     <!-- Stylesheet POS -->
-    <link rel="stylesheet" href="css/style.css?v=4.4">
+    <link rel="stylesheet" href="css/style.css?v=5.4">
     <!-- Pustaka Eksternal: Excel XLSX Export, Canvas Struk, PDF Generator -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -98,18 +102,56 @@
                 </div>
             </header>
 
-            <!-- Search & Filter Bar -->
-            <section class="filter-bar">
-                <div class="category-pills">
-                    <button type="button" class="cat-pill active" data-category="all">Semua Menu</button>
-                    <button type="button" class="cat-pill" data-category="makanan">🍗 Makanan / Paket</button>
-                    <button type="button" class="cat-pill" data-category="minuman">🍹 Minuman</button>
-                    <button type="button" class="cat-pill" data-category="tambahan">🍚 Tambahan</button>
+            <!-- Category Selector Bar (Sesuai Referensi Visual) -->
+            <section class="category-bar">
+                <div class="category-pills" id="categoryPills">
+                    <button type="button" class="cat-pill active" data-category="all">
+                        <div class="cat-pill-icon-wrap">
+                            <span class="cat-icon-symbol">🍽️</span>
+                        </div>
+                        <div class="cat-pill-info">
+                            <span class="cat-pill-title">Semua Menu</span>
+                            <span class="cat-pill-count" id="countCatAll">0 items</span>
+                        </div>
+                    </button>
+                    <button type="button" class="cat-pill" data-category="makanan">
+                        <div class="cat-pill-icon-wrap">
+                            <span class="cat-icon-symbol">🍗</span>
+                        </div>
+                        <div class="cat-pill-info">
+                            <span class="cat-pill-title">Makanan / Paket</span>
+                            <span class="cat-pill-count" id="countCatMakanan">0 items</span>
+                        </div>
+                    </button>
+                    <button type="button" class="cat-pill" data-category="minuman">
+                        <div class="cat-pill-icon-wrap">
+                            <span class="cat-icon-symbol">🍹</span>
+                        </div>
+                        <div class="cat-pill-info">
+                            <span class="cat-pill-title">Minuman</span>
+                            <span class="cat-pill-count" id="countCatMinuman">0 items</span>
+                        </div>
+                    </button>
+                    <button type="button" class="cat-pill" data-category="tambahan">
+                        <div class="cat-pill-icon-wrap">
+                            <span class="cat-icon-symbol">🍚</span>
+                        </div>
+                        <div class="cat-pill-info">
+                            <span class="cat-pill-title">Tambahan</span>
+                            <span class="cat-pill-count" id="countCatTambahan">0 items</span>
+                        </div>
+                    </button>
                 </div>
+            </section>
 
+            <!-- Search Bar (Sesuai Referensi Visual) -->
+            <section class="search-bar-section">
                 <div class="search-box">
-                    <span class="search-icon">🔍</span>
-                    <input type="text" id="searchMenuInput" placeholder="Cari paket menu...">
+                    <svg class="search-icon-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="searchMenuInput" placeholder="Cari menu makanan, minuman, atau paket...">
                 </div>
             </section>
 
@@ -1194,7 +1236,12 @@
                     <label for="lockPasswordInput">Password Akses Kasir</label>
                     <div class="lock-password-wrapper">
                         <input type="password" id="lockPasswordInput" class="lock-password-input" placeholder="Masukkan password..." autocomplete="current-password" required>
-                        <button type="button" id="toggleShowPassBtn" class="btn-toggle-eye" title="Lihat/Sembunyikan password">👁️</button>
+                        <button type="button" id="toggleShowPassBtn" class="btn-toggle-eye" title="Lihat/Sembunyikan password">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
                     </div>
                 </div>
 
@@ -1224,7 +1271,7 @@
     <script src="js/inventory.js?v=4.0"></script>
     <script src="js/products.js?v=4.0"></script>
     <script src="js/cart.js?v=4.1"></script>
-    <script src="js/payment.js?v=4.4"></script>
+    <script src="js/payment.js?v=4.5"></script>
     <script src="js/auth.js?v=4.0"></script>
     <script src="js/admin.js?v=4.0"></script>
     <script src="js/app.js?v=4.0"></script>

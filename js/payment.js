@@ -643,7 +643,8 @@ class PaymentManager {
                     ` : ''}
 
                     <div class="bill-confirm-note">
-                        * Konfirmasi bukti transfer / pembayaran ke kasir / WA resto.
+                        * Konfirmasi bukti transfer / pembayaran<br>
+                        ke kasir / WA resto.
                     </div>
                 </div>
 

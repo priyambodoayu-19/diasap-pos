@@ -277,9 +277,17 @@ class AdminManager {
                 <tr>
                     <td style="text-align: center; vertical-align: middle;">
                         <div class="admin-reorder-wrap">
-                            <button type="button" class="btn-reorder-action" onclick="adminManager.moveProduct('${p.id}', 'up')" ${idx === 0 ? 'disabled' : ''} title="Geser Urutan Naik">▲</button>
+                            <button type="button" class="btn-reorder-action" onclick="adminManager.moveProduct('${p.id}', 'up')" ${idx === 0 ? 'disabled' : ''} title="Geser Urutan Naik">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="18 15 12 9 6 15"></polyline>
+                                </svg>
+                            </button>
                             <span class="admin-order-num">${idx + 1}</span>
-                            <button type="button" class="btn-reorder-action" onclick="adminManager.moveProduct('${p.id}', 'down')" ${idx === filtered.length - 1 ? 'disabled' : ''} title="Geser Urutan Turun">▼</button>
+                            <button type="button" class="btn-reorder-action" onclick="adminManager.moveProduct('${p.id}', 'down')" ${idx === filtered.length - 1 ? 'disabled' : ''} title="Geser Urutan Turun">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </button>
                         </div>
                     </td>
                     <td>
@@ -305,10 +313,7 @@ class AdminManager {
                         <div class="admin-price-promo-wrap">
                             <span class="admin-price-promo ${hasDiscount ? 'has-discount' : ''}">${formatRupiah(pricePromo)}</span>
                             ${hasDiscount ? `
-                                <div class="admin-discount-badge">
-                                    <span class="badge-pct">-${discountPct}%</span>
-                                    <span class="badge-saving">Hemat ${formatRupiah(savings)}</span>
-                                </div>
+                                <span class="admin-discount-badge-compact">-${discountPct}% (Hemat ${formatRupiah(savings)})</span>
                             ` : `
                                 <span class="admin-no-discount-tag">Normal (Tanpa Diskon)</span>
                             `}
@@ -316,14 +321,16 @@ class AdminManager {
                     </td>
                     <td>
                         <div class="admin-profit-wrap">
-                            <span class="admin-profit-val ${currentProfit >= 0 ? 'profit-positive' : 'profit-negative'}">
-                                ${currentProfit >= 0 ? '+' : ''}${formatRupiah(currentProfit)}
-                            </span>
-                            <span class="admin-margin-badge ${currentMargin >= 30 ? 'margin-good' : (currentMargin >= 0 ? 'margin-ok' : 'margin-loss')}">
-                                ${currentMargin}%
-                            </span>
+                            <div class="admin-profit-row-top">
+                                <span class="admin-profit-val ${currentProfit >= 0 ? 'profit-positive' : 'profit-negative'}">
+                                    ${currentProfit >= 0 ? '+' : ''}${formatRupiah(currentProfit)}
+                                </span>
+                                <span class="admin-margin-badge ${currentMargin >= 30 ? 'margin-good' : (currentMargin >= 0 ? 'margin-ok' : 'margin-loss')}">
+                                    ${currentMargin}%
+                                </span>
+                            </div>
                             ${hasDiscount ? `
-                                <div style="font-size: 10px; color: #94A3B8; margin-top: 2px;">(Normal: +${formatRupiah(profitNormal)})</div>
+                                <div class="admin-profit-sub-note">Normal: +${formatRupiah(profitNormal)}</div>
                             ` : ''}
                         </div>
                     </td>

@@ -14,7 +14,25 @@ class ProductManager {
 
     async loadProducts() {
         this.products = await db.getProducts();
+        this.updateCategoryCounts();
         this.render();
+    }
+
+    updateCategoryCounts() {
+        if (!Array.isArray(this.products)) return;
+        const total = this.products.length;
+        const countMakanan = this.products.filter(p => p.category === 'makanan').length;
+        const countMinuman = this.products.filter(p => p.category === 'minuman').length;
+        const countTambahan = this.products.filter(p => p.category === 'tambahan').length;
+
+        const elAll = document.getElementById('countCatAll');
+        if (elAll) elAll.textContent = `${total} items`;
+        const elMakanan = document.getElementById('countCatMakanan');
+        if (elMakanan) elMakanan.textContent = `${countMakanan} items`;
+        const elMinuman = document.getElementById('countCatMinuman');
+        if (elMinuman) elMinuman.textContent = `${countMinuman} items`;
+        const elTambahan = document.getElementById('countCatTambahan');
+        if (elTambahan) elTambahan.textContent = `${countTambahan} items`;
     }
 
     setPromoMode(isPromo) {
@@ -51,9 +69,9 @@ class ProductManager {
         if (filtered.length === 0) {
             grid.innerHTML = `
                 <div class="empty-menu-state">
-                    <div style="font-size: 40px; margin-bottom: 10px;">🔍</div>
-                    <div style="font-weight: bold; font-size: 16px;">Menu tidak ditemukan</div>
-                    <div style="color: #7f8c8d; font-size: 13px;">Coba gunakan kata kunci pencarian atau kategori lain.</div>
+                    <div style="font-size: 44px; margin-bottom: 12px;">🔍</div>
+                    <div style="font-weight: 700; font-size: 17px; color: var(--secondary);">Menu tidak ditemukan</div>
+                    <div style="color: var(--text-muted); font-size: 13px; margin-top: 4px;">Coba gunakan kata kunci pencarian atau kategori lain.</div>
                 </div>
             `;
             return;
@@ -107,35 +125,39 @@ class ProductManager {
                 <div class="product-card ${this.isPromoMode ? 'is-promo-active' : ''} ${isOutOfStock ? 'is-out-of-stock' : ''}" 
                      onclick="${isOutOfStock ? `alert('Maaf, stok menu ini habis / bahan baku tidak mencukupi!')` : `cartManager.addItem('${product.id}')`}" 
                      title="${isOutOfStock ? 'Menu habis' : (hasVariants ? 'Pilih varian rasa/bagian' : 'Klik untuk menambah ke keranjang')}">
-                    <div class="card-top">
-                        <span class="product-emoji">${emojiDisplay}</span>
-                        <div style="display: flex; gap: 4px; align-items: center;">
-                            ${stockBadge}
-                            <span class="category-badge cat-${product.category}">${product.category.toUpperCase()}</span>
+                    
+                    <div class="card-visual-wrapper">
+                        ${stockBadge ? `<div class="card-stock-tag">${stockBadge}</div>` : ''}
+                        <div class="product-visual-circle">
+                            <span class="product-emoji">${emojiDisplay}</span>
                         </div>
                     </div>
 
-                    <div class="product-name">${product.name}</div>
-                    <div class="product-desc">${product.desc || '-'}</div>
+                    <div class="card-body-content">
+                        <div class="product-name" title="${product.name}">${product.name}</div>
+                        <div class="product-desc">${product.desc || '-'}</div>
 
-                    <div class="price-container">
                         ${isDiscounted ? `
                             <div class="price-row-promo">
                                 <span class="old-price">${formatRupiah(product.priceNormal)}</span>
                                 <span class="savings-tag">Hemat ${formatRupiah(savings)}</span>
                             </div>
                         ` : ''}
-                        <div class="product-price ${this.isPromoMode ? 'promo-text' : ''}">
-                            ${formatRupiah(currentPrice)}
+
+                        <div class="card-footer-row">
+                            <span class="category-badge cat-${product.category}">${product.category.toUpperCase()}</span>
+                            <div class="product-price ${this.isPromoMode ? 'promo-text' : ''}">
+                                ${formatRupiah(currentPrice)}
+                            </div>
                         </div>
                     </div>
 
                     <button class="quick-add-btn ${isOutOfStock ? 'btn-disabled' : ''}" type="button" aria-label="Tambah item" ${isOutOfStock ? 'disabled' : ''}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
-                        <span>${isOutOfStock ? 'Habis' : (hasVariants ? 'Pilih' : 'Tambah')}</span>
+                        <span>${isOutOfStock ? 'Habis' : (hasVariants ? 'Pilih Varian' : 'Tambah')}</span>
                     </button>
                 </div>
             `;

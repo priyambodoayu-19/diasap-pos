@@ -217,11 +217,11 @@ class InventoryManager {
                                     const portions = u.amount > 0 ? Math.floor(stock / u.amount) : 0;
                                     return `
                                         <div class="portion-row">
-                                            <span>
-                                                <strong>${u.productName}</strong>
-                                                ${u.variantName ? `<span class="badge-var-mini">[Varian: ${u.variantName}]</span>` : ''} 
-                                                (${u.amount} ${mat.unit}):
-                                            </span>
+                                            <div class="portion-name-wrap" title="${u.productName}${u.variantName ? ' (' + u.variantName + ')' : ''} - ${u.amount} ${mat.unit}">
+                                                <strong class="portion-name-text">${u.productName}</strong>
+                                                ${u.variantName ? `<span class="badge-var-mini">${u.variantName}</span>` : ''} 
+                                                <span class="portion-amount-text" style="color: #64748B; font-size: 11px;">(${u.amount} ${mat.unit}):</span>
+                                            </div>
                                             <span class="portion-count ${portions === 0 ? 'text-danger' : 'text-success'}">
                                                 <strong>${portions}</strong> porsi
                                             </span>

@@ -24,9 +24,8 @@ class SettingsManager {
         if (!this.settings) return;
 
         // 1. Update Title & Favicon
-        if (this.settings.storeName) {
-            document.title = `🔥 ${this.settings.storeName} - Kasir & Manajemen Penjualan`;
-        }
+        const storeName = this.settings.storeName || 'DIASAP POS';
+        document.title = `${storeName} - Kasir & Manajemen Penjualan`;
 
         // Favicon
         if (this.settings.storeFavicon) {
@@ -59,17 +58,21 @@ class SettingsManager {
     }
 
     updateFavicon(faviconValue) {
-        let link = document.querySelector("link[rel~='icon']");
+        if (!faviconValue) return;
+        let link = document.getElementById('appFavicon') || document.querySelector("link[rel~='icon']");
         if (!link) {
             link = document.createElement('link');
+            link.id = 'appFavicon';
             link.rel = 'icon';
             document.getElementsByTagName('head')[0].appendChild(link);
         }
 
-        if (faviconValue.startsWith('data:image') || faviconValue.startsWith('http')) {
+        if (faviconValue.startsWith('data:image') || faviconValue.startsWith('http') || faviconValue.startsWith('blob:')) {
+            link.type = 'image/png';
             link.href = faviconValue;
         } else {
             // Jika emoji atau teks singkat, buat SVG Data URI favicon
+            link.type = 'image/svg+xml';
             const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">${faviconValue}</text></svg>`;
             link.href = `data:image/svg+xml,${encodeURIComponent(svg)}`;
         }
