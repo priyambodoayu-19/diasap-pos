@@ -4,8 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🔥 DIASAP POS - Kasir & Manajemen Penjualan</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔥</text></svg>">
     <!-- Stylesheet POS -->
-    <link rel="stylesheet" href="css/style.css?v=2.9">
+    <link rel="stylesheet" href="css/style.css?v=3.0">
+    <!-- Pustaka Eksternal: Excel XLSX Export, Canvas Struk, PDF Generator -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -27,6 +32,21 @@
                     <div class="status-indicator status-offline" id="dbStatusBadge" title="Status Database">
                         <span id="dbStatusText">Memeriksa DB...</span>
                     </div>
+
+                    <!-- Lencana Kasir Aktif -->
+                    <div class="active-cashier-pill" id="activeCashierBadge" onclick="authManager.lockApp()" title="Kasir Aktif. Klik untuk ganti kasir / kunci.">
+                        <span class="cashier-pill-icon">👤</span>
+                        <span class="cashier-pill-name" id="activeCashierName">Ayu</span>
+                    </div>
+
+                    <!-- Tombol Pengaturan Toko -->
+                    <button type="button" class="btn-nav-action btn-settings-nav" onclick="settingsManager.openSettingsModal()" title="Pengaturan Profil Toko, Rekening, QRIS, Struk & Kasir">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
+                        <span>Pengaturan Toko</span>
+                    </button>
 
                     <!-- Tombol Rekap Penjualan -->
                     <button type="button" class="btn-nav-action" onclick="openHistoryModal()" title="Lihat Rekap Transaksi & Penjualan (F8)">
@@ -156,6 +176,33 @@
 
             <!-- Section Pembayaran -->
             <div class="payment-section">
+                <!-- Baris Subtotal -->
+                <div class="subtotal-row">
+                    <span>Subtotal:</span>
+                    <span id="cartSubtotalDisplay">Rp 0</span>
+                </div>
+
+                <!-- Kontrol Diskon Final Kasir -->
+                <div class="final-discount-section" id="finalDiscountGroup">
+                    <div class="discount-toggle-header">
+                        <span class="disc-label">🏷️ Diskon Tambahan Kasir:</span>
+                        <div class="disc-mode-switch">
+                            <button type="button" class="btn-disc-mode active" data-mode="nominal">Rp</button>
+                            <button type="button" class="btn-disc-mode" data-mode="percent">%</button>
+                        </div>
+                    </div>
+                    <div class="discount-inputs-row">
+                        <input type="number" id="finalDiscountValue" class="form-control disc-val-input" placeholder="Diskon (Rp) misal: 5000" min="0" step="1">
+                        <input type="text" id="finalDiscountNote" class="form-control disc-note-input" placeholder="Catatan (misal: Ultah / Khusus)">
+                    </div>
+                </div>
+
+                <!-- Potongan Diskon -->
+                <div class="discount-deduct-row" id="cartDiscountRow" style="display: none;">
+                    <span>Potongan Diskon:</span>
+                    <span class="disc-amount-text" id="cartDiscountAmountDisplay">- Rp 0</span>
+                </div>
+
                 <!-- Baris Grand Total -->
                 <div class="total-row">
                     <span>Total Pembayaran:</span>
@@ -224,9 +271,18 @@
                     <!-- Format Struk Kasir Thermal digenerate oleh payment.js -->
                 </div>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer receipt-actions-footer">
                 <button type="button" class="btn-nav-action" onclick="paymentManager.closeReceiptModal()">Tutup</button>
-                <button type="button" class="btn-nav-action" style="background: var(--primary); color: white; border-color: var(--primary);" onclick="paymentManager.printReceipt()">
+                <button type="button" class="btn-nav-action btn-receipt-share" onclick="paymentManager.shareReceipt()" title="Kirim struk / bagikan via WhatsApp atau simpan">
+                    📲 Bagikan Struk
+                </button>
+                <button type="button" class="btn-nav-action btn-receipt-save" onclick="paymentManager.saveReceiptAsImage()" title="Simpan struk sebagai gambar PNG">
+                    🖼️ Simpan Gambar
+                </button>
+                <button type="button" class="btn-nav-action btn-receipt-pdf" onclick="paymentManager.saveReceiptAsPDF()" title="Simpan struk sebagai file PDF">
+                    📄 Unduh PDF
+                </button>
+                <button type="button" class="btn-nav-action btn-receipt-print" onclick="paymentManager.printReceipt()" title="Cetak struk ke printer thermal kasir">
                     🖨️ Cetak Struk
                 </button>
             </div>
@@ -241,6 +297,25 @@
                 <button type="button" class="modal-close-btn" onclick="closeHistoryModal()">&times;</button>
             </div>
             <div class="modal-body">
+                <!-- Filter Periode Riwayat -->
+                <div class="history-filter-bar">
+                    <div class="history-filter-pills">
+                        <button type="button" class="history-filter-btn active" data-filter="all" onclick="setHistoryFilter('all')">Semua Transaksi</button>
+                        <button type="button" class="history-filter-btn" data-filter="today" onclick="setHistoryFilter('today')">Hari Ini</button>
+                        <button type="button" class="history-filter-btn" data-filter="week" onclick="setHistoryFilter('week')">7 Hari Terakhir</button>
+                        <button type="button" class="history-filter-btn" data-filter="month" onclick="setHistoryFilter('month')">Bulan Ini</button>
+                        <button type="button" class="history-filter-btn" data-filter="custom" onclick="setHistoryFilter('custom')">📅 Kustom Rentang</button>
+                    </div>
+                    <div class="history-custom-date" id="historyCustomDateRange" style="display: none;">
+                        <input type="date" id="historyStartDate" class="form-control date-picker-input" onchange="renderHistoryData()">
+                        <span>s/d</span>
+                        <input type="date" id="historyEndDate" class="form-control date-picker-input" onchange="renderHistoryData()">
+                    </div>
+                </div>
+
+                <!-- Grafik Tren Omset & Untung Bersih (Pure SVG) -->
+                <div id="historyChartContainer" class="history-chart-wrapper"></div>
+
                 <!-- Summary Cards -->
                 <div class="rekap-cards-grid">
                     <div class="rekap-card">
@@ -302,8 +377,8 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn-nav-action" onclick="exportHistoryToCSV()">
-                    📥 Ekspor ke CSV / Excel
+                <button type="button" class="btn-nav-action btn-export-excel" onclick="exportHistoryToExcel()">
+                    📊 Ekspor ke Excel (.xlsx)
                 </button>
                 <button type="button" class="btn-nav-action" onclick="closeHistoryModal()">Tutup</button>
             </div>
@@ -429,12 +504,17 @@
 
             <form id="adminProductForm">
                 <div class="modal-body">
-                    <!-- Baris 1: ID & Icon Emoji -->
+                    <!-- Baris 1: ID, Urutan & Icon Emoji -->
                     <div class="form-row">
                         <div class="form-group" style="flex: 1;">
                             <label for="adminProdId">Kode Menu / SKU <span class="text-danger">*</span></label>
                             <input type="text" id="adminProdId" class="form-control font-bold" placeholder="Contoh: E, M3, T3" required autocomplete="off">
                             <small class="form-help">Kode unik / SKU menu di POS (dapat diubah)</small>
+                        </div>
+                        <div class="form-group" style="flex: 0.8;">
+                            <label for="adminProdSortOrder">Urutan Tampilan</label>
+                            <input type="number" id="adminProdSortOrder" class="form-control" placeholder="10" min="1" step="1" value="10">
+                            <small class="form-help">Urutan kartu di kasir</small>
                         </div>
                         <div class="form-group" style="flex: 1.2;">
                             <label for="adminProdEmoji">Icon Emoji</label>
@@ -577,6 +657,29 @@
 
                         <!-- Live Preview Porsi -->
                         <div id="adminStockPortionPreview" style="margin-top: 8px;"></div>
+                    </div>
+
+                    <!-- Section Varian Menu (Paha, Dada, Campur, dll) -->
+                    <div class="variants-config-box">
+                        <div class="variants-config-header">
+                            <div class="variants-toggle-wrap">
+                                <label class="switch">
+                                    <input type="checkbox" id="adminProdHasVariants" onchange="adminManager.toggleVariantsSection(this.checked)">
+                                    <span class="slider"></span>
+                                </label>
+                                <div>
+                                    <strong>✨ Aktifkan Varian Menu (Paha, Dada, Campur, dll)</strong>
+                                    <p>Menu ini memiliki pilihan varian berbeda dengan resep gramasi bahan baku masing-masing.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="adminVariantsSection" style="display: none; margin-top: 14px;">
+                            <div id="adminVariantsListContainer"></div>
+                            <button type="button" class="btn-add-variant-item" onclick="adminManager.addVariantRow()">
+                                + Tambah Varian Baru
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Deskripsi -->
@@ -749,9 +852,14 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="voidAuthorName">Nama Staf / Otorisator <span class="text-danger">*</span></label>
-                        <input type="text" id="voidAuthorName" class="form-control" placeholder="Contoh: Ayu (Supervisor) / Kasir 1" required autocomplete="name">
-                        <small class="form-help">Nama staf yang bertanggung jawab membatalkan transaksi ini</small>
+                        <label for="voidAuthorSelect">Nama Staf / Kasir Otorisator <span class="text-danger">*</span></label>
+                        <select id="voidAuthorSelect" class="form-control" onchange="document.getElementById('voidAuthorName').value = this.value" required>
+                            <option value="Ayu">👤 Ayu</option>
+                            <option value="Dina">👤 Dina</option>
+                            <option value="Nining">👤 Nining</option>
+                        </select>
+                        <input type="hidden" id="voidAuthorName" value="Ayu">
+                        <small class="form-help">Nama kasir / staf yang bertanggung jawab membatalkan transaksi ini</small>
                     </div>
 
                     <div class="form-group">
@@ -793,6 +901,187 @@
         </div>
     </div>
 
+    <!-- ================= MODAL: PILIH VARIAN MENU (KASIR) ================= -->
+    <div class="modal-backdrop" id="variantModal" style="z-index: 1080;">
+        <div class="modal-content modal-variant-select">
+            <div class="modal-header">
+                <div>
+                    <h3 id="variantModalTitle">Pilih Varian Menu</h3>
+                    <p id="variantModalDesc" class="variant-modal-subtitle">Pilih varian rasa / potongan sebelum dimasukkan ke pesanan</p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="variantSelectManager.close()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="variant-options-list" id="variantOptionsList">
+                    <!-- Diisi secara dinamis oleh variantSelectManager -->
+                </div>
+
+                <div class="variant-qty-section">
+                    <span class="variant-qty-label">Jumlah Pesanan:</span>
+                    <div class="qty-stepper">
+                        <button type="button" class="qty-btn" onclick="variantSelectManager.changeQty(-1)">-</button>
+                        <span class="qty-display" id="variantModalQty">1</span>
+                        <button type="button" class="qty-btn" onclick="variantSelectManager.changeQty(1)">+</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-nav-action" onclick="variantSelectManager.close()">Batal</button>
+                <button type="button" class="btn-nav-action btn-primary-submit" onclick="variantSelectManager.confirmAddToCart()">
+                    + Tambah ke Pesanan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODAL: PENGATURAN TOKO ================= -->
+    <div class="modal-backdrop" id="storeSettingsModal" style="z-index: 1055;">
+        <div class="modal-content modal-settings">
+            <div class="modal-header">
+                <div class="admin-header-title">
+                    <span class="admin-title-badge" style="background: #FEF3C7; color: #B45309;">🏪 TOKO</span>
+                    <div>
+                        <h3>Pengaturan Toko & Kasir</h3>
+                        <p class="admin-subtitle">Atur profil resto, rekening bank, upload QRIS, teks struk, dan kelola nama kasir</p>
+                    </div>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="settingsManager.closeSettingsModal()">&times;</button>
+            </div>
+
+            <!-- Tabs Pengaturan -->
+            <div class="settings-tabs-nav">
+                <button type="button" class="settings-tab-btn active" data-tab="profile">
+                    🏢 Profil Toko & Struk
+                </button>
+                <button type="button" class="settings-tab-btn" data-tab="bank">
+                    💳 Rekening Bank & QRIS
+                </button>
+                <button type="button" class="settings-tab-btn" data-tab="cashiers">
+                    👥 Kelola Daftar Kasir
+                </button>
+            </div>
+
+            <form id="storeSettingsForm">
+                <div class="modal-body settings-modal-body">
+                    <!-- TAB 1: PROFIL TOKO & STRUK -->
+                    <div class="settings-tab-pane" id="settingsTab-profile">
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 2;">
+                                <label for="settingStoreName">Nama Toko / Restoran <span class="text-danger">*</span></label>
+                                <input type="text" id="settingStoreName" class="form-control font-bold" placeholder="DIASAP POS" required>
+                            </div>
+                            <div class="form-group" style="flex: 1.5;">
+                                <label for="settingStoreTagline">Tagline / Slogan</label>
+                                <input type="text" id="settingStoreTagline" class="form-control" placeholder="Smoked Meat & Kitchen">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="settingStoreFavicon">Favicon (Emoji atau Upload Gambar Icon)</label>
+                            <div class="favicon-picker-row">
+                                <div class="favicon-preview-box" id="settingFaviconPreview">🔥</div>
+                                <input type="text" id="settingStoreFavicon" class="form-control" placeholder="Emoji (🔥, 🍗) atau URL data:image" oninput="settingsManager.renderFaviconPreview()">
+                                <label class="btn-file-upload">
+                                    📁 Upload Icon
+                                    <input type="file" id="settingFaviconFileInput" accept="image/*" style="display: none;">
+                                </label>
+                            </div>
+                            <small class="form-help">Gunakan emoji unik atau upload logo kecil untuk favicon tab browser Anda.</small>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 2;">
+                                <label for="settingStoreAddress">Alamat Toko</label>
+                                <input type="text" id="settingStoreAddress" class="form-control" placeholder="Jl. Kuliner No. 123, Bandung">
+                            </div>
+                            <div class="form-group" style="flex: 1.2;">
+                                <label for="settingStorePhone">Nomor Telepon / WhatsApp</label>
+                                <input type="text" id="settingStorePhone" class="form-control" placeholder="0812-3456-7890">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="settingReceiptHeader">Pesan Header Struk (Opsional)</label>
+                            <input type="text" id="settingReceiptHeader" class="form-control" placeholder="Selamat Menikmati Hidangan Kami!">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="settingReceiptFooter">Pesan Footer Struk</label>
+                            <textarea id="settingReceiptFooter" class="form-control" rows="2" placeholder="Terima Kasih Atas Kunjungan Anda!&#10;Follow IG: @diasap.resto"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: BANK & QRIS -->
+                    <div class="settings-tab-pane" id="settingsTab-bank" style="display: none;">
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 1;">
+                                <label for="settingBankName">Nama Bank</label>
+                                <input type="text" id="settingBankName" class="form-control" placeholder="BCA / Mandiri / BNI">
+                            </div>
+                            <div class="form-group" style="flex: 1.5;">
+                                <label for="settingBankAccountNo">Nomor Rekening</label>
+                                <input type="text" id="settingBankAccountNo" class="form-control font-bold" placeholder="123-456-7890">
+                            </div>
+                            <div class="form-group" style="flex: 1.5;">
+                                <label for="settingBankAccountHolder">Atas Nama (Pemilik Rekening)</label>
+                                <input type="text" id="settingBankAccountHolder" class="form-control" placeholder="DIASAP RESTO">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Gambar QRIS Toko (Scan Pembayaran Kasir)</label>
+                            <div class="qris-upload-card">
+                                <div class="qris-preview-box" id="settingQrisPreviewWrapper">
+                                    <img id="settingQrisPreviewImg" src="" alt="QRIS Toko" style="display: none;">
+                                    <div id="settingQrisEmptyState" class="qris-empty-text">
+                                        <span style="font-size: 32px;">📱</span>
+                                        <div>Belum ada gambar QRIS</div>
+                                        <small>Upload gambar QRIS statis / barcode toko Anda</small>
+                                    </div>
+                                </div>
+                                <div class="qris-actions-box">
+                                    <label class="btn-file-upload btn-upload-qris">
+                                        📤 Pilih File QRIS (JPEG / PNG)
+                                        <input type="file" id="settingQrisFileInput" accept="image/jpeg,image/png,image/webp" style="display: none;">
+                                    </label>
+                                    <button type="button" id="settingBtnRemoveQris" class="btn-del-cashier-outline" style="display: none;" onclick="settingsManager.removeQrisImage()">
+                                        🗑️ Hapus Gambar QRIS
+                                    </button>
+                                    <small class="form-help">Gambar QRIS otomatis muncul di kasir saat metode QRIS dipilih.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: DAFTAR KASIR -->
+                    <div class="settings-tab-pane" id="settingsTab-cashiers" style="display: none;">
+                        <div class="cashiers-manager-card">
+                            <label>Daftar Nama Kasir Bertugas:</label>
+                            <div class="cashiers-tags-container" id="settingCashiersList">
+                                <!-- Diisi dinamis oleh settingsManager -->
+                            </div>
+
+                            <div class="add-cashier-input-row">
+                                <input type="text" id="settingNewCashierName" class="form-control" placeholder="Nama Kasir Baru (misal: Ayu, Dina, Nining)" onkeydown="if(event.key==='Enter'){event.preventDefault(); settingsManager.addCashier();}">
+                                <button type="button" class="btn-nav-action btn-add-cashier-act" onclick="settingsManager.addCashier()">
+                                    + Tambah Kasir
+                                </button>
+                            </div>
+                            <small class="form-help">Kasir yang didaftarkan di sini akan muncul pada opsi pilih kasir saat buka kunci kasir dan laporan audit riwayat.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer settings-modal-footer">
+                    <button type="button" class="btn-nav-action" onclick="settingsManager.closeSettingsModal()">Tutup</button>
+                    <button type="submit" class="btn-nav-action btn-primary-submit" id="settingBtnSave">
+                        Simpan Pengaturan Toko
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- ================= OVERLAY: LOCK SCREEN PASSWORD ================= -->
     <div class="lock-screen-overlay" id="lockScreenOverlay">
         <div class="lock-card" id="lockCard">
@@ -803,6 +1092,15 @@
             </div>
 
             <form id="lockScreenForm" class="lock-form">
+                <div class="lock-input-group">
+                    <label for="lockCashierSelect">Kasir yang Bertugas</label>
+                    <select id="lockCashierSelect" class="form-control lock-cashier-select">
+                        <option value="Ayu">👤 Kasir: Ayu</option>
+                        <option value="Dina">👤 Kasir: Dina</option>
+                        <option value="Nining">👤 Kasir: Nining</option>
+                    </select>
+                </div>
+
                 <div class="lock-input-group">
                     <label for="lockPasswordInput">Password Akses Kasir</label>
                     <div class="lock-password-wrapper">
@@ -833,6 +1131,7 @@
     <script src="js/config.js?v=2.9"></script>
     <script src="js/sound.js?v=2.9"></script>
     <script src="js/db.js?v=2.9"></script>
+    <script src="js/settings.js?v=2.9"></script>
     <script src="js/inventory.js?v=2.9"></script>
     <script src="js/products.js?v=2.9"></script>
     <script src="js/cart.js?v=2.9"></script>

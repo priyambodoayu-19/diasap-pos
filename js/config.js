@@ -20,6 +20,22 @@ const CONFIG = {
     // Password Akses Webapp Kasir
     APP_PASSWORD: "syalala123",
 
+    // Default Pengaturan Toko & Profil Kasir
+    DEFAULT_SETTINGS: {
+        storeName: "DIASAP RESTO & SMOKEHOUSE",
+        storeTagline: "Smoked Meat & Kitchen",
+        storeAddress: "Jl. Kuliner Lezat No. 88, Kota Rasa",
+        storePhone: "0812-3456-7890",
+        storeFavicon: "🔥",
+        bankName: "BCA",
+        bankAccountNo: "123-456-7890",
+        bankAccountHolder: "DIASAP RESTO",
+        qrisImage: "",
+        receiptHeader: "🔥 DIASAP 🔥\nSmoked Meat & Kitchen",
+        receiptFooter: "Terima Kasih Atas Kunjungan Anda!\nNikmati Sensasi Daging Asap Khas Kami.",
+        cashiers: ["Ayu", "Dina", "Nining"]
+    },
+
     // Data Bahan Baku Master Default (jika offline)
     DEFAULT_RAW_MATERIALS: [
         { id: 'RAW-AYAM', name: 'Ayam Asap', stock: 3000, unit: 'gr', minStock: 500 },

@@ -17,6 +17,7 @@ class AdminManager {
         this.currentCategory = 'all';
         this.searchQuery = '';
         this.editingProductId = null;
+        this.currentVariants = [];
     }
 
     init() {
@@ -73,6 +74,13 @@ class AdminManager {
         const directStockInput = document.getElementById('adminProdDirectStock');
         if (directStockInput) {
             directStockInput.addEventListener('input', () => this.updateStockPortionPreview());
+        }
+
+        const hasVariantsCheckbox = document.getElementById('adminProdHasVariants');
+        if (hasVariantsCheckbox) {
+            hasVariantsCheckbox.addEventListener('change', (e) => {
+                this.toggleVariantsSection(e.target.checked);
+            });
         }
     }
 
@@ -163,6 +171,34 @@ class AdminManager {
         this.renderTable();
     }
 
+    async moveProduct(productId, direction) {
+        const products = [...(productManager.products || [])];
+        const idx = products.findIndex(p => p.id === productId);
+        if (idx < 0) return;
+
+        if (direction === 'up' && idx > 0) {
+            const temp = products[idx];
+            products[idx] = products[idx - 1];
+            products[idx - 1] = temp;
+        } else if (direction === 'down' && idx < products.length - 1) {
+            const temp = products[idx];
+            products[idx] = products[idx + 1];
+            products[idx + 1] = temp;
+        } else {
+            return;
+        }
+
+        try {
+            await db.updateProductsSortOrder(products);
+            await productManager.loadProducts();
+            this.renderTable();
+            this.showToast('Urutan menu berhasil diubah.');
+        } catch (err) {
+            console.error(err);
+            alert('Gagal mengubah urutan: ' + err.message);
+        }
+    }
+
     renderStats() {
         const products = productManager.products || [];
         const total = products.length;
@@ -232,14 +268,28 @@ class AdminManager {
                 catBadgeClass = 'cat-tambahan';
             }
 
+            const hasVariants = p.variants && Array.isArray(p.variants) && p.variants.length > 0;
+            const variantsBadge = hasVariants 
+                ? `<span class="badge-has-variants" title="Varian: ${p.variants.map(v => v.name).join(', ')}">✨ ${p.variants.length} Varian</span>` 
+                : '';
+
             return `
                 <tr>
-                    <td style="text-align: center; font-weight: 700; color: #64748B;">${idx + 1}</td>
+                    <td style="text-align: center; vertical-align: middle;">
+                        <div class="admin-reorder-wrap">
+                            <button type="button" class="btn-reorder-action" onclick="adminManager.moveProduct('${p.id}', 'up')" ${idx === 0 ? 'disabled' : ''} title="Geser Urutan Naik">▲</button>
+                            <span class="admin-order-num">${idx + 1}</span>
+                            <button type="button" class="btn-reorder-action" onclick="adminManager.moveProduct('${p.id}', 'down')" ${idx === filtered.length - 1 ? 'disabled' : ''} title="Geser Urutan Turun">▼</button>
+                        </div>
+                    </td>
                     <td>
                         <div class="admin-prod-identity">
                             <span class="admin-prod-emoji">${getValidProductEmoji(p.emoji, p.category, p.id)}</span>
                             <div>
-                                <div class="admin-prod-name">${p.name}</div>
+                                <div class="admin-prod-name">
+                                    ${p.name}
+                                    ${variantsBadge}
+                                </div>
                                 <div class="admin-prod-code">Kode: <strong>${p.id}</strong> &bull; <span class="category-badge ${catBadgeClass}">${catLabel}</span></div>
                                 ${p.desc ? `<div class="admin-prod-desc-inline">${p.desc}</div>` : ''}
                             </div>
@@ -485,6 +535,15 @@ class AdminManager {
         this.updateStockFormVisibility();
         this.updateStockPortionPreview();
 
+        // Reset urutan & varian
+        const sortOrderInput = document.getElementById('adminProdSortOrder');
+        if (sortOrderInput) sortOrderInput.value = ((productManager.products || []).length + 1) * 10;
+
+        this.currentVariants = [];
+        const hasVariantsCheckbox = document.getElementById('adminProdHasVariants');
+        if (hasVariantsCheckbox) hasVariantsCheckbox.checked = false;
+        this.toggleVariantsSection(false);
+
         // Sembunyikan tombol hapus saat mode tambah
         const deleteBtn = document.getElementById('adminBtnDeleteProduct');
         if (deleteBtn) deleteBtn.style.display = 'none';
@@ -517,6 +576,7 @@ class AdminManager {
         const nominalInput = document.getElementById('adminProdDiscountNominal');
         const percentInput = document.getElementById('adminProdDiscountPercent');
         const deleteBtn = document.getElementById('adminBtnDeleteProduct');
+        const sortOrderInput = document.getElementById('adminProdSortOrder');
 
         if (title) title.textContent = `✏️ Edit Menu: ${product.name}`;
         if (idInput) {
@@ -527,6 +587,7 @@ class AdminManager {
         if (catSelect) catSelect.value = product.category || 'makanan';
         if (emojiInput) emojiInput.value = getValidProductEmoji(product.emoji, product.category, product.id);
         if (descInput) descInput.value = product.desc || '';
+        if (sortOrderInput) sortOrderInput.value = product.sortOrder || 10;
 
         // Tampilkan tombol hapus saat mode edit
         if (deleteBtn) {
@@ -557,12 +618,173 @@ class AdminManager {
         this.updateStockFormVisibility();
         this.updateStockPortionPreview();
 
+        // Prefill Varian Menu
+        this.currentVariants = (product.variants && Array.isArray(product.variants))
+            ? JSON.parse(JSON.stringify(product.variants))
+            : [];
+        const hasVariantsCheckbox = document.getElementById('adminProdHasVariants');
+        const hasVariants = this.currentVariants.length > 0;
+        if (hasVariantsCheckbox) hasVariantsCheckbox.checked = hasVariants;
+        this.toggleVariantsSection(hasVariants);
+
         this.updateDiscountPreview();
 
         if (modal) modal.classList.add('active');
         if (priceNormalInput) {
             setTimeout(() => priceNormalInput.focus(), 150);
         }
+    }
+
+    // ================= MANAJEMEN VARIAN MENU =================
+
+    toggleVariantsSection(enable) {
+        const section = document.getElementById('adminVariantsSection');
+        if (section) section.style.display = enable ? 'block' : 'none';
+
+        if (enable && (!this.currentVariants || this.currentVariants.length === 0)) {
+            this.currentVariants = [
+                {
+                    id: 'var_' + Date.now(),
+                    name: 'Paha',
+                    priceExtra: 0,
+                    cogsExtra: 0,
+                    ingredients: [{ rawMaterialId: '', amount: 0 }]
+                }
+            ];
+        }
+        this.renderVariantsUI();
+    }
+
+    renderVariantsUI() {
+        const container = document.getElementById('adminVariantsListContainer');
+        if (!container) return;
+
+        const rawMaterials = (typeof inventoryManager !== 'undefined') ? inventoryManager.rawMaterials : [];
+
+        if (!this.currentVariants || this.currentVariants.length === 0) {
+            container.innerHTML = `<div style="color: #94A3B8; font-size: 13px; font-style: italic; padding: 10px 0;">Belum ada varian menu. Klik "+ Tambah Varian" di bawah.</div>`;
+            return;
+        }
+
+        container.innerHTML = this.currentVariants.map((v, vIdx) => {
+            const ingredients = v.ingredients || [];
+
+            return `
+                <div class="variant-builder-card" data-vidx="${vIdx}">
+                    <div class="variant-builder-header">
+                        <span class="variant-num-badge">Varian #${vIdx + 1}</span>
+                        <button type="button" class="btn-del-variant-row" onclick="adminManager.removeVariantRow(${vIdx})" title="Hapus varian ini">
+                            &times; Hapus Varian
+                        </button>
+                    </div>
+
+                    <div class="variant-builder-fields">
+                        <div class="variant-field-group">
+                            <label>Nama Varian (Contoh: Paha, Dada, Campur):</label>
+                            <input type="text" class="variant-input variant-name-input" value="${v.name || ''}" placeholder="Nama varian..." oninput="adminManager.updateVariantField(${vIdx}, 'name', this.value)" required>
+                        </div>
+                        <div class="variant-field-group" style="max-width: 170px;">
+                            <label>Tambahan Harga (Rp):</label>
+                            <input type="number" class="variant-input variant-price-input" value="${v.priceExtra || 0}" min="0" placeholder="0" oninput="adminManager.updateVariantField(${vIdx}, 'priceExtra', this.value)">
+                        </div>
+                    </div>
+
+                    <!-- Resep Bahan Baku Master untuk Varian Ini (Bisa > 1 bahan) -->
+                    <div class="variant-ingredients-box">
+                        <div class="variant-ing-header">
+                            <span>🌾 Resep Bahan Baku Master (Bisa pilih lebih dari 1 bahan):</span>
+                            <button type="button" class="btn-add-ing-row" onclick="adminManager.addVariantIngredient(${vIdx})">
+                                + Tambah Bahan
+                            </button>
+                        </div>
+
+                        <div class="variant-ing-list">
+                            ${ingredients.length === 0 ? `
+                                <div style="color: #94A3B8; font-size: 12px; font-style: italic;">Belum ada resep bahan master untuk varian ini.</div>
+                            ` : ingredients.map((ing, ingIdx) => `
+                                <div class="variant-ing-row">
+                                    <select class="variant-select-mat" onchange="adminManager.updateVariantIngredient(${vIdx}, ${ingIdx}, 'rawMaterialId', this.value)">
+                                        <option value="">-- Pilih Bahan Baku Master --</option>
+                                        ${rawMaterials.map(m => `
+                                            <option value="${m.id}" ${m.id === ing.rawMaterialId ? 'selected' : ''}>
+                                                ${m.name} (Stok: ${Number(m.stock).toLocaleString('id-ID')} ${m.unit})
+                                            </option>
+                                        `).join('')}
+                                    </select>
+                                    <div class="variant-ing-amount-wrap">
+                                        <input type="number" step="0.01" class="variant-input-amount" value="${ing.amount || 0}" placeholder="Takaran" oninput="adminManager.updateVariantIngredient(${vIdx}, ${ingIdx}, 'amount', this.value)">
+                                        <span class="unit-label">gr / unit</span>
+                                    </div>
+                                    <button type="button" class="btn-del-ing-row" onclick="adminManager.removeVariantIngredient(${vIdx}, ${ingIdx})" title="Hapus bahan ini">
+                                        &times;
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    updateVariantField(vIdx, field, val) {
+        if (!this.currentVariants[vIdx]) return;
+        if (field === 'priceExtra' || field === 'cogsExtra') {
+            this.currentVariants[vIdx][field] = parseFloat(val) || 0;
+        } else {
+            this.currentVariants[vIdx][field] = val;
+        }
+    }
+
+    addVariantRow() {
+        if (!this.currentVariants) this.currentVariants = [];
+        this.currentVariants.push({
+            id: 'var_' + Date.now() + '_' + Math.floor(Math.random() * 100),
+            name: '',
+            priceExtra: 0,
+            cogsExtra: 0,
+            ingredients: [{ rawMaterialId: '', amount: 0 }]
+        });
+        this.renderVariantsUI();
+    }
+
+    removeVariantRow(vIdx) {
+        if (!this.currentVariants || !this.currentVariants[vIdx]) return;
+        this.currentVariants.splice(vIdx, 1);
+        this.renderVariantsUI();
+    }
+
+    addVariantIngredient(vIdx) {
+        if (!this.currentVariants || !this.currentVariants[vIdx]) return;
+        if (!this.currentVariants[vIdx].ingredients) this.currentVariants[vIdx].ingredients = [];
+        this.currentVariants[vIdx].ingredients.push({ rawMaterialId: '', amount: 0 });
+        this.renderVariantsUI();
+    }
+
+    removeVariantIngredient(vIdx, ingIdx) {
+        if (!this.currentVariants || !this.currentVariants[vIdx] || !this.currentVariants[vIdx].ingredients) return;
+        this.currentVariants[vIdx].ingredients.splice(ingIdx, 1);
+        this.renderVariantsUI();
+    }
+
+    updateVariantIngredient(vIdx, ingIdx, key, val) {
+        if (!this.currentVariants[vIdx] || !this.currentVariants[vIdx].ingredients || !this.currentVariants[vIdx].ingredients[ingIdx]) return;
+        if (key === 'amount') {
+            this.currentVariants[vIdx].ingredients[ingIdx].amount = parseFloat(val) || 0;
+        } else {
+            this.currentVariants[vIdx].ingredients[ingIdx].rawMaterialId = val;
+        }
+    }
+
+    collectVariantsFromUI() {
+        const cards = document.querySelectorAll('.variant-builder-card');
+        cards.forEach((card, vIdx) => {
+            if (!this.currentVariants[vIdx]) return;
+            const nameInput = card.querySelector('.variant-name-input');
+            const priceInput = card.querySelector('.variant-price-input');
+            if (nameInput) this.currentVariants[vIdx].name = nameInput.value.trim();
+            if (priceInput) this.currentVariants[vIdx].priceExtra = parseFloat(priceInput.value) || 0;
+        });
     }
 
     // Berpindah dari form produk ke tabel admin panel utama
@@ -662,6 +884,37 @@ class AdminManager {
             }
         }
 
+        // Validasi dan pengumpulan Varian Menu
+        const hasVariants = document.getElementById('adminProdHasVariants')?.checked;
+        let variants = [];
+        if (hasVariants) {
+            this.collectVariantsFromUI();
+            if (!this.currentVariants || this.currentVariants.length === 0) {
+                alert('Opsi Varian Menu diaktifkan tetapi belum ada varian yang ditambahkan!');
+                return;
+            }
+
+            for (let i = 0; i < this.currentVariants.length; i++) {
+                const v = this.currentVariants[i];
+                const vName = (v.name || '').trim();
+                if (!vName) {
+                    alert(`Varian #${i + 1} wajib memiliki nama (misal: Paha, Dada, Campur)!`);
+                    return;
+                }
+
+                variants.push({
+                    id: v.id || ('var_' + Date.now() + '_' + i),
+                    name: vName,
+                    priceExtra: parseFloat(v.priceExtra) || 0,
+                    cogsExtra: parseFloat(v.cogsExtra) || 0,
+                    ingredients: (v.ingredients || []).filter(ing => ing.rawMaterialId && Number(ing.amount) > 0)
+                });
+            }
+        }
+
+        const sortOrderInput = document.getElementById('adminProdSortOrder');
+        const sortOrder = sortOrderInput ? (parseInt(sortOrderInput.value) || 10) : 10;
+
         const product = {
             id,
             name,
@@ -674,7 +927,9 @@ class AdminManager {
             stockType,
             rawMaterialId,
             rawMaterialAmount,
-            directStock
+            directStock,
+            sortOrder,
+            variants
         };
 
         const submitBtn = document.getElementById('adminBtnSaveProduct');

@@ -3254,3 +3254,959 @@ input:checked + .slider:before {
     }
 }
 
+/* ==========================================================================
+   FEATURE ENHANCEMENTS v3.0: STORE SETTINGS, VARIANTS, EXCEL, RECEIPT ACTIONS
+   ========================================================================== */
+
+/* --- 1. Lencana Kasir Aktif & Tombol Pengaturan Toko --- */
+.active-cashier-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #F8FAFC;
+    border: 1px solid #CBD5E1;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #1E293B;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.active-cashier-pill:hover {
+    background: #F1F5F9;
+    border-color: #94A3B8;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.cashier-pill-icon {
+    font-size: 14px;
+}
+
+.cashier-pill-name {
+    color: var(--primary);
+    font-weight: 800;
+}
+
+.btn-settings-nav {
+    background: #FFFBEB !important;
+    border-color: #FDE68A !important;
+    color: #B45309 !important;
+}
+
+.btn-settings-nav:hover {
+    background: #FEF3C7 !important;
+    border-color: #FCD34D !important;
+    color: #92400E !important;
+}
+
+/* --- 2. Subtotal Keranjang & Diskon Final Kasir --- */
+.subtotal-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    padding-bottom: 8px;
+    border-bottom: 1px dashed var(--border);
+    margin-bottom: 8px;
+}
+
+.final-discount-section {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    margin-bottom: 8px;
+}
+
+.discount-toggle-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.disc-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+}
+
+.disc-mode-switch {
+    display: flex;
+    background: #E2E8F0;
+    border-radius: 4px;
+    padding: 2px;
+    gap: 2px;
+}
+
+.btn-disc-mode {
+    border: none;
+    background: transparent;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 3px;
+    cursor: pointer;
+    color: #64748B;
+    transition: all 0.15s;
+}
+
+.btn-disc-mode.active {
+    background: white;
+    color: var(--primary);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.discount-inputs-row {
+    display: flex;
+    gap: 6px;
+}
+
+.disc-val-input {
+    flex: 1.2;
+    padding: 6px 8px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.disc-note-input {
+    flex: 1.8;
+    padding: 6px 8px;
+    font-size: 12px;
+}
+
+.discount-deduct-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: #DC2626;
+    margin-bottom: 8px;
+    padding: 4px 8px;
+    background: #FEF2F2;
+    border-radius: 4px;
+    border: 1px dashed #FCA5A5;
+}
+
+.disc-amount-text {
+    font-weight: 800;
+}
+
+/* --- 3. Struk Actions & Watermark --- */
+.receipt-actions-footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.btn-receipt-share {
+    background: #25D366 !important;
+    color: white !important;
+    border-color: #25D366 !important;
+    font-weight: 700;
+}
+
+.btn-receipt-share:hover {
+    background: #1EBE5D !important;
+}
+
+.btn-receipt-save {
+    background: #3B82F6 !important;
+    color: white !important;
+    border-color: #3B82F6 !important;
+}
+
+.btn-receipt-save:hover {
+    background: #2563EB !important;
+}
+
+.btn-receipt-pdf {
+    background: #EF4444 !important;
+    color: white !important;
+    border-color: #EF4444 !important;
+}
+
+.btn-receipt-pdf:hover {
+    background: #DC2626 !important;
+}
+
+.btn-receipt-print {
+    background: var(--primary) !important;
+    color: white !important;
+    border-color: var(--primary) !important;
+    font-weight: 800;
+}
+
+.reprint-watermark-banner {
+    background: #FEF3C7;
+    border: 2px dashed #F59E0B;
+    color: #92400E;
+    font-size: 11px;
+    font-weight: 800;
+    text-align: center;
+    padding: 4px 8px;
+    margin-bottom: 12px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+}
+
+/* --- 4. Rekap Penjualan: Filter Periode & Pure SVG Chart --- */
+.history-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding: 10px 14px;
+    background: white;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+}
+
+.history-filter-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.history-filter-btn {
+    border: 1px solid #CBD5E1;
+    background: #F8FAFC;
+    color: #475569;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.history-filter-btn:hover {
+    background: #F1F5F9;
+    border-color: #94A3B8;
+}
+
+.history-filter-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+    box-shadow: 0 2px 6px rgba(211, 84, 0, 0.25);
+}
+
+.history-custom-date {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.date-picker-input {
+    padding: 5px 8px;
+    font-size: 12px;
+    border-radius: 6px;
+    border: 1px solid #CBD5E1;
+}
+
+.history-chart-wrapper {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    margin-bottom: 16px;
+}
+
+.chart-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.chart-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: #1E293B;
+}
+
+.chart-legend {
+    display: flex;
+    gap: 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748B;
+}
+
+.legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+}
+
+.dot-omset {
+    background: #3B82F6;
+}
+
+.dot-profit {
+    background: #10B981;
+}
+
+.chart-svg-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.history-svg-chart {
+    width: 100%;
+    height: auto;
+    min-width: 500px;
+    display: block;
+}
+
+.chart-bar-group rect {
+    transition: opacity 0.2s, transform 0.2s;
+    cursor: pointer;
+}
+
+.chart-bar-group:hover rect {
+    opacity: 0.85;
+}
+
+.chart-empty-state {
+    text-align: center;
+    padding: 24px;
+    color: #94A3B8;
+    font-size: 13px;
+    font-style: italic;
+}
+
+.btn-export-excel {
+    background: #107C41 !important;
+    color: white !important;
+    border-color: #107C41 !important;
+    font-weight: 700;
+}
+
+.btn-export-excel:hover {
+    background: #0E6B37 !important;
+}
+
+.btn-table-reprint {
+    border: 1px solid #CBD5E1;
+    background: white;
+    color: #334155;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-table-reprint:hover {
+    background: #F1F5F9;
+    border-color: #94A3B8;
+}
+
+.table-action-btns-row {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    justify-content: center;
+}
+
+/* --- 5. Modal Pilih Varian Menu Kasir --- */
+.modal-variant-select {
+    max-width: 480px !important;
+}
+
+.variant-modal-subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.variant-options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.variant-option-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: #F8FAFC;
+    border: 2px solid #E2E8F0;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.variant-option-card:hover:not(.out-of-stock) {
+    border-color: #CBD5E1;
+    background: white;
+    box-shadow: var(--shadow-sm);
+}
+
+.variant-option-card.selected {
+    border-color: var(--primary);
+    background: #FFF7ED;
+}
+
+.variant-option-card.out-of-stock {
+    opacity: 0.55;
+    cursor: not-allowed;
+    background: #F1F5F9;
+    border-color: #E2E8F0;
+}
+
+.variant-radio-wrap input[type="radio"] {
+    accent-color: var(--primary);
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.variant-info {
+    flex: 1;
+}
+
+.variant-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.variant-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1E293B;
+}
+
+.variant-ingredients-text {
+    font-size: 11px;
+    color: #64748B;
+    margin-top: 2px;
+}
+
+.variant-price-col {
+    text-align: right;
+}
+
+.variant-final-price {
+    display: block;
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--primary);
+}
+
+.variant-extra-tag {
+    font-size: 11px;
+    color: #10B981;
+    font-weight: 700;
+}
+
+.variant-qty-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+}
+
+.variant-qty-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+}
+
+.cart-variant-tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #1D4ED8;
+    background: #EFF6FF;
+    border: 1px solid #BFDBFE;
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+
+/* --- 6. Admin Panel: Reorder Tombol & Variant Builder --- */
+.btn-order-move {
+    background: #F1F5F9;
+    border: 1px solid #CBD5E1;
+    color: #475569;
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    font-size: 10px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+}
+
+.btn-order-move:hover {
+    background: #E2E8F0;
+    color: #0F172A;
+}
+
+.variants-config-box {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    margin-top: 14px;
+}
+
+.variants-config-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.variants-toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.variants-toggle-wrap strong {
+    font-size: 13px;
+    color: #1E293B;
+}
+
+.variants-toggle-wrap p {
+    font-size: 11px;
+    color: #64748B;
+    margin-top: 1px;
+}
+
+.variant-builder-card {
+    background: white;
+    border: 1px solid #CBD5E1;
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.variant-builder-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #F1F5F9;
+}
+
+.variant-num-badge {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--primary);
+}
+
+.btn-del-variant-row {
+    background: transparent;
+    border: none;
+    color: #EF4444;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn-del-variant-row:hover {
+    text-decoration: underline;
+}
+
+.variant-builder-fields {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.variant-field-group {
+    flex: 1;
+}
+
+.variant-field-group label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    margin-bottom: 4px;
+}
+
+.variant-input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #CBD5E1;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.variant-ingredients-box {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 6px;
+    padding: 8px 10px;
+}
+
+.variant-ing-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 6px;
+}
+
+.btn-add-ing-row {
+    background: white;
+    border: 1px solid #CBD5E1;
+    color: var(--primary);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn-add-ing-row:hover {
+    background: #FFF7ED;
+    border-color: var(--primary);
+}
+
+.variant-ing-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.variant-ing-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.variant-select-mat {
+    flex: 2;
+    padding: 5px 8px;
+    border: 1px solid #CBD5E1;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.variant-ing-amount-wrap {
+    flex: 1.2;
+    display: flex;
+    align-items: center;
+    background: white;
+    border: 1px solid #CBD5E1;
+    border-radius: 4px;
+    padding: 0 6px;
+}
+
+.variant-input-amount {
+    width: 100%;
+    border: none;
+    padding: 5px 0;
+    font-size: 12px;
+    font-weight: 700;
+    outline: none;
+}
+
+.unit-label {
+    font-size: 10px;
+    color: #94A3B8;
+    white-space: nowrap;
+}
+
+.btn-del-ing-row {
+    background: transparent;
+    border: none;
+    color: #94A3B8;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    padding: 0 4px;
+}
+
+.btn-del-ing-row:hover {
+    color: #EF4444;
+}
+
+.btn-add-variant-item {
+    width: 100%;
+    padding: 8px 12px;
+    background: white;
+    border: 1px dashed #CBD5E1;
+    border-radius: 6px;
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-add-variant-item:hover {
+    background: #FFF7ED;
+    border-color: var(--primary);
+}
+
+/* --- 7. Modal Pengaturan Toko --- */
+.modal-settings {
+    max-width: 680px !important;
+}
+
+.settings-tabs-nav {
+    display: flex;
+    background: #F1F5F9;
+    padding: 6px 12px;
+    gap: 6px;
+    border-bottom: 1px solid var(--border);
+}
+
+.settings-tab-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 700;
+    color: #64748B;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.settings-tab-btn:hover {
+    color: #1E293B;
+}
+
+.settings-tab-btn.active {
+    background: white;
+    color: var(--primary);
+    box-shadow: var(--shadow-sm);
+}
+
+.settings-modal-body {
+    padding: 20px 24px;
+    max-height: 65vh;
+    overflow-y: auto;
+}
+
+.favicon-picker-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.favicon-preview-box {
+    width: 44px;
+    height: 44px;
+    border: 1px solid #CBD5E1;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.btn-file-upload {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 12px;
+    background: #F8FAFC;
+    border: 1px solid #CBD5E1;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+}
+
+.btn-file-upload:hover {
+    background: #F1F5F9;
+    border-color: #94A3B8;
+}
+
+.qris-upload-card {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    background: #F8FAFC;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    margin-top: 6px;
+}
+
+.qris-preview-box {
+    width: 130px;
+    height: 130px;
+    border: 1px dashed #CBD5E1;
+    border-radius: 8px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.qris-preview-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.qris-empty-text {
+    text-align: center;
+    color: #94A3B8;
+    font-size: 11px;
+    padding: 6px;
+}
+
+.qris-actions-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.btn-upload-qris {
+    background: white;
+}
+
+.btn-del-cashier-outline {
+    background: #FEF2F2;
+    border: 1px solid #FCA5A5;
+    color: #DC2626;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn-del-cashier-outline:hover {
+    background: #FEE2E2;
+}
+
+.cashiers-manager-card {
+    background: #F8FAFC;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 16px;
+}
+
+.cashiers-tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0 16px;
+    min-height: 40px;
+}
+
+.cashier-tag-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: white;
+    border: 1px solid #CBD5E1;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1E293B;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+.cashier-avatar-badge {
+    font-size: 14px;
+}
+
+.btn-del-cashier {
+    background: transparent;
+    border: none;
+    color: #94A3B8;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    line-height: 1;
+    margin-left: 2px;
+}
+
+.btn-del-cashier:hover {
+    color: #EF4444;
+}
+
+.add-cashier-input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.btn-add-cashier-act {
+    background: var(--primary) !important;
+    color: white !important;
+    border-color: var(--primary) !important;
+    white-space: nowrap;
+    font-weight: 700;
+}
+
+/* --- 8. Info Transfer Bank di Layar Kasir --- */
+.transfer-info-box {
+    background: #F0F9FF;
+    border: 1px solid #BAE6FD;
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    margin: 10px 0;
+    text-align: center;
+}
+
+/* --- 9. Dropdown Kasir di Lock Screen --- */
+.lock-cashier-select {
+    font-weight: 700;
+    background-color: white;
+    border: 1.5px solid #CBD5E1;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    color: #1E293B;
+    margin-top: 4px;
+}
+
+

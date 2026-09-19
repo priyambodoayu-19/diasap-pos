@@ -7,19 +7,28 @@
 class AuthManager {
     constructor() {
         this.storageKey = 'diasap_auth_token';
+        this.storageKeyCashier = 'diasap_active_cashier';
         this.fallbackPassword = 'syalala123';
         this.isAuthenticated = false;
+        this.activeCashier = sessionStorage.getItem(this.storageKeyCashier) || 'Ayu';
+        this.cashierList = ['Ayu', 'Dina', 'Nining'];
     }
 
     init() {
         // Cek apakah kasir sudah login pada sesi ini
         const savedToken = sessionStorage.getItem(this.storageKey);
+        const savedCashier = sessionStorage.getItem(this.storageKeyCashier);
+        if (savedCashier) {
+            this.activeCashier = savedCashier;
+        }
+
         if (savedToken) {
             this.unlockApp(false);
         } else {
             this.lockApp();
         }
 
+        this.updateActiveCashierBadge();
         this.setupListeners();
     }
 
@@ -97,6 +106,13 @@ class AuthManager {
         }
 
         if (authorized) {
+            const cashierSelect = document.getElementById('lockCashierSelect');
+            if (cashierSelect && cashierSelect.value) {
+                this.activeCashier = cashierSelect.value;
+                sessionStorage.setItem(this.storageKeyCashier, this.activeCashier);
+            }
+            this.updateActiveCashierBadge();
+
             sessionStorage.setItem(this.storageKey, 'dsp_auth_' + Date.now());
             sounds.playSuccess();
             this.unlockApp(true);
@@ -180,6 +196,51 @@ class AuthManager {
 
         const fallback = (typeof CONFIG !== 'undefined' && CONFIG.APP_PASSWORD) ? CONFIG.APP_PASSWORD : this.fallbackPassword;
         return trimmed === fallback || trimmed === this.fallbackPassword;
+    }
+
+    // Ambil nama kasir aktif saat ini
+    getActiveCashier() {
+        return sessionStorage.getItem(this.storageKeyCashier) || this.activeCashier || 'Kasir';
+    }
+
+    // Update daftar kasir di elemen UI
+    updateCashierList(list) {
+        if (Array.isArray(list) && list.length > 0) {
+            this.cashierList = list;
+        }
+
+        const select = document.getElementById('lockCashierSelect');
+        if (select) {
+            const currentVal = select.value || this.getActiveCashier();
+            select.innerHTML = this.cashierList.map(name => `
+                <option value="${name}" ${name === currentVal ? 'selected' : ''}>👤 Kasir: ${name}</option>
+            `).join('');
+        }
+
+        // Update juga dropdown staf di modal void
+        const voidAuthorSelect = document.getElementById('voidAuthorSelect');
+        if (voidAuthorSelect) {
+            const currentVal = voidAuthorSelect.value || this.getActiveCashier();
+            voidAuthorSelect.innerHTML = `
+                <option value="">-- Pilih Nama Kasir --</option>
+                ${this.cashierList.map(name => `
+                    <option value="${name}" ${name === currentVal ? 'selected' : ''}>${name}</option>
+                `).join('')}
+            `;
+        }
+    }
+
+    // Update tampilan lencana kasir di header
+    updateActiveCashierBadge() {
+        const badge = document.getElementById('activeCashierBadge');
+        const nameEl = document.getElementById('activeCashierName');
+        const current = this.getActiveCashier();
+        if (nameEl) {
+            nameEl.textContent = current;
+        }
+        if (badge) {
+            badge.title = `Kasir bertugas: ${current}. Klik untuk ganti kasir / kunci.`;
+        }
     }
 }
 

@@ -11,6 +11,7 @@ class DatabaseService {
         this.storageKeyProducts = 'diasap_products_cache';
         this.storageKeyOrders = 'diasap_orders_cache';
         this.storageKeyRawMaterials = 'diasap_raw_materials_cache';
+        this.storageKeySettings = 'diasap_store_settings_cache';
     }
 
     // Daftarkan listener status koneksi
@@ -69,6 +70,58 @@ class DatabaseService {
         }
     }
 
+    // ================= MANAJEMEN PENGATURAN TOKO (STORE SETTINGS) =================
+
+    // Ambil pengaturan toko (Prioritas Neon DB, Fallback Cache)
+    async getStoreSettings() {
+        try {
+            const rows = await this.query(`SELECT key, value FROM store_settings;`);
+            if (rows && rows.length > 0) {
+                const settings = { ...CONFIG.DEFAULT_SETTINGS };
+                rows.forEach(r => {
+                    try {
+                        settings[r.key] = JSON.parse(r.value);
+                    } catch {
+                        settings[r.key] = r.value;
+                    }
+                });
+                localStorage.setItem(this.storageKeySettings, JSON.stringify(settings));
+                return settings;
+            }
+        } catch (e) {
+            console.warn('Gagal memuat store_settings dari Neon, menggunakan cache lokal:', e);
+        }
+
+        const cached = localStorage.getItem(this.storageKeySettings);
+        if (cached) {
+            try {
+                return { ...CONFIG.DEFAULT_SETTINGS, ...JSON.parse(cached) };
+            } catch (e) {}
+        }
+
+        localStorage.setItem(this.storageKeySettings, JSON.stringify(CONFIG.DEFAULT_SETTINGS));
+        return CONFIG.DEFAULT_SETTINGS;
+    }
+
+    // Simpan pengaturan toko ke Neon PostgreSQL dan cache lokal
+    async saveStoreSettings(settings) {
+        try {
+            for (const [key, val] of Object.entries(settings)) {
+                const valStr = typeof val === 'object' ? JSON.stringify(val) : String(val);
+                await this.query(`
+                    INSERT INTO store_settings (key, value, updated_at)
+                    VALUES ($1, $2, NOW())
+                    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
+                `, [key, valStr]);
+            }
+        } catch (err) {
+            console.warn('Gagal menyimpan store_settings ke Neon, disimpan lokal:', err);
+        }
+
+        localStorage.setItem(this.storageKeySettings, JSON.stringify(settings));
+        return settings;
+    }
+
     // Mengambil daftar produk (Prioritas Neon DB, Fallback Cache)
     async getProducts() {
         try {
@@ -81,7 +134,9 @@ class DatabaseService {
                        COALESCE(raw_material_id, '') as "rawMaterialId",
                        COALESCE(raw_material_amount, 0)::numeric as "rawMaterialAmount",
                        COALESCE(direct_stock, 0)::numeric as "directStock",
-                       image_emoji as "emoji"
+                       image_emoji as "emoji",
+                       COALESCE(sort_order, 10)::integer as "sortOrder",
+                       COALESCE(variants, '[]'::jsonb) as "variants"
                 FROM products 
                 WHERE is_active = TRUE 
                 ORDER BY sort_order ASC, id ASC;
@@ -97,7 +152,9 @@ class DatabaseService {
                     stockType: r.stockType || 'unlimited',
                     rawMaterialId: r.rawMaterialId || '',
                     rawMaterialAmount: Number(r.rawMaterialAmount) || 0,
-                    directStock: Number(r.directStock) || 0
+                    directStock: Number(r.directStock) || 0,
+                    sortOrder: Number(r.sortOrder) || 10,
+                    variants: Array.isArray(r.variants) ? r.variants : (typeof r.variants === 'string' ? JSON.parse(r.variants) : [])
                 }));
                 localStorage.setItem(this.storageKeyProducts, JSON.stringify(formatted));
                 return formatted;
@@ -154,8 +211,8 @@ class DatabaseService {
         // 1. Simpan ke Neon PostgreSQL Cloud
         try {
             await this.query(`
-                INSERT INTO products (id, name, description, category, price_normal, price_promo, cogs, stock_type, raw_material_id, raw_material_amount, direct_stock, image_emoji, sort_order, is_active)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, TRUE)
+                INSERT INTO products (id, name, description, category, price_normal, price_promo, cogs, stock_type, raw_material_id, raw_material_amount, direct_stock, image_emoji, sort_order, variants, is_active)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, TRUE)
                 ON CONFLICT (id) DO UPDATE SET
                     name = EXCLUDED.name,
                     description = EXCLUDED.description,
@@ -168,6 +225,8 @@ class DatabaseService {
                     raw_material_amount = EXCLUDED.raw_material_amount,
                     direct_stock = EXCLUDED.direct_stock,
                     image_emoji = EXCLUDED.image_emoji,
+                    sort_order = EXCLUDED.sort_order,
+                    variants = EXCLUDED.variants,
                     is_active = TRUE;
             `, [
                 product.id,
@@ -182,7 +241,8 @@ class DatabaseService {
                 product.rawMaterialAmount || 0,
                 product.directStock || 0,
                 product.emoji || '🍗',
-                product.sortOrder || 10
+                product.sortOrder || 10,
+                JSON.stringify(product.variants || [])
             ]);
         } catch (err) {
             console.warn('Gagal menyimpan produk ke Neon, disimpan lokal:', err);
@@ -198,6 +258,22 @@ class DatabaseService {
         }
         localStorage.setItem(this.storageKeyProducts, JSON.stringify(products));
         return product;
+    }
+
+    // Perbarui urutan seluruh produk (Sort Order)
+    async updateProductsSortOrder(orderedProducts) {
+        for (let i = 0; i < orderedProducts.length; i++) {
+            const p = orderedProducts[i];
+            const newOrder = i + 1;
+            p.sortOrder = newOrder;
+            try {
+                await this.query(`UPDATE products SET sort_order = $1 WHERE id = $2;`, [newOrder, p.id]);
+            } catch (err) {
+                console.warn(`Gagal update sort_order produk ${p.id}:`, err);
+            }
+        }
+        localStorage.setItem(this.storageKeyProducts, JSON.stringify(orderedProducts));
+        return orderedProducts;
     }
 
     // Hapus Produk (Database Cloud & Cache Lokal)
@@ -244,8 +320,8 @@ class DatabaseService {
         // 2. Simpan ke Neon PostgreSQL
         try {
             const orderRes = await this.query(`
-                INSERT INTO orders (invoice_no, customer_name, order_type, payment_method, total_amount, cash_received, change_amount, notes)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                INSERT INTO orders (invoice_no, customer_name, order_type, payment_method, total_amount, cash_received, change_amount, notes, cashier_name, subtotal_amount, final_discount_amount, final_discount_note)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
                 RETURNING id;
             `, [
                 orderData.invoiceNo,
@@ -255,7 +331,11 @@ class DatabaseService {
                 orderData.totalAmount,
                 orderData.cashReceived || 0,
                 orderData.changeAmount || 0,
-                orderData.notes || ''
+                orderData.notes || '',
+                orderData.cashierName || 'Kasir',
+                orderData.subtotalAmount || orderData.totalAmount,
+                orderData.finalDiscountAmount || 0,
+                orderData.finalDiscountNote || ''
             ]);
 
             const newOrderId = orderRes[0]?.id;
@@ -264,8 +344,8 @@ class DatabaseService {
                 // Simpan item-item transaksi
                 for (const item of items) {
                     await this.query(`
-                        INSERT INTO order_items (order_id, product_id, product_name, price_locked, is_promo, quantity, item_total, cogs_locked)
-                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
+                        INSERT INTO order_items (order_id, product_id, product_name, price_locked, is_promo, quantity, item_total, cogs_locked, variant_id, variant_name, ingredients_snapshot)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);
                     `, [
                         newOrderId,
                         item.id,
@@ -274,7 +354,10 @@ class DatabaseService {
                         item.isPromo || false,
                         item.qty,
                         item.priceLocked * item.qty,
-                        item.cogsLocked || item.cogs || 0
+                        item.cogsLocked || item.cogs || 0,
+                        item.variantId || '',
+                        item.variantName || '',
+                        JSON.stringify(item.ingredients || [])
                     ]);
                 }
             }
@@ -302,7 +385,7 @@ class DatabaseService {
     }
 
     // Ambil Riwayat Transaksi (dari Neon atau cache)
-    async getOrdersHistory(limit = 100) {
+    async getOrdersHistory(limit = 200) {
         try {
             const rows = await this.query(`
                 SELECT o.id, o.invoice_no as "invoiceNo", o.customer_name as "customerName",
@@ -315,6 +398,10 @@ class DatabaseService {
                        COALESCE(o.void_reason, '') as "voidReason",
                        COALESCE(o.void_by, '') as "voidBy",
                        o.void_at as "voidAt",
+                       COALESCE(o.cashier_name, 'Kasir') as "cashierName",
+                       COALESCE(o.subtotal_amount, o.total_amount)::numeric as "subtotalAmount",
+                       COALESCE(o.final_discount_amount, 0)::numeric as "finalDiscountAmount",
+                       COALESCE(o.final_discount_note, '') as "finalDiscountNote",
                        COALESCE(
                            json_agg(
                                 json_build_object(
@@ -323,7 +410,10 @@ class DatabaseService {
                                     'qty', oi.quantity,
                                     'priceLocked', oi.price_locked,
                                     'isPromo', oi.is_promo,
-                                    'cogsLocked', COALESCE(oi.cogs_locked, 0)
+                                    'cogsLocked', COALESCE(oi.cogs_locked, 0),
+                                    'variantId', COALESCE(oi.variant_id, ''),
+                                    'variantName', COALESCE(oi.variant_name, ''),
+                                    'ingredients', COALESCE(oi.ingredients_snapshot, '[]'::jsonb)
                                 )
                            ) FILTER (WHERE oi.id IS NOT NULL), '[]'::json
                        ) as items
@@ -340,6 +430,10 @@ class DatabaseService {
                     totalAmount: Number(r.totalAmount),
                     cashReceived: Number(r.cashReceived),
                     changeAmount: Number(r.changeAmount),
+                    subtotalAmount: Number(r.subtotalAmount) || Number(r.totalAmount),
+                    finalDiscountAmount: Number(r.finalDiscountAmount) || 0,
+                    finalDiscountNote: r.finalDiscountNote || '',
+                    cashierName: r.cashierName || 'Kasir',
                     isVoid: Boolean(r.isVoid),
                     voidReason: r.voidReason || '',
                     voidBy: r.voidBy || '',
@@ -458,7 +552,15 @@ class DatabaseService {
 
             const qty = Number(item.qty) || 1;
 
-            if (prod.stockType === 'raw_material' && prod.rawMaterialId) {
+            // Jika item memiliki bahan baku varian (1 atau lebih bahan baku master)
+            if (item.ingredients && Array.isArray(item.ingredients) && item.ingredients.length > 0) {
+                for (const ing of item.ingredients) {
+                    if (ing.rawMaterialId && Number(ing.amount) > 0) {
+                        const amountNeeded = Number(ing.amount) * qty;
+                        rawDeductions[ing.rawMaterialId] = (rawDeductions[ing.rawMaterialId] || 0) + amountNeeded;
+                    }
+                }
+            } else if (prod.stockType === 'raw_material' && prod.rawMaterialId) {
                 const amountNeeded = (Number(prod.rawMaterialAmount) || 0) * qty;
                 rawDeductions[prod.rawMaterialId] = (rawDeductions[prod.rawMaterialId] || 0) + amountNeeded;
             } else if (prod.stockType === 'direct') {
@@ -513,7 +615,14 @@ class DatabaseService {
 
             const qty = Number(item.qty) || 1;
 
-            if (prod.stockType === 'raw_material' && prod.rawMaterialId) {
+            if (item.ingredients && Array.isArray(item.ingredients) && item.ingredients.length > 0) {
+                for (const ing of item.ingredients) {
+                    if (ing.rawMaterialId && Number(ing.amount) > 0) {
+                        const amount = Number(ing.amount) * qty;
+                        rawRestorations[ing.rawMaterialId] = (rawRestorations[ing.rawMaterialId] || 0) + amount;
+                    }
+                }
+            } else if (prod.stockType === 'raw_material' && prod.rawMaterialId) {
                 const amount = (Number(prod.rawMaterialAmount) || 0) * qty;
                 rawRestorations[prod.rawMaterialId] = (rawRestorations[prod.rawMaterialId] || 0) + amount;
             } else if (prod.stockType === 'direct') {

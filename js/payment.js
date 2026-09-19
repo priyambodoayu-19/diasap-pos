@@ -1,6 +1,8 @@
 /**
  * DIASAP POS - Payment & Checkout Manager
- * Menangani kalkulasi pembayaran, uang pas, kembalian, QRIS/Transfer, dan pencetakan struk
+ * Menangani kalkulasi pembayaran, uang pas, kembalian, QRIS/Transfer,
+ * pencetakan struk termal, simpan struk sebagai gambar PNG / dokumen PDF,
+ * dan fitur bagikan (share) struk ke perangkat / WhatsApp
  */
 
 class PaymentManager {
@@ -8,6 +10,7 @@ class PaymentManager {
         this.paymentMethod = 'cash'; // 'cash', 'qris', 'transfer'
         this.cashAmount = 0;
         this.lastCompletedOrder = null;
+        this.currentViewingOrder = null;
     }
 
     setPaymentMethod(method) {
@@ -23,30 +26,35 @@ class PaymentManager {
         const cashGroup = document.getElementById('cashInputGroup');
         const quickCash = document.getElementById('quickCashGroup');
         const qrisInfo = document.getElementById('qrisInfoGroup');
+        const transferInfo = document.getElementById('transferInfoGroup');
 
         if (method === 'cash') {
             if (cashGroup) cashGroup.style.display = 'block';
             if (quickCash) quickCash.style.display = 'flex';
             if (qrisInfo) qrisInfo.style.display = 'none';
+            if (transferInfo) transferInfo.style.display = 'none';
         } else if (method === 'qris') {
             if (cashGroup) cashGroup.style.display = 'none';
             if (quickCash) quickCash.style.display = 'none';
+            if (transferInfo) transferInfo.style.display = 'none';
             if (qrisInfo) {
                 qrisInfo.style.display = 'block';
-                const total = cartManager.getSubtotal();
-                document.getElementById('qrisTotalDisplay').textContent = formatRupiah(total);
+                const grandTotal = cartManager.getGrandTotal();
+                const qrisTotalEl = document.getElementById('qrisTotalDisplay');
+                if (qrisTotalEl) qrisTotalEl.textContent = formatRupiah(grandTotal);
             }
         } else { // transfer
             if (cashGroup) cashGroup.style.display = 'none';
             if (quickCash) quickCash.style.display = 'none';
             if (qrisInfo) qrisInfo.style.display = 'none';
+            if (transferInfo) transferInfo.style.display = 'block';
         }
 
         this.calculate();
     }
 
     setQuickCash(amount) {
-        const total = cartManager.getSubtotal();
+        const total = cartManager.getGrandTotal();
         let targetAmount = amount;
 
         if (amount === 'exact') {
@@ -61,14 +69,19 @@ class PaymentManager {
     }
 
     calculate() {
-        const total = cartManager.getSubtotal();
+        const grandTotal = cartManager.getGrandTotal();
         const grandTotalEl = document.getElementById('grandTotal');
         const checkoutBtn = document.getElementById('checkoutBtn');
         const changeDisplay = document.getElementById('changeDisplay');
         const cashInput = document.getElementById('cashInput');
 
         if (grandTotalEl) {
-            grandTotalEl.textContent = formatRupiah(total);
+            grandTotalEl.textContent = formatRupiah(grandTotal);
+        }
+
+        const qrisTotalEl = document.getElementById('qrisTotalDisplay');
+        if (qrisTotalEl) {
+            qrisTotalEl.textContent = formatRupiah(grandTotal);
         }
 
         // Jika keranjang kosong
@@ -81,7 +94,7 @@ class PaymentManager {
         if (this.paymentMethod === 'cash') {
             const rawVal = cashInput ? cashInput.value.replace(/\D/g, '') : '0';
             this.cashAmount = parseFloat(rawVal) || 0;
-            const change = this.cashAmount - total;
+            const change = this.cashAmount - grandTotal;
 
             if (this.cashAmount === 0) {
                 changeDisplay.innerHTML = `Kembalian: <span class="text-muted">Rp 0</span>`;
@@ -101,8 +114,12 @@ class PaymentManager {
     }
 
     async processCheckout() {
-        const total = cartManager.getSubtotal();
-        if (total <= 0 || cartManager.cart.length === 0) {
+        const subtotal = cartManager.getSubtotal();
+        const grandTotal = cartManager.getGrandTotal();
+        const finalDiscountAmount = cartManager.getFinalDiscountAmount();
+        const finalDiscountNote = cartManager.finalDiscount.note || '';
+
+        if (grandTotal < 0 || cartManager.cart.length === 0) {
             alert('Keranjang belanja masih kosong!');
             return;
         }
@@ -111,34 +128,39 @@ class PaymentManager {
         let changeAmount = 0;
 
         if (this.paymentMethod === 'cash') {
-            if (cashReceived > 0 && cashReceived < total) {
+            if (cashReceived > 0 && cashReceived < grandTotal) {
                 sounds.playWarning();
                 alert('Uang pembayaran tunai masih kurang!');
                 return;
             }
             if (cashReceived === 0) {
                 // Jika input tunai kosong, anggap uang pas
-                cashReceived = total;
+                cashReceived = grandTotal;
             }
-            changeAmount = Math.max(0, cashReceived - total);
+            changeAmount = Math.max(0, cashReceived - grandTotal);
         } else {
-            cashReceived = total;
+            cashReceived = grandTotal;
             changeAmount = 0;
         }
 
         const customerName = (document.getElementById('customerNameInput')?.value || '').trim() || 'Pelanggan';
         const notes = (document.getElementById('orderNotesInput')?.value || '').trim();
         const invoiceNo = generateInvoiceNumber();
+        const activeCashier = (typeof authManager !== 'undefined') ? authManager.getActiveCashier() : 'Kasir';
 
         const orderData = {
             invoiceNo: invoiceNo,
             customerName: customerName,
             orderType: cartManager.orderType,
             paymentMethod: this.paymentMethod,
-            totalAmount: total,
+            subtotalAmount: subtotal,
+            finalDiscountAmount: finalDiscountAmount,
+            finalDiscountNote: finalDiscountNote,
+            totalAmount: grandTotal,
             cashReceived: cashReceived,
             changeAmount: changeAmount,
             notes: notes,
+            cashierName: activeCashier,
             createdAt: new Date().toISOString()
         };
 
@@ -165,7 +187,7 @@ class PaymentManager {
             sounds.playSuccess();
 
             // Tampilkan Struk Pembayaran
-            this.showReceiptModal(savedOrder);
+            this.showReceiptModal(savedOrder, false);
 
             // Bersihkan Keranjang & Form
             cartManager.clearCart(true);
@@ -187,21 +209,44 @@ class PaymentManager {
         }
     }
 
-    showReceiptModal(order) {
+    showReceiptModal(order, isReprint = false) {
+        this.currentViewingOrder = order;
         const modal = document.getElementById('receiptModal');
         const content = document.getElementById('receiptPrintArea');
         if (!modal || !content) return;
 
+        const settings = (typeof settingsManager !== 'undefined' && settingsManager.settings)
+            ? settingsManager.settings
+            : CONFIG;
+
+        const storeName = settings.storeName || CONFIG.STORE_NAME || 'DIASAP RESTO';
+        const storeTagline = settings.storeTagline || 'Smoked Meat & Kitchen';
+        const storeAddress = settings.storeAddress || CONFIG.STORE_ADDRESS || '';
+        const storePhone = settings.storePhone || CONFIG.STORE_PHONE || '';
+        const footerNote = settings.receiptFooter || CONFIG.FOOTER_RECEIPT_NOTE || 'Terima Kasih Atas Kunjungan Anda!';
+
         const orderTypeLabel = order.orderType === 'dine_in' ? 'Dine In (Makan di Tempat)' : 'Take Away (Bungkus)';
-        const paymentLabel = order.paymentMethod.toUpperCase();
+        const paymentLabel = (order.paymentMethod || 'cash').toUpperCase();
+        const cashierName = order.cashierName || 'Kasir';
+
+        const subtotal = Number(order.subtotalAmount) || Number(order.totalAmount);
+        const finalDiscount = Number(order.finalDiscountAmount) || 0;
+        const finalDiscountNote = order.finalDiscountNote ? ` (${order.finalDiscountNote})` : '';
 
         content.innerHTML = `
-            <div class="receipt-paper">
+            <div class="receipt-paper" id="thermalReceiptPaper">
+                ${isReprint ? `
+                    <div class="reprint-watermark-banner">
+                        ⚠️ STRUK SALINAN (CETAK ULANG)
+                    </div>
+                ` : ''}
+
                 <div class="receipt-header">
                     <div class="receipt-logo">🔥 DIASAP 🔥</div>
-                    <div class="receipt-store">${CONFIG.STORE_NAME}</div>
-                    <div class="receipt-meta">${CONFIG.STORE_ADDRESS}</div>
-                    <div class="receipt-meta">Telp: ${CONFIG.STORE_PHONE}</div>
+                    <div class="receipt-store">${storeName}</div>
+                    ${storeTagline ? `<div style="font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 2px;">${storeTagline}</div>` : ''}
+                    ${storeAddress ? `<div class="receipt-meta">${storeAddress}</div>` : ''}
+                    ${storePhone ? `<div class="receipt-meta">Telp: ${storePhone}</div>` : ''}
                 </div>
 
                 <div class="receipt-divider">================================</div>
@@ -215,8 +260,12 @@ class PaymentManager {
                     <span>${formatDateTime(order.createdAt)}</span>
                 </div>
                 <div class="receipt-info-row">
+                    <span>Kasir:</span>
+                    <span><strong>${cashierName}</strong></span>
+                </div>
+                <div class="receipt-info-row">
                     <span>Pelanggan:</span>
-                    <span>${order.customerName}</span>
+                    <span>${order.customerName || 'Pelanggan'}</span>
                 </div>
                 <div class="receipt-info-row">
                     <span>Layanan:</span>
@@ -232,7 +281,7 @@ class PaymentManager {
                 <div class="receipt-divider">--------------------------------</div>
 
                 <div class="receipt-items">
-                    ${order.items.map(item => `
+                    ${(order.items || []).map(item => `
                         <div class="receipt-item-row">
                             <div class="item-name-line">
                                 <strong>${item.name}</strong> ${item.isPromo ? '(PROMO)' : ''}
@@ -246,6 +295,17 @@ class PaymentManager {
                 </div>
 
                 <div class="receipt-divider">================================</div>
+
+                ${finalDiscount > 0 ? `
+                    <div class="receipt-info-row" style="font-size: 12px; margin-bottom: 3px;">
+                        <span>Subtotal:</span>
+                        <span>${formatRupiah(subtotal)}</span>
+                    </div>
+                    <div class="receipt-info-row" style="font-size: 12px; color: #C0392B; margin-bottom: 3px;">
+                        <span>Diskon Tambahan${finalDiscountNote}:</span>
+                        <span>-${formatRupiah(finalDiscount)}</span>
+                    </div>
+                ` : ''}
 
                 <div class="receipt-calc-row">
                     <span>TOTAL:</span>
@@ -267,7 +327,7 @@ class PaymentManager {
                 <div class="receipt-divider">--------------------------------</div>
 
                 <div class="receipt-footer">
-                    <p style="white-space: pre-line;">${CONFIG.FOOTER_RECEIPT_NOTE}</p>
+                    <p style="white-space: pre-line;">${footerNote}</p>
                     <small>Sistem Kasir DIASAP POS Cloud v2.0</small>
                 </div>
             </div>
@@ -280,9 +340,151 @@ class PaymentManager {
         window.print();
     }
 
+    // Simpan struk sebagai gambar PNG
+    async saveReceiptAsImage() {
+        const receiptEl = document.getElementById('thermalReceiptPaper');
+        if (!receiptEl) return;
+
+        const order = this.currentViewingOrder;
+        const filename = `Struk_DIASAP_${order?.invoiceNo || 'transaksi'}.png`;
+
+        if (typeof html2canvas === 'undefined') {
+            alert('Pustaka html2canvas sedang dimuat, silakan coba sesaat lagi.');
+            return;
+        }
+
+        try {
+            const canvas = await html2canvas(receiptEl, {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                useCORS: true
+            });
+
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            if (typeof adminManager !== 'undefined' && adminManager.showToast) {
+                adminManager.showToast('Gambar struk berhasil diunduh!');
+            }
+        } catch (err) {
+            console.error('Gagal simpan gambar struk:', err);
+            alert('Gagal menyimpan gambar struk: ' + err.message);
+        }
+    }
+
+    // Simpan struk sebagai file PDF
+    async saveReceiptAsPDF() {
+        const receiptEl = document.getElementById('thermalReceiptPaper');
+        if (!receiptEl) return;
+
+        const order = this.currentViewingOrder;
+        const filename = `Struk_DIASAP_${order?.invoiceNo || 'transaksi'}.pdf`;
+
+        if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
+            alert('Fitur PDF sedang dimuat, silakan gunakan tombol Cetak (Print to PDF) sebagai alternatif.');
+            window.print();
+            return;
+        }
+
+        try {
+            const canvas = await html2canvas(receiptEl, {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                useCORS: true
+            });
+
+            const imgData = canvas.toDataURL('image/png');
+            const { jsPDF } = window.jspdf;
+
+            // Ukuran kertas struk 80mm
+            const imgWidth = 80;
+            const pageHeight = (canvas.height * imgWidth) / canvas.width;
+
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: [imgWidth, Math.max(100, pageHeight + 10)]
+            });
+
+            pdf.addImage(imgData, 'PNG', 0, 5, imgWidth, pageHeight);
+            pdf.save(filename);
+
+            if (typeof adminManager !== 'undefined' && adminManager.showToast) {
+                adminManager.showToast('File PDF struk berhasil diunduh!');
+            }
+        } catch (err) {
+            console.error('Gagal generate PDF:', err);
+            // Fallback: cetak biasa
+            window.print();
+        }
+    }
+
+    // Bagikan struk (Native Web Share Sheet untuk HP/WA)
+    async shareReceipt() {
+        const receiptEl = document.getElementById('thermalReceiptPaper');
+        if (!receiptEl) return;
+
+        const order = this.currentViewingOrder;
+        const filename = `Struk_DIASAP_${order?.invoiceNo || 'transaksi'}.png`;
+
+        if (typeof html2canvas === 'undefined') {
+            alert('Pustaka renderer sedang dimuat, silakan coba sesaat lagi.');
+            return;
+        }
+
+        try {
+            const canvas = await html2canvas(receiptEl, {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                useCORS: true
+            });
+
+            canvas.toBlob(async (blob) => {
+                if (!blob) {
+                    this.saveReceiptAsImage();
+                    return;
+                }
+
+                const file = new File([blob], filename, { type: 'image/png' });
+
+                // Cek apakah browser mendukung Web Share API dengan file (misal di Chrome Android / Safari iOS)
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            title: `Struk DIASAP - ${order?.invoiceNo || ''}`,
+                            text: `Struk pembayaran ${order?.invoiceNo || ''} sebesar ${formatRupiah(order?.totalAmount || 0)}`,
+                            files: [file]
+                        });
+                        return;
+                    } catch (shareErr) {
+                        if (shareErr.name === 'AbortError') return; // User cancel share
+                    }
+                }
+
+                // Fallback: unduh gambar langsung dan beri notifikasi
+                const link = document.createElement('a');
+                link.download = filename;
+                link.href = URL.createObjectURL(blob);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                alert('Gambar struk telah diunduh ke perangkat Anda. Anda dapat langsung mengirimkannya lewat WhatsApp atau aplikasi lainnya.');
+            }, 'image/png');
+        } catch (err) {
+            console.error('Gagal share struk:', err);
+            this.saveReceiptAsImage();
+        }
+    }
+
     closeReceiptModal() {
         const modal = document.getElementById('receiptModal');
         if (modal) modal.classList.remove('active');
+        this.currentViewingOrder = null;
     }
 }
 

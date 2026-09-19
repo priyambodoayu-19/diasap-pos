@@ -1,6 +1,7 @@
 /**
  * DIASAP POS - Product Management & Rendering
- * Menangani pemuatan produk, filter kategori, pencarian, dan rendering kartu menu
+ * Menangani pemuatan produk, filter kategori, pencarian, rendering kartu menu,
+ * dan modal pemilihan varian menu (Paha, Dada, Campur, dll)
  */
 
 class ProductManager {
@@ -62,19 +63,27 @@ class ProductManager {
             const currentPrice = this.isPromoMode ? product.pricePromo : product.priceNormal;
             const savings = product.priceNormal - product.pricePromo;
             const isDiscounted = this.isPromoMode && savings > 0;
+            const hasVariants = product.variants && product.variants.length > 0;
 
-            const portions = (typeof inventoryManager !== 'undefined')
-                ? inventoryManager.getPortionsAvailable(product)
-                : Infinity;
-            const isOutOfStock = portions === 0;
-
+            let portions = Infinity;
+            let isOutOfStock = false;
             let stockBadge = '';
-            if (isOutOfStock) {
-                stockBadge = `<span class="stock-pill stock-pill-out">❌ Habis</span>`;
-            } else if (portions <= 5 && portions > 0) {
-                stockBadge = `<span class="stock-pill stock-pill-low">Sisa ${portions}</span>`;
-            } else if (portions !== Infinity) {
-                stockBadge = `<span class="stock-pill stock-pill-avail">Sisa ${portions}</span>`;
+
+            if (hasVariants) {
+                stockBadge = `<span class="stock-pill stock-pill-avail" style="background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE;">✨ ${product.variants.length} Varian</span>`;
+            } else {
+                portions = (typeof inventoryManager !== 'undefined')
+                    ? inventoryManager.getPortionsAvailable(product)
+                    : Infinity;
+                isOutOfStock = portions === 0;
+
+                if (isOutOfStock) {
+                    stockBadge = `<span class="stock-pill stock-pill-out">❌ Habis</span>`;
+                } else if (portions <= 5 && portions > 0) {
+                    stockBadge = `<span class="stock-pill stock-pill-low">Sisa ${portions}</span>`;
+                } else if (portions !== Infinity) {
+                    stockBadge = `<span class="stock-pill stock-pill-avail">Sisa ${portions}</span>`;
+                }
             }
 
             const emojiDisplay = (typeof getValidProductEmoji === 'function') 
@@ -84,7 +93,7 @@ class ProductManager {
             return `
                 <div class="product-card ${this.isPromoMode ? 'is-promo-active' : ''} ${isOutOfStock ? 'is-out-of-stock' : ''}" 
                      onclick="${isOutOfStock ? `alert('Maaf, stok menu ini habis / bahan baku tidak mencukupi!')` : `cartManager.addItem('${product.id}')`}" 
-                     title="${isOutOfStock ? 'Menu habis' : 'Klik untuk menambah ke keranjang'}">
+                     title="${isOutOfStock ? 'Menu habis' : (hasVariants ? 'Pilih varian rasa/bagian' : 'Klik untuk menambah ke keranjang')}">
                     <div class="card-top">
                         <span class="product-emoji">${emojiDisplay}</span>
                         <div style="display: flex; gap: 4px; align-items: center;">
@@ -113,7 +122,7 @@ class ProductManager {
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
-                        <span>${isOutOfStock ? 'Habis' : 'Tambah'}</span>
+                        <span>${isOutOfStock ? 'Habis' : (hasVariants ? 'Pilih' : 'Tambah')}</span>
                     </button>
                 </div>
             `;
@@ -126,3 +135,120 @@ class ProductManager {
 }
 
 const productManager = new ProductManager();
+
+// ================= MODAL PEMILIHAN VARIAN MENU =================
+
+class VariantSelectManager {
+    constructor() {
+        this.currentProduct = null;
+        this.selectedVariant = null;
+        this.qty = 1;
+    }
+
+    open(productId) {
+        const product = productManager.getProductById(productId);
+        if (!product || !product.variants || product.variants.length === 0) return;
+
+        this.currentProduct = product;
+        this.selectedVariant = product.variants[0];
+        this.qty = 1;
+
+        const modal = document.getElementById('variantModal');
+        const title = document.getElementById('variantModalTitle');
+        const desc = document.getElementById('variantModalDesc');
+        const qtyDisplay = document.getElementById('variantModalQty');
+
+        if (title) title.textContent = product.name;
+        if (desc) desc.textContent = product.desc || 'Pilih varian rasa / potongan sebelum dimasukkan ke pesanan.';
+        if (qtyDisplay) qtyDisplay.textContent = '1';
+
+        this.renderOptions();
+
+        if (modal) modal.classList.add('active');
+    }
+
+    renderOptions() {
+        const container = document.getElementById('variantOptionsList');
+        if (!container || !this.currentProduct) return;
+
+        const isPromo = productManager.isPromoMode;
+        const basePrice = isPromo ? Number(this.currentProduct.pricePromo) : Number(this.currentProduct.priceNormal);
+
+        container.innerHTML = this.currentProduct.variants.map((v, idx) => {
+            const extra = Number(v.priceExtra) || 0;
+            const finalPrice = basePrice + extra;
+            const isSelected = (this.selectedVariant && this.selectedVariant.id === v.id) || (!this.selectedVariant && idx === 0);
+
+            // Cek ketersediaan bahan baku untuk varian ini
+            let portions = Infinity;
+            if (v.ingredients && v.ingredients.length > 0 && typeof cartManager !== 'undefined') {
+                portions = cartManager.getVariantAvailablePortions(v.ingredients);
+            }
+            const isOut = portions === 0;
+
+            let ingredientsDesc = '';
+            if (v.ingredients && v.ingredients.length > 0 && typeof inventoryManager !== 'undefined') {
+                ingredientsDesc = v.ingredients.map(ing => {
+                    const mat = inventoryManager.getRawMaterialById(ing.rawMaterialId);
+                    return mat ? `${mat.name} (${ing.amount} ${mat.unit})` : '';
+                }).filter(Boolean).join(' + ');
+            }
+
+            return `
+                <div class="variant-option-card ${isSelected ? 'selected' : ''} ${isOut ? 'out-of-stock' : ''}"
+                     onclick="${isOut ? '' : `variantSelectManager.selectVariant('${v.id}')`}">
+                    <div class="variant-radio-wrap">
+                        <input type="radio" name="variantOptionRadio" id="var_${v.id}" value="${v.id}" ${isSelected ? 'checked' : ''} ${isOut ? 'disabled' : ''}>
+                    </div>
+                    <div class="variant-info">
+                        <div class="variant-name-row">
+                            <span class="variant-title">${v.name}</span>
+                            ${portions !== Infinity ? `
+                                <span class="stock-pill ${isOut ? 'stock-pill-out' : (portions <= 5 ? 'stock-pill-low' : 'stock-pill-avail')}">
+                                    ${isOut ? '❌ Habis' : `Sisa ${portions}`}
+                                </span>
+                            ` : ''}
+                        </div>
+                        ${ingredientsDesc ? `<div class="variant-ingredients-text">🌾 Resep: ${ingredientsDesc}</div>` : ''}
+                    </div>
+                    <div class="variant-price-col">
+                        <span class="variant-final-price">${formatRupiah(finalPrice)}</span>
+                        ${extra > 0 ? `<span class="variant-extra-tag">+${formatRupiah(extra)}</span>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    selectVariant(variantId) {
+        if (!this.currentProduct) return;
+        const v = this.currentProduct.variants.find(item => item.id === variantId);
+        if (v) {
+            this.selectedVariant = v;
+            this.renderOptions();
+        }
+    }
+
+    changeQty(delta) {
+        this.qty = Math.max(1, this.qty + delta);
+        const qtyEl = document.getElementById('variantModalQty');
+        if (qtyEl) qtyEl.textContent = this.qty;
+    }
+
+    confirmAddToCart() {
+        if (!this.currentProduct || !this.selectedVariant) return;
+
+        cartManager.addItem(this.currentProduct.id, this.selectedVariant, this.qty);
+        this.close();
+    }
+
+    close() {
+        const modal = document.getElementById('variantModal');
+        if (modal) modal.classList.remove('active');
+        this.currentProduct = null;
+        this.selectedVariant = null;
+        this.qty = 1;
+    }
+}
+
+const variantSelectManager = new VariantSelectManager();
