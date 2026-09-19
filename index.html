@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🔥 DIASAP POS - Kasir & Manajemen Penjualan</title>
     <!-- Stylesheet POS -->
-    <link rel="stylesheet" href="css/style.css?v=2.6">
+    <link rel="stylesheet" href="css/style.css?v=2.7">
 </head>
 <body>
 
@@ -475,7 +475,7 @@
                             <label for="adminProdCogs">Harga Modal / Pokok (COGS) (Rp) <span class="text-danger">*</span></label>
                             <div class="input-currency-wrapper">
                                 <span class="currency-prefix">Rp</span>
-                                <input type="number" id="adminProdCogs" class="form-control price-input" placeholder="15000" min="0" step="500" value="0" required>
+                                <input type="number" id="adminProdCogs" class="form-control price-input" placeholder="15000" min="0" step="1" value="0" required>
                             </div>
                             <small class="form-help">Biaya bahan baku per porsi (HPP)</small>
                         </div>
@@ -483,7 +483,7 @@
                             <label for="adminProdPriceNormal">Harga Jual Normal (Rp) <span class="text-danger">*</span></label>
                             <div class="input-currency-wrapper">
                                 <span class="currency-prefix">Rp</span>
-                                <input type="number" id="adminProdPriceNormal" class="form-control price-input" placeholder="35000" min="0" step="500" required>
+                                <input type="number" id="adminProdPriceNormal" class="form-control price-input" placeholder="35000" min="0" step="1" required>
                             </div>
                             <small class="form-help">Harga jual standar ke pelanggan</small>
                         </div>
@@ -504,7 +504,7 @@
                                 <label for="adminProdDiscountNominal">Potongan Diskon (Rp)</label>
                                 <div class="input-currency-wrapper">
                                     <span class="currency-prefix">Rp</span>
-                                    <input type="number" id="adminProdDiscountNominal" class="form-control" placeholder="5000" min="0" step="500">
+                                    <input type="number" id="adminProdDiscountNominal" class="form-control" placeholder="5000" min="0" step="1">
                                 </div>
                             </div>
 
@@ -512,7 +512,7 @@
                                 <label for="adminProdDiscountPercent">Diskon (%)</label>
                                 <div class="input-currency-wrapper">
                                     <span class="currency-prefix">%</span>
-                                    <input type="number" id="adminProdDiscountPercent" class="form-control" placeholder="15" min="0" max="100" step="0.5">
+                                    <input type="number" id="adminProdDiscountPercent" class="form-control" placeholder="15" min="0" max="100" step="0.01">
                                 </div>
                             </div>
 
@@ -520,7 +520,7 @@
                                 <label for="adminProdPricePromo">Harga Promo Akhir (Rp)</label>
                                 <div class="input-currency-wrapper">
                                     <span class="currency-prefix">Rp</span>
-                                    <input type="number" id="adminProdPricePromo" class="form-control price-input promo-highlight" placeholder="30000" min="0" step="500">
+                                    <input type="number" id="adminProdPricePromo" class="form-control price-input promo-highlight" placeholder="30000" min="0" step="1">
                                 </div>
                             </div>
                         </div>
@@ -763,15 +763,15 @@
     </div>
 
     <!-- ================= JAVASCRIPT MODULES ================= -->
-    <script src="js/config.js?v=2.6"></script>
-    <script src="js/sound.js?v=2.6"></script>
-    <script src="js/db.js?v=2.6"></script>
-    <script src="js/inventory.js?v=2.6"></script>
-    <script src="js/products.js?v=2.6"></script>
-    <script src="js/cart.js?v=2.6"></script>
-    <script src="js/payment.js?v=2.6"></script>
-    <script src="js/auth.js?v=2.6"></script>
-    <script src="js/admin.js?v=2.6"></script>
-    <script src="js/app.js?v=2.6"></script>
+    <script src="js/config.js?v=2.7"></script>
+    <script src="js/sound.js?v=2.7"></script>
+    <script src="js/db.js?v=2.7"></script>
+    <script src="js/inventory.js?v=2.7"></script>
+    <script src="js/products.js?v=2.7"></script>
+    <script src="js/cart.js?v=2.7"></script>
+    <script src="js/payment.js?v=2.7"></script>
+    <script src="js/auth.js?v=2.7"></script>
+    <script src="js/admin.js?v=2.7"></script>
+    <script src="js/app.js?v=2.7"></script>
 </body>
 </html>

@@ -333,7 +333,7 @@ class AdminManager {
                 const promo = parseFloat(pricePromoInput.value) || normal;
                 const nominal = Math.max(0, normal - promo);
                 discountNominalInput.value = nominal;
-                discountPercentInput.value = normal > 0 ? (nominal / normal * 100).toFixed(1).replace(/\.0$/, '') : 0;
+                discountPercentInput.value = normal > 0 ? parseFloat(((nominal / normal) * 100).toFixed(2)) : 0;
             } else {
                 pricePromoInput.value = normal;
                 discountNominalInput.value = 0;
@@ -350,7 +350,7 @@ class AdminManager {
             const promo = Math.max(0, normal - nominal);
             pricePromoInput.value = promo;
 
-            const pct = (normal > 0 && nominal > 0) ? ((nominal / normal) * 100).toFixed(1).replace(/\.0$/, '') : 0;
+            const pct = (normal > 0 && nominal > 0) ? parseFloat(((nominal / normal) * 100).toFixed(2)) : 0;
             discountPercentInput.value = pct;
 
             this.updateDiscountPreview();
@@ -378,7 +378,7 @@ class AdminManager {
             const nominal = Math.max(0, normal - promo);
             discountNominalInput.value = nominal;
 
-            const pct = (normal > 0 && nominal > 0) ? ((nominal / normal) * 100).toFixed(1).replace(/\.0$/, '') : 0;
+            const pct = (normal > 0 && nominal > 0) ? parseFloat(((nominal / normal) * 100).toFixed(2)) : 0;
             discountPercentInput.value = pct;
 
             this.updateDiscountPreview();
@@ -395,13 +395,13 @@ class AdminManager {
 
         const saving = normal - promo;
         const profitNormal = normal - cogs;
-        const marginNormal = normal > 0 ? ((profitNormal / normal) * 100).toFixed(1).replace(/\.0$/, '') : 0;
+        const marginNormal = normal > 0 ? parseFloat(((profitNormal / normal) * 100).toFixed(2)) : 0;
         const profitPromo = promo - cogs;
-        const marginPromo = promo > 0 ? ((profitPromo / promo) * 100).toFixed(1).replace(/\.0$/, '') : 0;
+        const marginPromo = promo > 0 ? parseFloat(((profitPromo / promo) * 100).toFixed(2)) : 0;
 
         let discountHtml = '';
         if (normal > 0 && saving > 0) {
-            const pct = ((saving / normal) * 100).toFixed(1).replace(/\.0$/, '');
+            const pct = parseFloat(((saving / normal) * 100).toFixed(2));
             discountHtml = `
                 <div class="discount-preview-card active-discount">
                     <span class="preview-tag">🔥 Diskon Aktif</span>
@@ -537,7 +537,7 @@ class AdminManager {
         const promo = Number(product.pricePromo) || normal;
         const cogs = Number(product.cogs) || 0;
         const saving = Math.max(0, normal - promo);
-        const pct = (normal > 0 && saving > 0) ? ((saving / normal) * 100).toFixed(1).replace(/\.0$/, '') : 0;
+        const pct = (normal > 0 && saving > 0) ? parseFloat(((saving / normal) * 100).toFixed(2)) : 0;
 
         if (cogsInput) cogsInput.value = cogs;
         if (priceNormalInput) priceNormalInput.value = normal;
