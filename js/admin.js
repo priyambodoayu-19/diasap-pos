@@ -140,6 +140,7 @@ class AdminManager {
                 </div>
             `;
         }
+    }
 
     // ================= MODAL ADMIN PANEL =================
 
