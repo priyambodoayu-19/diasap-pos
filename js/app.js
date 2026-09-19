@@ -205,7 +205,15 @@ async function renderHistoryData() {
         return orderCogs;
     };
 
+    let activeOrdersCount = 0;
+    let voidOrdersCount = 0;
+
     orders.forEach(o => {
+        if (o.isVoid) {
+            voidOrdersCount++;
+            return; // Transaksi void TIDAK dihitung dalam omset, modal, atau untung bersih
+        }
+        activeOrdersCount++;
         const val = Number(o.totalAmount) || 0;
         totalRevenue += val;
         totalCogs += calculateOrderCogs(o);
@@ -215,7 +223,7 @@ async function renderHistoryData() {
 
     const totalProfit = totalRevenue - totalCogs;
     const overallMargin = totalRevenue > 0 ? Math.round((totalProfit / totalRevenue) * 100) : 0;
-    const avgOrder = orders.length > 0 ? Math.round(totalRevenue / orders.length) : 0;
+    const avgOrder = activeOrdersCount > 0 ? Math.round(totalRevenue / activeOrdersCount) : 0;
 
     if (totalRevenueEl) totalRevenueEl.textContent = formatRupiah(totalRevenue);
     if (totalCogsEl) totalCogsEl.textContent = formatRupiah(totalCogs);
@@ -224,7 +232,11 @@ async function renderHistoryData() {
         profitMarginEl.textContent = `${overallMargin}% Margin`;
         profitMarginEl.className = `margin-pill ${overallMargin >= 30 ? 'positive' : (overallMargin >= 0 ? 'warning' : 'danger')}`;
     }
-    if (totalOrdersEl) totalOrdersEl.textContent = `${orders.length} Transaksi`;
+    if (totalOrdersEl) {
+        totalOrdersEl.textContent = voidOrdersCount > 0
+            ? `${activeOrdersCount} Sukses (${voidOrdersCount} Void)`
+            : `${activeOrdersCount} Transaksi`;
+    }
     if (avgOrderEl) avgOrderEl.textContent = formatRupiah(avgOrder);
     if (cashTotalEl) cashTotalEl.textContent = formatRupiah(cashRevenue);
     if (qrisTotalEl) qrisTotalEl.textContent = formatRupiah(qrisRevenue);
@@ -232,11 +244,12 @@ async function renderHistoryData() {
     if (!tableBody) return;
 
     if (orders.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 30px; color: #95a5a6;">Belum ada transaksi tercatat.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 30px; color: #95a5a6;">Belum ada transaksi tercatat.</td></tr>`;
         return;
     }
 
     tableBody.innerHTML = orders.map((o, idx) => {
+        const isVoid = Boolean(o.isVoid);
         const orderCogs = calculateOrderCogs(o);
         const orderRevenue = Number(o.totalAmount) || 0;
         const orderProfit = orderRevenue - orderCogs;
@@ -247,22 +260,44 @@ async function renderHistoryData() {
             : '-';
 
         return `
-            <tr>
-                <td>${idx + 1}</td>
-                <td><strong>${o.invoiceNo}</strong></td>
-                <td>${formatDateTime(o.createdAt)}</td>
+            <tr class="${isVoid ? 'row-voided' : ''}">
+                <td style="text-align: center; color: #64748B;">${idx + 1}</td>
+                <td>
+                    <strong>${o.invoiceNo}</strong>
+                    ${isVoid ? '<div class="tag-void-mini">VOID</div>' : ''}
+                </td>
+                <td style="white-space: nowrap;">${formatDateTime(o.createdAt)}</td>
                 <td>${o.customerName || 'Pelanggan'} <span class="order-badge">${o.orderType === 'dine_in' ? 'Dine In' : 'Take Away'}</span></td>
                 <td style="max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${itemsSummary}">${itemsSummary}</td>
                 <td><span class="badge-method badge-${o.paymentMethod}">${o.paymentMethod.toUpperCase()}</span></td>
-                <td><span class="badge-cogs">${formatRupiah(orderCogs)}</span></td>
-                <td><strong>${formatRupiah(orderRevenue)}</strong></td>
+                <td><span class="badge-cogs ${isVoid ? 'text-strikethrough' : ''}">${formatRupiah(orderCogs)}</span></td>
+                <td><strong class="${isVoid ? 'text-strikethrough' : ''}">${formatRupiah(orderRevenue)}</strong></td>
                 <td>
-                    <span class="badge-profit ${orderProfit >= 0 ? 'profit-positive' : 'profit-negative'}">
-                        ${orderProfit >= 0 ? '+' : ''}${formatRupiah(orderProfit)}
-                    </span>
-                    <span class="margin-pill ${orderMargin >= 30 ? 'positive' : 'warning'}" style="font-size: 10px; margin-left: 4px;">
-                        ${orderMargin}%
-                    </span>
+                    ${isVoid ? `
+                        <span style="color: #94A3B8; font-size: 11px; font-style: italic;">Dibatalkan</span>
+                    ` : `
+                        <span class="badge-profit ${orderProfit >= 0 ? 'profit-positive' : 'profit-negative'}">
+                            ${orderProfit >= 0 ? '+' : ''}${formatRupiah(orderProfit)}
+                        </span>
+                        <span class="margin-pill ${orderMargin >= 30 ? 'positive' : 'warning'}" style="font-size: 10px; margin-left: 4px;">
+                            ${orderMargin}%
+                        </span>
+                    `}
+                </td>
+                <td style="text-align: center;">
+                    ${isVoid ? `
+                        <div class="void-status-cell">
+                            <span class="badge-void">❌ VOID</span>
+                            <div class="void-meta-info" title="Alasan: ${o.voidReason || '-'} • Oleh: ${o.voidBy || '-'}">
+                                <strong>Oleh:</strong> ${o.voidBy || '-'}<br>
+                                <span class="void-reason-text">"${o.voidReason || '-'}"</span>
+                            </div>
+                        </div>
+                    ` : `
+                        <button type="button" class="btn-table-void" onclick="openVoidModal('${o.invoiceNo}')" title="Batalkan Transaksi (Void)">
+                            ⚠️ Void
+                        </button>
+                    `}
                 </td>
             </tr>
         `;
@@ -292,10 +327,11 @@ async function exportHistoryToCSV() {
         return orderCogs;
     };
 
-    const headers = ['No Invoice', 'Waktu', 'Nama Pelanggan', 'Tipe Pesanan', 'Metode Bayar', 'Total Omset', 'Total Modal (HPP)', 'Untung Bersih (Profit)', 'Margin %', 'Bayar Diterima', 'Kembalian', 'Catatan'];
+    const headers = ['No Invoice', 'Waktu', 'Nama Pelanggan', 'Tipe Pesanan', 'Metode Bayar', 'Status Transaksi', 'Dibatalkan Oleh', 'Alasan Void', 'Total Omset', 'Total Modal (HPP)', 'Untung Bersih (Profit)', 'Margin %', 'Bayar Diterima', 'Kembalian', 'Catatan'];
     const rows = orders.map(o => {
-        const orderRevenue = Number(o.totalAmount) || 0;
-        const orderCogs = calculateOrderCogs(o);
+        const isVoid = Boolean(o.isVoid);
+        const orderRevenue = isVoid ? 0 : (Number(o.totalAmount) || 0);
+        const orderCogs = isVoid ? 0 : calculateOrderCogs(o);
         const orderProfit = orderRevenue - orderCogs;
         const marginPct = orderRevenue > 0 ? ((orderProfit / orderRevenue) * 100).toFixed(1) : '0';
 
@@ -305,6 +341,9 @@ async function exportHistoryToCSV() {
             `"${(o.customerName || '').replace(/"/g, '""')}"`,
             `"${o.orderType}"`,
             `"${o.paymentMethod}"`,
+            `"${isVoid ? 'VOID / DIBATALKAN' : 'SUKSES'}"`,
+            `"${(o.voidBy || '').replace(/"/g, '""')}"`,
+            `"${(o.voidReason || '').replace(/"/g, '""')}"`,
             orderRevenue,
             orderCogs,
             orderProfit,
@@ -323,6 +362,188 @@ async function exportHistoryToCSV() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+}
+
+// ================= VOID TRANSAKSI CONTROLLER =================
+
+let currentVoidOrder = null;
+
+async function openVoidModal(invoiceNo) {
+    const orders = await db.getOrdersHistory(100);
+    const order = orders.find(o => o.invoiceNo === invoiceNo);
+    if (!order) {
+        alert('Data transaksi tidak ditemukan.');
+        return;
+    }
+
+    if (order.isVoid) {
+        alert('Transaksi ini sudah berstatus VOID.');
+        return;
+    }
+
+    currentVoidOrder = order;
+
+    const modal = document.getElementById('voidModal');
+    const invoiceInput = document.getElementById('voidInvoiceNo');
+    const summaryBox = document.getElementById('voidOrderSummary');
+    const authorInput = document.getElementById('voidAuthorName');
+    const reasonSelect = document.getElementById('voidReasonSelect');
+    const customGroup = document.getElementById('voidCustomReasonGroup');
+    const customInput = document.getElementById('voidCustomReason');
+    const passInput = document.getElementById('voidPassword');
+    const errBox = document.getElementById('voidErrorMessage');
+    const submitBtn = document.getElementById('btnSubmitVoid');
+
+    if (invoiceInput) invoiceInput.value = order.invoiceNo;
+    if (authorInput) authorInput.value = '';
+    if (reasonSelect) reasonSelect.value = '';
+    if (customGroup) customGroup.style.display = 'none';
+    if (customInput) customInput.value = '';
+    if (passInput) passInput.value = '';
+    if (errBox) errBox.style.display = 'none';
+    if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<span>⚠️ Konfirmasi VOID</span>';
+    }
+
+    if (summaryBox) {
+        const itemsList = (order.items && order.items.length > 0)
+            ? order.items.map(i => `${i.name} (${i.qty}x)`).join(', ')
+            : 'Tidak ada item';
+
+        summaryBox.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                <div>
+                    <strong style="font-size: 14px; color: #1E293B;">${order.invoiceNo}</strong>
+                    <div style="color: #64748B; font-size: 11px;">${formatDateTime(order.createdAt)} &bull; ${order.customerName || 'Pelanggan'}</div>
+                </div>
+                <strong style="font-size: 15px; color: #DC2626;">${formatRupiah(order.totalAmount)}</strong>
+            </div>
+            <div style="font-size: 11px; color: #475569; background: white; padding: 6px 10px; border-radius: 6px; border: 1px solid #E2E8F0;">
+                <strong>Item:</strong> ${itemsList}
+            </div>
+        `;
+    }
+
+    if (modal) modal.classList.add('active');
+    setTimeout(() => { if (authorInput) authorInput.focus(); }, 150);
+}
+
+function closeVoidModal() {
+    const modal = document.getElementById('voidModal');
+    if (modal) modal.classList.remove('active');
+    currentVoidOrder = null;
+}
+
+function toggleVoidCustomReason(val) {
+    const customGroup = document.getElementById('voidCustomReasonGroup');
+    const customInput = document.getElementById('voidCustomReason');
+    if (customGroup) {
+        const isOther = (val === 'other');
+        customGroup.style.display = isOther ? 'block' : 'none';
+        if (isOther && customInput) {
+            customInput.focus();
+            customInput.required = true;
+        } else if (customInput) {
+            customInput.required = false;
+        }
+    }
+}
+
+async function handleConfirmVoid(e) {
+    e.preventDefault();
+    const invoiceNo = document.getElementById('voidInvoiceNo')?.value;
+    const authorName = document.getElementById('voidAuthorName')?.value.trim();
+    const reasonSelect = document.getElementById('voidReasonSelect')?.value;
+    const customReason = document.getElementById('voidCustomReason')?.value.trim();
+    const password = document.getElementById('voidPassword')?.value;
+    const errBox = document.getElementById('voidErrorMessage');
+    const submitBtn = document.getElementById('btnSubmitVoid');
+
+    if (!invoiceNo) {
+        alert('Invoice transaksi tidak valid.');
+        return;
+    }
+
+    if (!authorName) {
+        if (errBox) {
+            errBox.textContent = 'Nama staf / otorisator wajib diisi!';
+            errBox.style.display = 'block';
+        }
+        return;
+    }
+
+    let finalReason = reasonSelect;
+    if (reasonSelect === 'other') {
+        if (!customReason) {
+            if (errBox) {
+                errBox.textContent = 'Silakan tuliskan alasan pembatalan!';
+                errBox.style.display = 'block';
+            }
+            return;
+        }
+        finalReason = customReason;
+    }
+
+    if (!finalReason) {
+        if (errBox) {
+            errBox.textContent = 'Pilih atau isi alasan pembatalan transaksi!';
+            errBox.style.display = 'block';
+        }
+        return;
+    }
+
+    if (!password) {
+        if (errBox) {
+            errBox.textContent = 'Password kasir wajib diisi untuk verifikasi!';
+            errBox.style.display = 'block';
+        }
+        return;
+    }
+
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span>Memverifikasi Password...</span>';
+    }
+    if (errBox) errBox.style.display = 'none';
+
+    // 1. Verifikasi Password Otorisasi
+    const isPasswordValid = await authManager.verifyPassword(password);
+    if (!isPasswordValid) {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<span>⚠️ Konfirmasi VOID</span>';
+        }
+        if (errBox) {
+            errBox.textContent = 'Password otorisasi salah! Pembatalan transaksi ditolak.';
+            errBox.style.display = 'block';
+        }
+        sounds.playWarning();
+        return;
+    }
+
+    // 2. Eksekusi Void di Database & Pulihkan Stok
+    if (submitBtn) {
+        submitBtn.innerHTML = '<span>Membatalkan Transaksi & Mengembalikan Stok...</span>';
+    }
+
+    try {
+        await db.voidOrder(invoiceNo, authorName, finalReason);
+        sounds.playWarning();
+        closeVoidModal();
+
+        // Refresh tabel riwayat transaksi
+        await renderHistoryData();
+
+        alert(`Transaksi ${invoiceNo} berhasil DIBATALKAN (VOID).\nStok bahan baku & produk fisik telah dikembalikan ke sistem.`);
+    } catch (err) {
+        console.error('Gagal void order:', err);
+        alert('Gagal membatalkan transaksi: ' + err.message);
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<span>⚠️ Konfirmasi VOID</span>';
+        }
+    }
 }
 
 // ================= MODAL KELOLA MENU =================

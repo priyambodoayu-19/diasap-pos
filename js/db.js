@@ -122,8 +122,36 @@ class DatabaseService {
     }
 
     // Simpan atau Perbarui Produk
-    async saveProduct(product) {
-        // Update di Neon jika online
+    async saveProduct(product, oldId = null) {
+        // 0. Jika Kode Menu (ID / SKU) diubah oleh pengguna, update ID di Neon dan cache lokal terlebih dahulu
+        if (oldId && oldId !== product.id) {
+            try {
+                await this.query(`UPDATE products SET id = $1 WHERE id = $2;`, [product.id, oldId]);
+            } catch (err) {
+                console.warn('Gagal update ID produk di Neon:', err);
+            }
+
+            // Update di cache lokal
+            try {
+                const cached = localStorage.getItem(this.storageKeyProducts);
+                if (cached) {
+                    let list = JSON.parse(cached);
+                    const oldIdx = list.findIndex(p => p.id === oldId);
+                    if (oldIdx >= 0) {
+                        list[oldIdx].id = product.id;
+                        localStorage.setItem(this.storageKeyProducts, JSON.stringify(list));
+                    }
+                }
+            } catch (e) {}
+
+            // Update di keranjang belanja jika item dengan oldId sedang dipilih kasir
+            if (typeof cartManager !== 'undefined' && cartManager.items) {
+                const cartItem = cartManager.items.find(i => i.id === oldId);
+                if (cartItem) cartItem.id = product.id;
+            }
+        }
+
+        // 1. Simpan ke Neon PostgreSQL Cloud
         try {
             await this.query(`
                 INSERT INTO products (id, name, description, category, price_normal, price_promo, cogs, stock_type, raw_material_id, raw_material_amount, direct_stock, image_emoji, sort_order, is_active)
@@ -283,16 +311,20 @@ class DatabaseService {
                        o.cash_received::numeric as "cashReceived", 
                        o.change_amount::numeric as "changeAmount",
                        o.notes, o.created_at as "createdAt",
+                       COALESCE(o.is_void, FALSE) as "isVoid",
+                       COALESCE(o.void_reason, '') as "voidReason",
+                       COALESCE(o.void_by, '') as "voidBy",
+                       o.void_at as "voidAt",
                        COALESCE(
                            json_agg(
-                               json_build_object(
-                                   'id', oi.product_id,
-                                   'name', oi.product_name,
-                                   'qty', oi.quantity,
-                                   'priceLocked', oi.price_locked,
-                                   'isPromo', oi.is_promo,
-                                   'cogsLocked', COALESCE(oi.cogs_locked, 0)
-                               )
+                                json_build_object(
+                                    'id', oi.product_id,
+                                    'name', oi.product_name,
+                                    'qty', oi.quantity,
+                                    'priceLocked', oi.price_locked,
+                                    'isPromo', oi.is_promo,
+                                    'cogsLocked', COALESCE(oi.cogs_locked, 0)
+                                )
                            ) FILTER (WHERE oi.id IS NOT NULL), '[]'::json
                        ) as items
                 FROM orders o
@@ -308,6 +340,10 @@ class DatabaseService {
                     totalAmount: Number(r.totalAmount),
                     cashReceived: Number(r.cashReceived),
                     changeAmount: Number(r.changeAmount),
+                    isVoid: Boolean(r.isVoid),
+                    voidReason: r.voidReason || '',
+                    voidBy: r.voidBy || '',
+                    voidAt: r.voidAt || null,
                     items: Array.isArray(r.items) ? r.items : (typeof r.items === 'string' ? JSON.parse(r.items) : [])
                 }));
             }
@@ -459,6 +495,102 @@ class DatabaseService {
             }
         }
         localStorage.setItem(this.storageKeyProducts, JSON.stringify(products));
+    }
+
+    // Kembalikan stok bahan & barang jadi saat transaksi di-void / dibatalkan
+    async restoreStockForOrder(items) {
+        if (!items || items.length === 0) return;
+
+        const products = await this.getProducts();
+        const rawMaterials = await this.getRawMaterials();
+
+        const rawRestorations = {};
+        const directRestorations = {};
+
+        for (const item of items) {
+            const prod = products.find(p => p.id === item.id);
+            if (!prod) continue;
+
+            const qty = Number(item.qty) || 1;
+
+            if (prod.stockType === 'raw_material' && prod.rawMaterialId) {
+                const amount = (Number(prod.rawMaterialAmount) || 0) * qty;
+                rawRestorations[prod.rawMaterialId] = (rawRestorations[prod.rawMaterialId] || 0) + amount;
+            } else if (prod.stockType === 'direct') {
+                directRestorations[prod.id] = (directRestorations[prod.id] || 0) + qty;
+            }
+        }
+
+        // 1. Kembalikan Bahan Baku Master
+        for (const rawId of Object.keys(rawRestorations)) {
+            const toAdd = rawRestorations[rawId];
+            const mat = rawMaterials.find(m => m.id === rawId);
+            if (mat) {
+                mat.stock = (Number(mat.stock) || 0) + toAdd;
+                try {
+                    await this.query(`UPDATE raw_materials SET stock = $1 WHERE id = $2;`, [mat.stock, rawId]);
+                } catch (e) {
+                    console.warn(`Gagal update pengembalian stok bahan ${rawId} di Neon:`, e);
+                }
+            }
+        }
+        localStorage.setItem(this.storageKeyRawMaterials, JSON.stringify(rawMaterials));
+
+        // 2. Kembalikan Barang Jadi (Fisik)
+        for (const prodId of Object.keys(directRestorations)) {
+            const toAdd = directRestorations[prodId];
+            const prod = products.find(p => p.id === prodId);
+            if (prod) {
+                prod.directStock = (Number(prod.directStock) || 0) + toAdd;
+                try {
+                    await this.query(`UPDATE products SET direct_stock = $1 WHERE id = $2;`, [prod.directStock, prodId]);
+                } catch (e) {
+                    console.warn(`Gagal update pengembalian direct_stock produk ${prodId} di Neon:`, e);
+                }
+            }
+        }
+        localStorage.setItem(this.storageKeyProducts, JSON.stringify(products));
+
+        // Refresh state di memory
+        if (typeof inventoryManager !== 'undefined') {
+            await inventoryManager.loadRawMaterials();
+        }
+        if (typeof productManager !== 'undefined') {
+            await productManager.loadProducts();
+            productManager.render();
+        }
+    }
+
+    // Void / Batalkan Transaksi
+    async voidOrder(invoiceNo, voidBy, voidReason) {
+        // 1. Update status di Neon PostgreSQL
+        try {
+            await this.query(`
+                UPDATE orders 
+                SET is_void = TRUE, void_reason = $1, void_by = $2, void_at = NOW()
+                WHERE invoice_no = $3;
+            `, [voidReason || 'Dibatalkan oleh kasir', voidBy || 'Kasir', invoiceNo]);
+        } catch (err) {
+            console.warn('Gagal menandai void transaksi di Neon:', err);
+        }
+
+        // 2. Update di cache lokal
+        let orders = this.getLocalOrders();
+        const order = orders.find(o => o.invoiceNo === invoiceNo);
+        if (order) {
+            order.isVoid = true;
+            order.voidReason = voidReason || 'Dibatalkan oleh kasir';
+            order.voidBy = voidBy || 'Kasir';
+            order.voidAt = new Date().toISOString();
+            localStorage.setItem(this.storageKeyOrders, JSON.stringify(orders));
+
+            // 3. Kembalikan stok bahan & barang jadi yang sebelumnya terpotong
+            if (order.items && order.items.length > 0) {
+                await this.restoreStockForOrder(order.items);
+            }
+        }
+
+        return true;
     }
 }
 

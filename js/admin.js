@@ -521,7 +521,7 @@ class AdminManager {
         if (title) title.textContent = `✏️ Edit Menu: ${product.name}`;
         if (idInput) {
             idInput.value = product.id;
-            idInput.disabled = true; // Jangan ubah ID produk saat edit
+            idInput.disabled = false; // SKU / Kode Menu kini dapat diedit
         }
         if (nameInput) nameInput.value = product.name;
         if (catSelect) catSelect.value = product.category || 'makanan';
@@ -645,11 +645,19 @@ class AdminManager {
             }
         }
 
-        // Cek ID duplikat saat mode tambah
-        if (!this.editingProductId) {
+        const oldId = this.editingProductId;
+
+        // Cek ID / SKU duplikat
+        if (oldId && oldId !== id) {
+            const existing = productManager.getProductById(id);
+            if (existing && existing.id !== oldId) {
+                alert(`Kode Menu / SKU "${id}" sudah digunakan oleh menu "${existing.name}". Silakan gunakan kode lain.`);
+                return;
+            }
+        } else if (!oldId) {
             const existing = productManager.getProductById(id);
             if (existing) {
-                alert(`Kode Menu "${id}" sudah digunakan oleh produk "${existing.name}". Silakan gunakan kode lain.`);
+                alert(`Kode Menu / SKU "${id}" sudah digunakan oleh produk "${existing.name}". Silakan gunakan kode lain.`);
                 return;
             }
         }
@@ -676,7 +684,7 @@ class AdminManager {
         }
 
         try {
-            await db.saveProduct(product);
+            await db.saveProduct(product, oldId);
             await productManager.loadProducts();
 
             // Refresh keranjang jika ada item bersangkutan

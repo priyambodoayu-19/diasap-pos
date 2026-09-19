@@ -155,6 +155,32 @@ class AuthManager {
             lockOverlay.style.display = 'flex';
         }
     }
+
+    // Verifikasi password untuk otorisasi tindakan sensitif (seperti Void Transaksi)
+    async verifyPassword(password) {
+        if (!password) return false;
+        const trimmed = password.trim();
+
+        try {
+            const response = await fetch('/api/auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: trimmed })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                return data.success === true;
+            } else if (response.status === 401) {
+                return false;
+            }
+        } catch (e) {
+            // Offline fallback
+        }
+
+        const fallback = (typeof CONFIG !== 'undefined' && CONFIG.APP_PASSWORD) ? CONFIG.APP_PASSWORD : this.fallbackPassword;
+        return trimmed === fallback || trimmed === this.fallbackPassword;
+    }
 }
 
 const authManager = new AuthManager();

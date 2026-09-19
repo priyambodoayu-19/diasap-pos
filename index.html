@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🔥 DIASAP POS - Kasir & Manajemen Penjualan</title>
     <!-- Stylesheet POS -->
-    <link rel="stylesheet" href="css/style.css?v=2.8">
+    <link rel="stylesheet" href="css/style.css?v=2.9">
 </head>
 <body>
 
@@ -290,11 +290,12 @@
                                 <th>Modal (HPP)</th>
                                 <th>Total Omset</th>
                                 <th>Untung Bersih</th>
+                                <th style="text-align: center; min-width: 130px;">Status & Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="historyTableBody">
                             <tr>
-                                <td colspan="9" style="text-align: center; padding: 20px;">Memuat data riwayat...</td>
+                                <td colspan="10" style="text-align: center; padding: 20px;">Memuat data riwayat...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -431,9 +432,9 @@
                     <!-- Baris 1: ID & Icon Emoji -->
                     <div class="form-row">
                         <div class="form-group" style="flex: 1;">
-                            <label for="adminProdId">Kode Menu (ID) <span class="text-danger">*</span></label>
+                            <label for="adminProdId">Kode Menu / SKU <span class="text-danger">*</span></label>
                             <input type="text" id="adminProdId" class="form-control font-bold" placeholder="Contoh: E, M3, T3" required autocomplete="off">
-                            <small class="form-help">Kode unik menu di POS (huruf/angka)</small>
+                            <small class="form-help">Kode unik / SKU menu di POS (dapat diubah)</small>
                         </div>
                         <div class="form-group" style="flex: 1.2;">
                             <label for="adminProdEmoji">Icon Emoji</label>
@@ -726,6 +727,72 @@
         </div>
     </div>
 
+    <!-- ================= MODAL: VOID / BATALKAN TRANSAKSI ================= -->
+    <div class="modal-backdrop" id="voidModal" style="z-index: 1070;">
+        <div class="modal-content modal-void-content" style="max-width: 490px;">
+            <div class="modal-header void-modal-header">
+                <div class="void-header-info">
+                    <span class="void-header-icon">⚠️</span>
+                    <div>
+                        <h3>Void / Batalkan Transaksi</h3>
+                        <p>Transaksi tidak akan dihapus, melainkan ditandai status VOID</p>
+                    </div>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeVoidModal()">&times;</button>
+            </div>
+            <form id="voidTransactionForm" onsubmit="handleConfirmVoid(event)">
+                <input type="hidden" id="voidInvoiceNo">
+                <div class="modal-body void-modal-body">
+                    <!-- Ringkasan Transaksi yang akan di-void -->
+                    <div class="void-summary-card" id="voidOrderSummary">
+                        <!-- Diisi secara dinamis -->
+                    </div>
+
+                    <div class="form-group">
+                        <label for="voidAuthorName">Nama Staf / Otorisator <span class="text-danger">*</span></label>
+                        <input type="text" id="voidAuthorName" class="form-control" placeholder="Contoh: Ayu (Supervisor) / Kasir 1" required autocomplete="name">
+                        <small class="form-help">Nama staf yang bertanggung jawab membatalkan transaksi ini</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="voidReasonSelect">Alasan Pembatalan (Void) <span class="text-danger">*</span></label>
+                        <select id="voidReasonSelect" class="form-control" onchange="toggleVoidCustomReason(this.value)" required>
+                            <option value="">-- Pilih Alasan Void --</option>
+                            <option value="Salah input menu / pesanan">Salah input menu / pesanan</option>
+                            <option value="Pelanggan membatalkan pesanan">Pelanggan membatalkan pesanan</option>
+                            <option value="Transaksi ganda (double input)">Transaksi ganda (double input)</option>
+                            <option value="Kesalahan metode pembayaran">Kesalahan metode pembayaran</option>
+                            <option value="Menu / bahan habis saat dimasak">Menu / bahan habis saat dimasak</option>
+                            <option value="other">Lainnya (Tulis alasan sendiri)...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="voidCustomReasonGroup" style="display: none;">
+                        <label for="voidCustomReason">Tulis Alasan Lainnya <span class="text-danger">*</span></label>
+                        <textarea id="voidCustomReason" class="form-control" rows="2" placeholder="Jelaskan alasan pembatalan transaksi secara rinci..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="voidPassword">Password Otorisasi Kasir <span class="text-danger">*</span></label>
+                        <div class="input-currency-wrapper">
+                            <input type="password" id="voidPassword" class="form-control" placeholder="Masukkan password kasir..." required autocomplete="current-password">
+                        </div>
+                        <small class="form-help">Masukkan password akses kasir / owner untuk verifikasi void</small>
+                    </div>
+
+                    <div id="voidErrorMessage" class="void-error-box" style="display: none;"></div>
+                </div>
+
+                <div class="modal-footer void-modal-footer">
+                    <button type="button" class="btn-nav-action" onclick="closeVoidModal()">Batal</button>
+                    <button type="submit" class="btn-nav-action btn-danger-submit" id="btnSubmitVoid">
+                        <span>⚠️ Konfirmasi VOID</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- ================= OVERLAY: LOCK SCREEN PASSWORD ================= -->
     <div class="lock-screen-overlay" id="lockScreenOverlay">
         <div class="lock-card" id="lockCard">
@@ -763,15 +830,15 @@
     </div>
 
     <!-- ================= JAVASCRIPT MODULES ================= -->
-    <script src="js/config.js?v=2.8"></script>
-    <script src="js/sound.js?v=2.8"></script>
-    <script src="js/db.js?v=2.8"></script>
-    <script src="js/inventory.js?v=2.8"></script>
-    <script src="js/products.js?v=2.8"></script>
-    <script src="js/cart.js?v=2.8"></script>
-    <script src="js/payment.js?v=2.8"></script>
-    <script src="js/auth.js?v=2.8"></script>
-    <script src="js/admin.js?v=2.8"></script>
-    <script src="js/app.js?v=2.8"></script>
+    <script src="js/config.js?v=2.9"></script>
+    <script src="js/sound.js?v=2.9"></script>
+    <script src="js/db.js?v=2.9"></script>
+    <script src="js/inventory.js?v=2.9"></script>
+    <script src="js/products.js?v=2.9"></script>
+    <script src="js/cart.js?v=2.9"></script>
+    <script src="js/payment.js?v=2.9"></script>
+    <script src="js/auth.js?v=2.9"></script>
+    <script src="js/admin.js?v=2.9"></script>
+    <script src="js/app.js?v=2.9"></script>
 </body>
 </html>

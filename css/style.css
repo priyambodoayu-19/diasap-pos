@@ -2678,6 +2678,151 @@ input:checked + .slider:before {
 }
 
 /* ==========================================================================
+   VOID TRANSAKSI STYLING
+   ========================================================================== */
+
+.btn-table-void {
+    background: #FEF2F2;
+    color: #DC2626;
+    border: 1px solid #FECACA;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.btn-table-void:hover {
+    background: #FEE2E2;
+    border-color: #F87171;
+    color: #991B1B;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(220, 38, 38, 0.15);
+}
+
+.badge-void {
+    background: #FEF2F2;
+    color: #991B1B;
+    border: 1px solid #FCA5A5;
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    display: inline-block;
+}
+
+.void-status-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+}
+
+.void-meta-info {
+    font-size: 10px;
+    color: #64748B;
+    line-height: 1.3;
+    text-align: center;
+    max-width: 140px;
+}
+
+.void-reason-text {
+    font-style: italic;
+    color: #DC2626;
+    word-break: break-word;
+}
+
+.row-voided {
+    background: #F8FAFC !important;
+    opacity: 0.75;
+}
+
+.row-voided td {
+    color: #94A3B8 !important;
+}
+
+.text-strikethrough {
+    text-decoration: line-through;
+    color: #94A3B8 !important;
+}
+
+.tag-void-mini {
+    display: inline-block;
+    background: #DC2626;
+    color: white;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 1px 5px;
+    border-radius: 4px;
+    margin-top: 3px;
+}
+
+/* Void Modal Box */
+.void-modal-header {
+    background: #FEF2F2;
+    border-bottom: 1px solid #FECACA;
+    padding: 16px 20px;
+}
+
+.void-header-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.void-header-icon {
+    font-size: 24px;
+}
+
+.void-header-info h3 {
+    color: #991B1B;
+    font-size: 17px;
+    margin: 0;
+    font-weight: 800;
+}
+
+.void-header-info p {
+    color: #B91C1C;
+    font-size: 11px;
+    margin: 2px 0 0;
+}
+
+.void-summary-card {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+}
+
+.void-error-box {
+    background: #FEF2F2;
+    color: #B91C1C;
+    border: 1px solid #FCA5A5;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.btn-danger-submit {
+    background: #DC2626;
+    color: white;
+    border: 1px solid #B91C1C;
+    font-weight: 700;
+}
+
+.btn-danger-submit:hover {
+    background: #B91C1C;
+    color: white;
+}
+
+/* ==========================================================================
    RESPONSIVE DESIGN: LAYAR LAPTOP / DESKTOP SEDANG (MAX-WIDTH: 1200px)
    ========================================================================== */
 
