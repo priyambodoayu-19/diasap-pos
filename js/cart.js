@@ -278,12 +278,12 @@ class CartManager {
         if (countBadge) countBadge.textContent = `${totalQty} item`;
         if (clearBtn) clearBtn.style.display = this.cart.length > 0 ? 'inline-flex' : 'none';
 
-        // Update Floating Cart Bar untuk tampilan Mobile
+        // Update Floating Cart Bar HANYA untuk tampilan Mobile (<= 860px)
         const mFloatingBar = document.getElementById('mobileFloatingCartBar');
         const mCount = document.getElementById('mCartItemCount');
         const mTotal = document.getElementById('mCartGrandTotal');
         if (mFloatingBar) {
-            if (this.cart.length > 0) {
+            if (this.cart.length > 0 && window.innerWidth <= 860) {
                 mFloatingBar.style.display = 'flex';
                 if (mCount) mCount.textContent = totalQty;
                 if (mTotal) mTotal.textContent = formatRupiah(this.getGrandTotal());
@@ -374,9 +374,57 @@ class CartManager {
         }
     }
 
+    init() {
+        this.setupMobileCartObserver();
+        window.addEventListener('resize', () => {
+            const mFloatingBar = document.getElementById('mobileFloatingCartBar');
+            if (mFloatingBar) {
+                if (window.innerWidth > 860 || this.cart.length === 0) {
+                    mFloatingBar.style.display = 'none';
+                } else if (this.cart.length > 0 && window.innerWidth <= 860) {
+                    mFloatingBar.style.display = 'flex';
+                }
+            }
+        });
+    }
+
+    setupMobileCartObserver() {
+        const cartEl = document.querySelector('.cart-container');
+        const mFloatingBar = document.getElementById('mobileFloatingCartBar');
+        if (!cartEl || !mFloatingBar) return;
+
+        if ('IntersectionObserver' in window) {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        mFloatingBar.classList.add('cart-in-view');
+                    } else {
+                        mFloatingBar.classList.remove('cart-in-view');
+                    }
+                });
+            }, {
+                threshold: 0.08
+            });
+            observer.observe(cartEl);
+        } else {
+            window.addEventListener('scroll', () => {
+                const rect = cartEl.getBoundingClientRect();
+                if (rect.top < window.innerHeight - 80) {
+                    mFloatingBar.classList.add('cart-in-view');
+                } else {
+                    mFloatingBar.classList.remove('cart-in-view');
+                }
+            }, { passive: true });
+        }
+    }
+
     // Scroll otomatis ke keranjang di perangkat mobile
     scrollToCart() {
         const cart = document.querySelector('.cart-container');
+        const mFloatingBar = document.getElementById('mobileFloatingCartBar');
+        if (mFloatingBar) {
+            mFloatingBar.classList.add('cart-in-view');
+        }
         if (cart) {
             cart.scrollIntoView({ behavior: 'smooth' });
         }

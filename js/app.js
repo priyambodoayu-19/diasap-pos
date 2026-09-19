@@ -48,8 +48,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 2. Muat Produk
     await productManager.loadProducts();
 
-    // 3. Render Keranjang Awal
-    cartManager.render();
+    // 3. Inisialisasi & Render Keranjang Awal
+    if (typeof cartManager !== 'undefined') {
+        cartManager.init();
+        cartManager.render();
+    }
     paymentManager.calculate();
 
     // 4. Event Listener Mode Promo Switch

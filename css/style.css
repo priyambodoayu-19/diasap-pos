@@ -2698,8 +2698,23 @@ input:checked + .slider:before {
     cursor: pointer;
     border: 1px solid rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(8px);
-    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease, box-shadow 0.2s;
     animation: slideUpCart 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Sembunyikan floating cart bar secara permanen di layar desktop (> 860px) */
+@media (min-width: 861px) {
+    .mobile-floating-cart-bar {
+        display: none !important;
+    }
+}
+
+/* Sembunyikan floating cart bar ketika area keranjang / checkout kasir sedang dilihat */
+.mobile-floating-cart-bar.cart-in-view {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: translateY(80px) !important;
 }
 
 .mobile-floating-cart-bar:active {
