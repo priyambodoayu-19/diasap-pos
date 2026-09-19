@@ -4,6 +4,11 @@
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // Inisialisasi Proteksi Akses Kasir (Lock Screen)
+    if (typeof authManager !== 'undefined') {
+        authManager.init();
+    }
+
     // 1. Setup Status Koneksi Database
     const dbStatusBadge = document.getElementById('dbStatusBadge');
     const dbStatusText = document.getElementById('dbStatusText');

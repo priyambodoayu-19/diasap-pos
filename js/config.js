@@ -17,6 +17,9 @@ const CONFIG = {
         TIMEOUT_MS: 8000
     },
 
+    // Password Akses Webapp Kasir
+    APP_PASSWORD: "syalala123",
+
     // Nilai default jika database offline / pertama kali load
     DEFAULT_PRODUCTS: [
         { id: 'A', name: 'PAKET A', desc: 'Daging Ayam + Sayur + Sambal', category: 'makanan', priceNormal: 30000, pricePromo: 25000, emoji: '🍗' },

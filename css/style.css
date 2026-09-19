@@ -1283,3 +1283,187 @@ input:checked + .slider:before {
         max-width: 100%;
     }
 }
+
+/* ==========================================================================
+   LOCK SCREEN / PASSWORD PROTECTION STYLES
+   ========================================================================== */
+
+.lock-screen-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at center, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98));
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lock-screen-overlay.lock-fade-out {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.lock-card {
+    background: white;
+    border-radius: 20px;
+    padding: 38px 32px;
+    width: 90%;
+    max-width: 420px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
+    text-align: center;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    position: relative;
+    overflow: hidden;
+}
+
+.lock-brand {
+    margin-bottom: 24px;
+}
+
+.lock-logo-badge {
+    width: 58px;
+    height: 58px;
+    margin: 0 auto 14px auto;
+    background: linear-gradient(135deg, var(--primary), #E67E22);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    box-shadow: 0 8px 20px rgba(211, 84, 0, 0.4);
+}
+
+.lock-brand h2 {
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--secondary);
+    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+}
+
+.lock-brand p {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.lock-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    text-align: left;
+}
+
+.lock-input-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--secondary);
+    margin-bottom: 8px;
+}
+
+.lock-password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.lock-password-input {
+    width: 100%;
+    padding: 14px 44px 14px 16px;
+    font-size: 16px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    outline: none;
+    font-family: inherit;
+    transition: all 0.2s;
+    background: var(--bg-main);
+}
+
+.lock-password-input:focus {
+    border-color: var(--primary);
+    background: white;
+    box-shadow: 0 0 0 4px rgba(211, 84, 0, 0.15);
+}
+
+.btn-toggle-eye {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.btn-toggle-eye:hover {
+    opacity: 1;
+}
+
+.lock-error {
+    background: var(--promo-light);
+    color: var(--promo);
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+    border: 1px solid #F5C6CB;
+    animation: fadeIn 0.2s;
+}
+
+.lock-submit-btn {
+    width: 100%;
+    padding: 15px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+    box-shadow: 0 6px 18px rgba(211, 84, 0, 0.35);
+}
+
+.lock-submit-btn:hover:not(:disabled) {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(211, 84, 0, 0.45);
+}
+
+.lock-submit-btn:disabled {
+    background: #94A3B8;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.lock-footer-note {
+    margin-top: 20px;
+    font-size: 11px;
+    color: var(--text-light);
+    font-weight: 600;
+}
+
+/* Animasi Getar untuk Password Salah */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-10px); }
+    40%, 80% { transform: translateX(10px); }
+}
+
+.shake-animation {
+    animation: shake 0.4s ease-in-out;
+}
+
