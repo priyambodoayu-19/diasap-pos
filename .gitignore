@@ -1,0 +1,16 @@
+# Environment credentials (JANGAN COMMIT .env KE REPOSITORI GITHUB)
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS Files
+Thumbs.db
+.DS_Store
+
+# Temporary & backup files
+*.tmp
+*~

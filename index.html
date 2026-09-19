@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 DIASAP POS - Kasir & Manajemen Penjualan</title>
+    <!-- Stylesheet POS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <div class="app-wrapper">
+        <!-- ================= BAGIAN KIRI: MENU SELECTION ================= -->
+        <main class="menu-container" id="menuContainer">
+            <!-- Header Atas -->
+            <header class="top-header">
+                <div class="brand-section">
+                    <div class="brand-logo-badge">🔥</div>
+                    <div class="brand-text">
+                        <h1>DIASAP POS</h1>
+                        <span>Smoked Meat & Kitchen</span>
+                    </div>
+                </div>
+
+                <div class="header-right-controls">
+                    <!-- Status Database Neon -->
+                    <div class="status-indicator status-offline" id="dbStatusBadge" title="Status Database">
+                        <span id="dbStatusText">Memeriksa DB...</span>
+                    </div>
+
+                    <!-- Tombol Rekap Penjualan -->
+                    <button type="button" class="btn-nav-action" onclick="openHistoryModal()" title="Lihat Rekap Transaksi & Penjualan (F8)">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="20" x2="18" y2="10"></line>
+                            <line x1="12" y1="20" x2="12" y2="4"></line>
+                            <line x1="6" y1="20" x2="6" y2="14"></line>
+                        </svg>
+                        <span>Rekap Penjualan</span>
+                    </button>
+
+                    <!-- Tombol Tambah Menu -->
+                    <button type="button" class="btn-nav-action" onclick="openMenuModal()" title="Tambah Menu Baru">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        <span>Tambah Menu</span>
+                    </button>
+
+                    <!-- Tombol Switch Mode Promo -->
+                    <div class="promo-switch-container" title="Tekan F2 untuk toggle mode promo">
+                        <span class="switch-label">Mode Harga:</span>
+                        <label class="switch">
+                            <input type="checkbox" id="promoToggle">
+                            <span class="slider"></span>
+                        </label>
+                        <span id="priceModeLabel">Normal</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Search & Filter Bar -->
+            <section class="filter-bar">
+                <div class="category-pills">
+                    <button type="button" class="cat-pill active" data-category="all">Semua Menu</button>
+                    <button type="button" class="cat-pill" data-category="makanan">🍗 Makanan / Paket</button>
+                    <button type="button" class="cat-pill" data-category="minuman">🍹 Minuman</button>
+                    <button type="button" class="cat-pill" data-category="tambahan">🍚 Tambahan</button>
+                </div>
+
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="searchMenuInput" placeholder="Cari paket menu...">
+                </div>
+            </section>
+
+            <!-- Grid Menu Produk -->
+            <section class="menu-grid" id="menuGrid">
+                <!-- Kartu produk akan diisi secara dinamis oleh JavaScript -->
+            </section>
+        </main>
+
+        <!-- ================= BAGIAN KANAN: CART & CHECKOUT ================= -->
+        <aside class="cart-container">
+            <!-- Header Cart -->
+            <div class="cart-header-row">
+                <div class="cart-title-wrapper">
+                    <h2 class="cart-title">Pesanan Saat Ini</h2>
+                    <span class="cart-count-badge" id="cartItemCount">0 item</span>
+                </div>
+                <button type="button" class="btn-clear-cart" id="clearCartBtn" onclick="cartManager.clearCart()" style="display: none;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    <span>Kosongkan</span>
+                </button>
+            </div>
+
+            <!-- Tipe Pesanan & Nama Pelanggan -->
+            <div class="order-meta-box">
+                <div class="order-type-switch">
+                    <button type="button" class="order-type-btn active" data-type="dine_in">🍽️ Dine In (Makan Sini)</button>
+                    <button type="button" class="order-type-btn" data-type="take_away">🛍️ Take Away (Bungkus)</button>
+                </div>
+                <div class="customer-input-row">
+                    <input type="text" id="customerNameInput" class="customer-input" placeholder="Nama Pelanggan / No. Meja">
+                    <input type="text" id="orderNotesInput" class="customer-input" placeholder="Catatan (misal: pedas, es dipisah)">
+                </div>
+            </div>
+
+            <!-- Daftar Item Keranjang -->
+            <div class="cart-items" id="cartItemsList">
+                <div class="empty-cart-state">
+                    <div style="font-size: 48px; margin-bottom: 12px; opacity: 0.6;">🛒</div>
+                    <div style="font-weight: 600; font-size: 16px; color: #7f8c8d;">Keranjang Masih Kosong</div>
+                    <div style="font-size: 12px; color: #95a5a6; margin-top: 4px;">Klik menu di sebelah kiri untuk menambahkan pesanan</div>
+                </div>
+            </div>
+
+            <!-- Section Pembayaran -->
+            <div class="payment-section">
+                <!-- Baris Grand Total -->
+                <div class="total-row">
+                    <span>Total Pembayaran:</span>
+                    <span id="grandTotal">Rp 0</span>
+                </div>
+
+                <!-- Metode Pembayaran -->
+                <div class="payment-methods-tabs">
+                    <button type="button" class="pay-method-btn active" data-method="cash">
+                        💵 Tunai
+                    </button>
+                    <button type="button" class="pay-method-btn" data-method="qris">
+                        📱 QRIS
+                    </button>
+                    <button type="button" class="pay-method-btn" data-method="transfer">
+                        🏦 Transfer
+                    </button>
+                </div>
+
+                <!-- Tombol Uang Cepat (Quick Cash) -->
+                <div class="quick-cash-row" id="quickCashGroup">
+                    <button type="button" class="btn-quick-cash" data-val="exact">Uang Pas</button>
+                    <button type="button" class="btn-quick-cash" data-val="50000">Rp 50.000</button>
+                    <button type="button" class="btn-quick-cash" data-val="100000">Rp 100.000</button>
+                    <button type="button" class="btn-quick-cash" data-val="200000">Rp 200.000</button>
+                </div>
+
+                <!-- Input Nominal Tunai -->
+                <div class="payment-input-wrapper" id="cashInputGroup">
+                    <input type="number" id="cashInput" class="payment-input" placeholder="Nominal Uang Tunai (Rp)">
+                </div>
+
+                <!-- Tampilan QRIS Mockup (Jika dipilih) -->
+                <div class="qris-box" id="qrisInfoGroup" style="display: none;">
+                    <div class="qris-code-mock"></div>
+                    <div style="font-size: 13px; font-weight: 700; color: #2C3E50;">Scan QRIS DIASAP RESTO</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #D35400; margin-top: 4px;" id="qrisTotalDisplay">Rp 0</div>
+                </div>
+
+                <!-- Status Kembalian -->
+                <div class="change-display" id="changeDisplay">
+                    <span>Kembalian:</span>
+                    <span class="text-muted">Rp 0</span>
+                </div>
+
+                <!-- Tombol Checkout -->
+                <button type="button" class="checkout-btn" id="checkoutBtn" onclick="paymentManager.processCheckout()" disabled>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>SELESAI TRANSAKSI</span>
+                </button>
+            </div>
+        </aside>
+    </div>
+
+    <!-- ================= MODAL: STRUK PEMBAYARAN THERMAL ================= -->
+    <div class="modal-backdrop" id="receiptModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Struk Pembayaran</h3>
+                <button type="button" class="modal-close-btn" onclick="paymentManager.closeReceiptModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="receiptPrintArea">
+                    <!-- Format Struk Kasir Thermal digenerate oleh payment.js -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-nav-action" onclick="paymentManager.closeReceiptModal()">Tutup</button>
+                <button type="button" class="btn-nav-action" style="background: var(--primary); color: white; border-color: var(--primary);" onclick="paymentManager.printReceipt()">
+                    🖨️ Cetak Struk
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODAL: REKAP PENJUALAN & RIWAYAT ================= -->
+    <div class="modal-backdrop" id="historyModal">
+        <div class="modal-content modal-wide">
+            <div class="modal-header">
+                <h3>📊 Rekap Penjualan & Riwayat Transaksi</h3>
+                <button type="button" class="modal-close-btn" onclick="closeHistoryModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Summary Cards -->
+                <div class="rekap-cards-grid">
+                    <div class="rekap-card">
+                        <div class="rekap-label">Total Omset</div>
+                        <div class="rekap-val rekap-val-highlight" id="rekapTotalRevenue">Rp 0</div>
+                    </div>
+                    <div class="rekap-card">
+                        <div class="rekap-label">Total Transaksi</div>
+                        <div class="rekap-val" id="rekapTotalOrders">0 Transaksi</div>
+                    </div>
+                    <div class="rekap-card">
+                        <div class="rekap-label">Rata-rata Order</div>
+                        <div class="rekap-val" id="rekapAvgOrder">Rp 0</div>
+                    </div>
+                    <div class="rekap-card">
+                        <div class="rekap-label">Pendapatan Tunai</div>
+                        <div class="rekap-val" id="rekapCashTotal">Rp 0</div>
+                    </div>
+                    <div class="rekap-card">
+                        <div class="rekap-label">Pendapatan QRIS</div>
+                        <div class="rekap-val" id="rekapQrisTotal">Rp 0</div>
+                    </div>
+                </div>
+
+                <!-- Table History -->
+                <div class="history-table-container">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>No. Invoice</th>
+                                <th>Waktu</th>
+                                <th>Pelanggan</th>
+                                <th>Item Pesanan</th>
+                                <th>Metode</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 20px;">Memuat data riwayat...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-nav-action" onclick="exportHistoryToCSV()">
+                    📥 Ekspor ke CSV / Excel
+                </button>
+                <button type="button" class="btn-nav-action" onclick="closeHistoryModal()">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODAL: KELOLA & TAMBAH MENU ================= -->
+    <div class="modal-backdrop" id="menuModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>➕ Tambah Menu Produk Baru</h3>
+                <button type="button" class="modal-close-btn" onclick="closeMenuModal()">&times;</button>
+            </div>
+            <form id="formAddProduct" onsubmit="handleSaveNewProduct(event)">
+                <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="newProdId">Kode Menu (ID)</label>
+                            <input type="text" id="newProdId" class="form-control" placeholder="E, F, M3..." required>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="newProdEmoji">Icon Emoji</label>
+                            <input type="text" id="newProdEmoji" class="form-control" placeholder="🍗, 🍖, 🍹..." value="🍗">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="newProdName">Nama Menu / Paket</label>
+                        <input type="text" id="newProdName" class="form-control" placeholder="Contoh: PAKET SPESIAL IGA" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="newProdCategory">Kategori</label>
+                        <select id="newProdCategory" class="form-control">
+                            <option value="makanan">Makanan / Paket</option>
+                            <option value="minuman">Minuman</option>
+                            <option value="tambahan">Tambahan / Topping</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="newProdPriceNormal">Harga Normal (Rp)</label>
+                            <input type="number" id="newProdPriceNormal" class="form-control" placeholder="35000" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newProdPricePromo">Harga Promo (Rp)</label>
+                            <input type="number" id="newProdPricePromo" class="form-control" placeholder="30000" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="newProdDesc">Deskripsi Menu</label>
+                        <input type="text" id="newProdDesc" class="form-control" placeholder="Daging Asap + Sambal Matah...">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-nav-action" onclick="closeMenuModal()">Batal</button>
+                    <button type="submit" class="btn-nav-action" id="btnSaveMenu" style="background: var(--primary); color: white; border-color: var(--primary);">
+                        Simpan Menu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= JAVASCRIPT MODULES ================= -->
+    <script src="js/config.js"></script>
+    <script src="js/sound.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/products.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/payment.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
