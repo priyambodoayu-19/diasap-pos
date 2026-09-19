@@ -963,11 +963,21 @@ input:checked + .slider:before {
     max-height: 90vh;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
     animation: modalSlide 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .modal-content.modal-wide {
     max-width: 850px;
+}
+
+/* Ensure any form inside modal-content participates in flexbox and enables modal-body scroll */
+.modal-content > form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
 }
 
 @keyframes modalSlide {
@@ -981,6 +991,7 @@ input:checked + .slider:before {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .modal-header h3 {
@@ -1001,6 +1012,9 @@ input:checked + .slider:before {
 .modal-body {
     padding: 20px;
     overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+    -webkit-overflow-scrolling: touch;
 }
 
 .modal-footer {
@@ -1009,6 +1023,8 @@ input:checked + .slider:before {
     display: flex;
     justify-content: flex-end;
     gap: 10px;
+    flex-shrink: 0;
+    background: white;
 }
 
 /* Thermal Struk Styling */
@@ -1525,16 +1541,17 @@ input:checked + .slider:before {
     color: #9A3412;
 }
 
-/* Modal Admin Container */
+/* Modal Admin Container (Manajemen Menu & Stok) */
 .modal-content.modal-admin {
-    max-width: 1040px;
-    width: 95%;
-    max-height: 92vh;
+    max-width: 1320px;
+    width: 96vw;
+    max-height: 94vh;
 }
 
+/* Modal Form Produk (Tambah / Edit Menu) */
 .modal-content.modal-product-edit {
-    max-width: 620px;
-    width: 92%;
+    max-width: 680px;
+    width: 94vw;
     max-height: 92vh;
 }
 
@@ -1711,13 +1728,17 @@ input:checked + .slider:before {
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     background: white;
+    position: relative;
+    max-width: 100%;
 }
 
 .admin-table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     font-size: 13px;
     text-align: left;
+    min-width: 760px;
 }
 
 .admin-table thead th {
@@ -1737,6 +1758,37 @@ input:checked + .slider:before {
 
 .admin-table tbody tr:hover {
     background: #FDFBF7;
+}
+
+/* Sticky Action Column (Edit / Hapus Selalu Terlihat & Tidak Terpotong) */
+.admin-table thead th.col-actions,
+.admin-table tbody td.col-actions {
+    position: sticky;
+    right: 0;
+    z-index: 5;
+}
+
+.admin-table thead th.col-actions {
+    background: #F8FAFC;
+    border-left: 1px solid #E2E8F0;
+}
+
+.admin-table tbody td.col-actions {
+    background: white;
+    border-left: 1px solid #F1F5F9;
+    box-shadow: -4px 0 8px rgba(15, 23, 42, 0.05);
+}
+
+.admin-table tbody tr:hover td.col-actions {
+    background: #FDFBF7;
+}
+
+.admin-prod-desc-inline {
+    display: none;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 3px;
+    line-height: 1.3;
 }
 
 .admin-prod-identity {
@@ -2626,6 +2678,26 @@ input:checked + .slider:before {
 }
 
 /* ==========================================================================
+   RESPONSIVE DESIGN: LAYAR LAPTOP / DESKTOP SEDANG (MAX-WIDTH: 1200px)
+   ========================================================================== */
+
+@media (max-width: 1200px) {
+    /* Pada layar laptop, sembunyikan kolom deskripsi terpisah dan tampilkan di bawah nama menu agar tidak terpotong */
+    .admin-table th.col-desc,
+    .admin-table td.col-desc {
+        display: none !important;
+    }
+
+    .admin-prod-desc-inline {
+        display: block !important;
+    }
+
+    .admin-table {
+        min-width: 680px;
+    }
+}
+
+/* ==========================================================================
    RESPONSIVE DESIGN: TABLET & DESKTOP KECIL (MAX-WIDTH: 1024px)
    ========================================================================== */
 
@@ -2814,8 +2886,20 @@ input:checked + .slider:before {
     .modal-content {
         width: 96% !important;
         max-width: 96% !important;
-        max-height: 92vh !important;
+        max-height: 94vh !important;
         border-radius: 14px !important;
+    }
+
+    .modal-content.modal-admin {
+        width: 98% !important;
+        max-width: 98% !important;
+        max-height: 96vh !important;
+    }
+
+    .modal-content.modal-product-edit {
+        width: 96% !important;
+        max-width: 600px !important;
+        max-height: 94vh !important;
     }
 
     .modal-header {

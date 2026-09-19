@@ -241,6 +241,7 @@ class AdminManager {
                             <div>
                                 <div class="admin-prod-name">${p.name}</div>
                                 <div class="admin-prod-code">Kode: <strong>${p.id}</strong> &bull; <span class="category-badge ${catBadgeClass}">${catLabel}</span></div>
+                                ${p.desc ? `<div class="admin-prod-desc-inline">${p.desc}</div>` : ''}
                             </div>
                         </div>
                     </td>
@@ -276,17 +277,17 @@ class AdminManager {
                             ` : ''}
                         </div>
                     </td>
-                    <td>
+                    <td class="col-desc">
                         <div class="admin-prod-desc-cell" title="${p.desc || '-'}">${p.desc || '-'}</div>
                     </td>
-                    <td style="text-align: right;">
+                    <td class="col-actions" style="text-align: right;">
                         <div class="admin-action-btns">
                             <button type="button" class="btn-admin-action btn-admin-edit" onclick="adminManager.openEditModal('${p.id}')" title="Ubah Harga, Diskon & Info Produk">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                                 </svg>
-                                <span>Edit / Diskon</span>
+                                <span>Edit</span>
                             </button>
                             <button type="button" class="btn-admin-action btn-admin-delete" onclick="adminManager.handleDeleteProduct('${p.id}')" title="Hapus Menu Ini">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
