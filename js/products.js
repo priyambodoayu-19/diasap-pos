@@ -63,10 +63,14 @@ class ProductManager {
             const savings = product.priceNormal - product.pricePromo;
             const isDiscounted = this.isPromoMode && savings > 0;
 
+            const emojiDisplay = (typeof getValidProductEmoji === 'function') 
+                ? getValidProductEmoji(product.emoji, product.category, product.id)
+                : (product.emoji || '🍗');
+
             return `
                 <div class="product-card ${this.isPromoMode ? 'is-promo-active' : ''}" onclick="cartManager.addItem('${product.id}')" title="Klik untuk menambah ke keranjang">
                     <div class="card-top">
-                        <span class="product-emoji">${product.emoji || '🍗'}</span>
+                        <span class="product-emoji">${emojiDisplay}</span>
                         <span class="category-badge cat-${product.category}">${product.category.toUpperCase()}</span>
                     </div>
 

@@ -1,7 +1,16 @@
-/**
- * DIASAP POS - Admin Panel Manager
- * Mengelola katalog produk: Ubah Harga, Edit Diskon, Tambah & Hapus Produk
- */
+function getValidProductEmoji(emoji, category = 'makanan', id = '') {
+    if (emoji && !emoji.includes('?') && emoji.trim() !== '') {
+        return emoji;
+    }
+    const map = {
+        'A': '🍗', 'B': '🍱', 'C': '🍖', 'D': '🔥',
+        'M1': '🍹', 'M2': '💧', 'T1': '🍚', 'T2': '🌶️'
+    };
+    if (id && map[id]) return map[id];
+    if (category === 'minuman') return '🍹';
+    if (category === 'tambahan') return '🍚';
+    return '🍗';
+}
 
 class AdminManager {
     constructor() {
@@ -131,7 +140,7 @@ class AdminManager {
                     <td style="text-align: center; font-weight: 700; color: #64748B;">${idx + 1}</td>
                     <td>
                         <div class="admin-prod-identity">
-                            <span class="admin-prod-emoji">${p.emoji || '🍗'}</span>
+                            <span class="admin-prod-emoji">${getValidProductEmoji(p.emoji, p.category, p.id)}</span>
                             <div>
                                 <div class="admin-prod-name">${p.name}</div>
                                 <div class="admin-prod-code">Kode: <strong>${p.id}</strong> &bull; <span class="category-badge ${catBadgeClass}">${catLabel}</span></div>
@@ -306,6 +315,10 @@ class AdminManager {
             idInput.focus();
         }
 
+        // Sembunyikan tombol hapus saat mode tambah
+        const deleteBtn = document.getElementById('adminBtnDeleteProduct');
+        if (deleteBtn) deleteBtn.style.display = 'none';
+
         // Set default emoji
         this.setEmojiValue('🍗');
         this.updateDiscountPreview();
@@ -332,6 +345,7 @@ class AdminManager {
         const pricePromoInput = document.getElementById('adminProdPricePromo');
         const nominalInput = document.getElementById('adminProdDiscountNominal');
         const percentInput = document.getElementById('adminProdDiscountPercent');
+        const deleteBtn = document.getElementById('adminBtnDeleteProduct');
 
         if (title) title.textContent = `✏️ Edit Menu: ${product.name}`;
         if (idInput) {
@@ -340,8 +354,14 @@ class AdminManager {
         }
         if (nameInput) nameInput.value = product.name;
         if (catSelect) catSelect.value = product.category || 'makanan';
-        if (emojiInput) emojiInput.value = product.emoji || '🍗';
+        if (emojiInput) emojiInput.value = getValidProductEmoji(product.emoji, product.category, product.id);
         if (descInput) descInput.value = product.desc || '';
+
+        // Tampilkan tombol hapus saat mode edit
+        if (deleteBtn) {
+            deleteBtn.style.display = 'inline-flex';
+            deleteBtn.title = `Hapus menu ${product.name}`;
+        }
 
         const normal = Number(product.priceNormal) || 0;
         const promo = Number(product.pricePromo) || normal;
@@ -359,6 +379,20 @@ class AdminManager {
         if (priceNormalInput) {
             setTimeout(() => priceNormalInput.focus(), 150);
         }
+    }
+
+    // Berpindah dari form produk ke tabel admin panel utama
+    switchToAdminTable() {
+        this.closeProductModal();
+        this.openAdminModal();
+    }
+
+    // Hapus produk yang sedang diedit di form
+    async handleDeleteCurrentProduct() {
+        if (!this.editingProductId) return;
+        const prodId = this.editingProductId;
+        this.closeProductModal();
+        await this.handleDeleteProduct(prodId);
     }
 
     closeProductModal() {
