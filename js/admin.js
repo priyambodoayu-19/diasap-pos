@@ -50,7 +50,96 @@ class AdminManager {
         if (form) {
             form.addEventListener('submit', (e) => this.handleSaveProduct(e));
         }
+
+        // Tipe Kontrol Stok di Form Produk
+        const stockTypeSelect = document.getElementById('adminProdStockType');
+        if (stockTypeSelect) {
+            stockTypeSelect.addEventListener('change', () => {
+                this.updateStockFormVisibility();
+                this.updateStockPortionPreview();
+            });
+        }
+
+        const rawMatSelect = document.getElementById('adminProdRawMaterialId');
+        if (rawMatSelect) {
+            rawMatSelect.addEventListener('change', () => this.updateStockPortionPreview());
+        }
+
+        const rawAmountInput = document.getElementById('adminProdRawMaterialAmount');
+        if (rawAmountInput) {
+            rawAmountInput.addEventListener('input', () => this.updateStockPortionPreview());
+        }
+
+        const directStockInput = document.getElementById('adminProdDirectStock');
+        if (directStockInput) {
+            directStockInput.addEventListener('input', () => this.updateStockPortionPreview());
+        }
     }
+
+    updateStockFormVisibility() {
+        const type = document.getElementById('adminProdStockType')?.value || 'unlimited';
+        const rawGroup = document.getElementById('stockGroupRawMaterial');
+        const directGroup = document.getElementById('stockGroupDirect');
+
+        if (rawGroup) rawGroup.style.display = (type === 'raw_material') ? 'block' : 'none';
+        if (directGroup) directGroup.style.display = (type === 'direct') ? 'block' : 'none';
+    }
+
+    populateRawMaterialsSelect(selectedId = '') {
+        const select = document.getElementById('adminProdRawMaterialId');
+        if (!select) return;
+
+        const rawMaterials = (typeof inventoryManager !== 'undefined') ? inventoryManager.rawMaterials : [];
+        select.innerHTML = `
+            <option value="">-- Pilih Bahan Baku Master --</option>
+            ${rawMaterials.map(m => `
+                <option value="${m.id}" ${m.id === selectedId ? 'selected' : ''}>
+                    ${m.name} (Stok: ${Number(m.stock).toLocaleString('id-ID')} ${m.unit})
+                </option>
+            `).join('')}
+        `;
+    }
+
+    updateStockPortionPreview() {
+        const previewEl = document.getElementById('adminStockPortionPreview');
+        if (!previewEl) return;
+
+        const type = document.getElementById('adminProdStockType')?.value || 'unlimited';
+
+        if (type === 'raw_material') {
+            const rawId = document.getElementById('adminProdRawMaterialId')?.value;
+            const amount = parseFloat(document.getElementById('adminProdRawMaterialAmount')?.value) || 0;
+            const mat = (typeof inventoryManager !== 'undefined') ? inventoryManager.getRawMaterialById(rawId) : null;
+
+            if (mat && amount > 0) {
+                const portions = Math.floor((Number(mat.stock) || 0) / amount);
+                previewEl.innerHTML = `
+                    <div class="cogs-preview-card ${portions === 0 ? 'profit-loss-alert' : ''}">
+                        <span>🌾 Bahan: <strong>${mat.name}</strong> (Sisa stok: <strong>${Number(mat.stock).toLocaleString('id-ID')} ${mat.unit}</strong>)</span><br>
+                        <span>Estimasi Porsi Tersedia: <strong class="${portions === 0 ? 'text-danger' : 'text-success'}">${portions} Porsi</strong> (kebutuhan ${amount} ${mat.unit}/porsi)</span>
+                    </div>
+                `;
+            } else {
+                previewEl.innerHTML = `
+                    <div class="cogs-preview-card">
+                        <span style="color: #64748B;">Pilih bahan baku dan masukkan takaran per porsi (contoh: 75 gr).</span>
+                    </div>
+                `;
+            }
+        } else if (type === 'direct') {
+            const stock = parseFloat(document.getElementById('adminProdDirectStock')?.value) || 0;
+            previewEl.innerHTML = `
+                <div class="cogs-preview-card">
+                    <span>📦 Stok fisik siap jual: <strong class="${stock === 0 ? 'text-danger' : 'text-success'}">${stock} unit / botol</strong></span>
+                </div>
+            `;
+        } else {
+            previewEl.innerHTML = `
+                <div class="cogs-preview-card">
+                    <span style="color: #64748B;">Menu ini selalu tersedia tanpa pengurangan stok otomatis.</span>
+                </div>
+            `;
+        }
 
     // ================= MODAL ADMIN PANEL =================
 
@@ -383,6 +472,17 @@ class AdminManager {
         }
         if (cogsInput) cogsInput.value = 0;
 
+        // Reset pengaturan stok
+        this.populateRawMaterialsSelect('');
+        const stockTypeInput = document.getElementById('adminProdStockType');
+        if (stockTypeInput) stockTypeInput.value = 'unlimited';
+        const rawAmountInput = document.getElementById('adminProdRawMaterialAmount');
+        if (rawAmountInput) rawAmountInput.value = 0;
+        const directStockInput = document.getElementById('adminProdDirectStock');
+        if (directStockInput) directStockInput.value = 0;
+        this.updateStockFormVisibility();
+        this.updateStockPortionPreview();
+
         // Sembunyikan tombol hapus saat mode tambah
         const deleteBtn = document.getElementById('adminBtnDeleteProduct');
         if (deleteBtn) deleteBtn.style.display = 'none';
@@ -444,6 +544,17 @@ class AdminManager {
         if (nominalInput) nominalInput.value = saving;
         if (percentInput) percentInput.value = pct;
 
+        // Prefill pengaturan stok
+        this.populateRawMaterialsSelect(product.rawMaterialId || '');
+        const stockTypeInput = document.getElementById('adminProdStockType');
+        if (stockTypeInput) stockTypeInput.value = product.stockType || 'unlimited';
+        const rawAmountInput = document.getElementById('adminProdRawMaterialAmount');
+        if (rawAmountInput) rawAmountInput.value = product.rawMaterialAmount || 0;
+        const directStockInput = document.getElementById('adminProdDirectStock');
+        if (directStockInput) directStockInput.value = product.directStock || 0;
+        this.updateStockFormVisibility();
+        this.updateStockPortionPreview();
+
         this.updateDiscountPreview();
 
         if (modal) modal.classList.add('active');
@@ -491,6 +602,22 @@ class AdminManager {
         const priceNormal = parseFloat(document.getElementById('adminProdPriceNormal').value) || 0;
         let pricePromo = parseFloat(document.getElementById('adminProdPricePromo').value);
 
+        const stockType = document.getElementById('adminProdStockType')?.value || 'unlimited';
+        const rawMaterialId = document.getElementById('adminProdRawMaterialId')?.value || '';
+        const rawMaterialAmount = parseFloat(document.getElementById('adminProdRawMaterialAmount')?.value) || 0;
+        const directStock = parseFloat(document.getElementById('adminProdDirectStock')?.value) || 0;
+
+        if (stockType === 'raw_material') {
+            if (!rawMaterialId) {
+                alert('Mohon pilih Bahan Baku Master untuk menu dengan tipe Resep Bahan!');
+                return;
+            }
+            if (rawMaterialAmount <= 0) {
+                alert('Takaran bahan baku per porsi harus lebih besar dari 0!');
+                return;
+            }
+        }
+
         if (isNaN(pricePromo) || pricePromo <= 0) {
             pricePromo = priceNormal;
         }
@@ -533,7 +660,11 @@ class AdminManager {
             desc,
             cogs,
             priceNormal,
-            pricePromo
+            pricePromo,
+            stockType,
+            rawMaterialId,
+            rawMaterialAmount,
+            directStock
         };
 
         const submitBtn = document.getElementById('adminBtnSaveProduct');

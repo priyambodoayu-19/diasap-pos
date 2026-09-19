@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🔥 DIASAP POS - Kasir & Manajemen Penjualan</title>
     <!-- Stylesheet POS -->
-    <link rel="stylesheet" href="css/style.css?v=2.4">
+    <link rel="stylesheet" href="css/style.css?v=2.5">
 </head>
 <body>
 
@@ -38,22 +38,23 @@
                         <span>Rekap Penjualan</span>
                     </button>
 
-                    <!-- Tombol Kelola & Hapus Menu (Admin Panel) -->
-                    <button type="button" class="btn-nav-action btn-admin-nav" onclick="adminManager.openAdminModal()" title="Admin Panel: Ubah Harga, Diskon, Tambah & Hapus Menu">
+                    <!-- Tombol Kelola Menu (Admin Panel) -->
+                    <button type="button" class="btn-nav-action btn-admin-nav" onclick="adminManager.openAdminModal()" title="Admin Panel: Kelola Menu, Harga, Diskon & HPP">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                         </svg>
-                        <span>⚙️ Kelola / Hapus Menu</span>
+                        <span>⚙️ Kelola Menu</span>
                     </button>
 
-                    <!-- Tombol Tambah Menu Baru -->
-                    <button type="button" class="btn-nav-action" onclick="adminManager.openAddModal()" title="Tambah Menu Baru">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <!-- Tombol Kelola Stock (Bahan Baku Utama & Barang Jadi) -->
+                    <button type="button" class="btn-nav-action btn-stock-nav" onclick="inventoryManager.openStockModal()" title="Kelola Stok Bahan Baku Utama & Ketersediaan Porsi Menu">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                            <line x1="12" y1="22.08" x2="12" y2="12"></line>
                         </svg>
-                        <span>+ Tambah Menu</span>
+                        <span>📦 Kelola Stock</span>
                     </button>
 
                     <!-- Tombol Kunci Kasir -->
@@ -527,6 +528,56 @@
                         <div id="adminDiscountPreview"></div>
                     </div>
 
+                    <!-- Section Pengaturan Ketersediaan Stok (Opsional) -->
+                    <div class="stock-config-box">
+                        <div class="stock-config-header">
+                            <span class="calc-icon">📦</span>
+                            <div class="calc-title">
+                                <strong>Pengaturan Kontrol Stok & Ketersediaan (Opsional)</strong>
+                                <p>Tentukan apakah ketersediaan menu dihitung dari bahan baku (gramasi), stok barang jadi (pcs), atau tidak dibatasi.</p>
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-top: 10px;">
+                            <label for="adminProdStockType">Metode Kontrol Stok</label>
+                            <select id="adminProdStockType" class="form-control">
+                                <option value="unlimited">♾️ Tidak Dibatasi (Selalu Tersedia)</option>
+                                <option value="raw_material">🌾 Resep Bahan Baku Master (Berdasarkan Ketersediaan Gramasi)</option>
+                                <option value="direct">🥤 Stok Barang Jadi (Fisik per Unit / Botol / Pcs)</option>
+                            </select>
+                        </div>
+
+                        <!-- Sub-form: Bahan Baku Master -->
+                        <div id="stockGroupRawMaterial" style="display: none; margin-top: 10px;">
+                            <div class="form-row">
+                                <div class="form-group" style="flex: 1.4;">
+                                    <label for="adminProdRawMaterialId">Pilih Bahan Baku Master <span class="text-danger">*</span></label>
+                                    <select id="adminProdRawMaterialId" class="form-control">
+                                        <!-- Diisi dinamis oleh admin.js -->
+                                    </select>
+                                </div>
+                                <div class="form-group" style="flex: 1;">
+                                    <label for="adminProdRawMaterialAmount">Takaran per Porsi (gr) <span class="text-danger">*</span></label>
+                                    <div class="input-currency-wrapper">
+                                        <input type="number" id="adminProdRawMaterialAmount" class="form-control" placeholder="75" min="0" step="1">
+                                    </div>
+                                    <small class="form-help">Contoh: 75 untuk 75 gr</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sub-form: Stok Barang Jadi -->
+                        <div id="stockGroupDirect" style="display: none; margin-top: 10px;">
+                            <div class="form-group">
+                                <label for="adminProdDirectStock">Jumlah Stok Barang Jadi Saat Ini (Pcs / Unit)</label>
+                                <input type="number" id="adminProdDirectStock" class="form-control" placeholder="24" min="0" step="1">
+                            </div>
+                        </div>
+
+                        <!-- Live Preview Porsi -->
+                        <div id="adminStockPortionPreview" style="margin-top: 8px;"></div>
+                    </div>
+
                     <!-- Deskripsi -->
                     <div class="form-group" style="margin-top: 14px;">
                         <label for="adminProdDesc">Deskripsi Menu (Opsional)</label>
@@ -550,6 +601,126 @@
                             Simpan Produk
                         </button>
                     </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MODAL: KELOLA STOCK (BAHAN BAKU & BARANG JADI) ================= -->
+    <div class="modal-backdrop" id="stockModal">
+        <div class="modal-content modal-admin">
+            <div class="modal-header">
+                <div class="admin-header-title">
+                    <span class="admin-title-badge" style="background: #EBF5FB; color: #2980B9;">📦 STOCK</span>
+                    <div>
+                        <h3>Kelola Stock & Ketersediaan Bahan Baku</h3>
+                        <p class="admin-subtitle">Kontrol stok bahan baku utama (resep gramasi), stok barang jadi, dan cek ketersediaan porsi menu kasir</p>
+                    </div>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="inventoryManager.closeStockModal()">&times;</button>
+            </div>
+
+            <!-- Tab Navigasi Stock -->
+            <div class="stock-tabs-nav">
+                <button type="button" class="stock-tab-btn active" data-tab="raw" onclick="inventoryManager.setTab('raw')">
+                    🌾 Bahan Baku Utama (Resep Master)
+                </button>
+                <button type="button" class="stock-tab-btn" data-tab="direct" onclick="inventoryManager.setTab('direct')">
+                    🥤 Stok Barang Jadi (Fisik)
+                </button>
+                <button type="button" class="stock-tab-btn" data-tab="menu" onclick="inventoryManager.setTab('menu')">
+                    📋 Tinjauan Kesiapan Jual Menu
+                </button>
+            </div>
+
+            <div class="modal-body admin-modal-body" id="stockModalTabContent">
+                <!-- Diisi dinamis oleh inventory.js -->
+            </div>
+
+            <div class="modal-footer admin-modal-footer">
+                <div class="admin-footer-tip">
+                    <span>💡 <strong>Tips:</strong> Setiap transaksi di kasir otomatis memotong stok bahan baku sesuai takaran porsi yang Anda tentukan di Kelola Menu.</span>
+                </div>
+                <button type="button" class="btn-nav-action" onclick="inventoryManager.closeStockModal()">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODAL: TAMBAH BAHAN BAKU MASTER BARU ================= -->
+    <div class="modal-backdrop" id="rawMaterialAddModal" style="z-index: 1060;">
+        <div class="modal-content" style="max-width: 480px;">
+            <div class="modal-header">
+                <h3>🌾 Tambah Bahan Baku Master Baru</h3>
+                <button type="button" class="modal-close-btn" onclick="inventoryManager.closeAddRawMaterialModal()">&times;</button>
+            </div>
+            <form id="formAddRawMaterial" onsubmit="inventoryManager.handleSaveNewRawMaterial(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="newRawId">Kode ID Bahan <span class="text-danger">*</span></label>
+                        <input type="text" id="newRawId" class="form-control font-bold" placeholder="Contoh: RAW-BEBEK, RAW-SAMBAL" required autocomplete="off">
+                        <small class="form-help">Kode unik untuk database</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="newRawName">Nama Bahan Baku <span class="text-danger">*</span></label>
+                        <input type="text" id="newRawName" class="form-control" placeholder="Contoh: Bebek Asap, Sambal Matah" required autocomplete="off">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1.5;">
+                            <label for="newRawStock">Jumlah Stok Awal <span class="text-danger">*</span></label>
+                            <input type="number" id="newRawStock" class="form-control" placeholder="3000" min="0" step="1" required>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="newRawUnit">Satuan <span class="text-danger">*</span></label>
+                            <select id="newRawUnit" class="form-control">
+                                <option value="gr">gr (Gram)</option>
+                                <option value="kg">kg (Kilogram)</option>
+                                <option value="ml">ml (Mililiter)</option>
+                                <option value="pcs">pcs (Satuan)</option>
+                                <option value="porsi">porsi</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="newRawMinStock">Batas Minimum Stok Menipis (Alert)</label>
+                        <input type="number" id="newRawMinStock" class="form-control" placeholder="500" min="0" value="500">
+                        <small class="form-help">Sistem akan memberi peringatan jika stok di bawah angka ini</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-nav-action" onclick="inventoryManager.closeAddRawMaterialModal()">Batal</button>
+                    <button type="submit" class="btn-nav-action btn-primary-submit">Simpan Bahan Baku</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MODAL: ATUR / RESTOCK BAHAN BAKU ================= -->
+    <div class="modal-backdrop" id="rawMaterialAdjustModal" style="z-index: 1060;">
+        <div class="modal-content" style="max-width: 460px;">
+            <div class="modal-header">
+                <h3 id="rawAdjustTitle">Atur Stok Bahan Baku</h3>
+                <button type="button" class="modal-close-btn" onclick="inventoryManager.closeCustomAdjustModal()">&times;</button>
+            </div>
+            <form id="formAdjustRawMaterial" onsubmit="inventoryManager.handleSaveCustomAdjust(event)">
+                <input type="hidden" id="rawAdjustId">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="rawAdjustName">Nama Bahan Baku</label>
+                        <input type="text" id="rawAdjustName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="rawAdjustStock">Jumlah Total Stok Saat Ini (<span id="rawAdjustUnit">gr</span>) <span class="text-danger">*</span></label>
+                        <input type="number" id="rawAdjustStock" class="form-control price-input" min="0" step="1" required>
+                        <small class="form-help">Ubah nilai ini sesuai hasil opname fisik atau setelah belanja bahan baru</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="rawAdjustMinStock">Batas Minimum Peringatan (Min Stock)</label>
+                        <input type="number" id="rawAdjustMinStock" class="form-control" min="0" step="1">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-nav-action" onclick="inventoryManager.closeCustomAdjustModal()">Batal</button>
+                    <button type="submit" class="btn-nav-action btn-primary-submit">Simpan Perubahan Stok</button>
                 </div>
             </form>
         </div>
@@ -592,14 +763,15 @@
     </div>
 
     <!-- ================= JAVASCRIPT MODULES ================= -->
-    <script src="js/config.js?v=2.4"></script>
-    <script src="js/sound.js?v=2.4"></script>
-    <script src="js/db.js?v=2.4"></script>
-    <script src="js/products.js?v=2.4"></script>
-    <script src="js/cart.js?v=2.4"></script>
-    <script src="js/payment.js?v=2.4"></script>
-    <script src="js/auth.js?v=2.4"></script>
-    <script src="js/admin.js?v=2.4"></script>
-    <script src="js/app.js?v=2.4"></script>
+    <script src="js/config.js?v=2.5"></script>
+    <script src="js/sound.js?v=2.5"></script>
+    <script src="js/db.js?v=2.5"></script>
+    <script src="js/inventory.js?v=2.5"></script>
+    <script src="js/products.js?v=2.5"></script>
+    <script src="js/cart.js?v=2.5"></script>
+    <script src="js/payment.js?v=2.5"></script>
+    <script src="js/auth.js?v=2.5"></script>
+    <script src="js/admin.js?v=2.5"></script>
+    <script src="js/app.js?v=2.5"></script>
 </body>
 </html>

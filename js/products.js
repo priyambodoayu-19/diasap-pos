@@ -63,15 +63,34 @@ class ProductManager {
             const savings = product.priceNormal - product.pricePromo;
             const isDiscounted = this.isPromoMode && savings > 0;
 
+            const portions = (typeof inventoryManager !== 'undefined')
+                ? inventoryManager.getPortionsAvailable(product)
+                : Infinity;
+            const isOutOfStock = portions === 0;
+
+            let stockBadge = '';
+            if (isOutOfStock) {
+                stockBadge = `<span class="stock-pill stock-pill-out">❌ Habis</span>`;
+            } else if (portions <= 5 && portions > 0) {
+                stockBadge = `<span class="stock-pill stock-pill-low">Sisa ${portions}</span>`;
+            } else if (portions !== Infinity) {
+                stockBadge = `<span class="stock-pill stock-pill-avail">Sisa ${portions}</span>`;
+            }
+
             const emojiDisplay = (typeof getValidProductEmoji === 'function') 
                 ? getValidProductEmoji(product.emoji, product.category, product.id)
                 : (product.emoji || '🍗');
 
             return `
-                <div class="product-card ${this.isPromoMode ? 'is-promo-active' : ''}" onclick="cartManager.addItem('${product.id}')" title="Klik untuk menambah ke keranjang">
+                <div class="product-card ${this.isPromoMode ? 'is-promo-active' : ''} ${isOutOfStock ? 'is-out-of-stock' : ''}" 
+                     onclick="${isOutOfStock ? `alert('Maaf, stok menu ini habis / bahan baku tidak mencukupi!')` : `cartManager.addItem('${product.id}')`}" 
+                     title="${isOutOfStock ? 'Menu habis' : 'Klik untuk menambah ke keranjang'}">
                     <div class="card-top">
                         <span class="product-emoji">${emojiDisplay}</span>
-                        <span class="category-badge cat-${product.category}">${product.category.toUpperCase()}</span>
+                        <div style="display: flex; gap: 4px; align-items: center;">
+                            ${stockBadge}
+                            <span class="category-badge cat-${product.category}">${product.category.toUpperCase()}</span>
+                        </div>
                     </div>
 
                     <div class="product-name">${product.name}</div>
@@ -89,12 +108,12 @@ class ProductManager {
                         </div>
                     </div>
 
-                    <button class="quick-add-btn" type="button" aria-label="Tambah item">
+                    <button class="quick-add-btn ${isOutOfStock ? 'btn-disabled' : ''}" type="button" aria-label="Tambah item" ${isOutOfStock ? 'disabled' : ''}>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
-                        <span>Tambah</span>
+                        <span>${isOutOfStock ? 'Habis' : 'Tambah'}</span>
                     </button>
                 </div>
             `;

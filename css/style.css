@@ -2096,6 +2096,347 @@ input:checked + .slider:before {
     color: #DC2626 !important;
 }
 
+/* ==========================================================================
+   INVENTORY & STOCK MANAGEMENT STYLES
+   ========================================================================== */
+
+/* Navbar Button Stock */
+.btn-stock-nav {
+    background: #F0FDF4;
+    border-color: #86EFAC;
+    color: #15803D;
+}
+
+.btn-stock-nav:hover {
+    background: #DCFCE7;
+    border-color: #4ADE80;
+    color: #166534;
+}
+
+/* Tabs Nav inside Stock Modal */
+.stock-tabs-nav {
+    display: flex;
+    gap: 8px;
+    padding: 12px 20px;
+    background: #F8FAFC;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.stock-tab-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #64748B;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.stock-tab-btn:hover {
+    background: #EDF2F7;
+    color: var(--secondary);
+}
+
+.stock-tab-btn.active {
+    background: #FFFFFF;
+    color: var(--primary);
+    border-color: var(--border);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Stock Tab Header */
+.stock-tab-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* Raw Materials Cards Grid */
+.raw-materials-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+}
+
+.raw-material-card {
+    background: #FFFFFF;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s;
+}
+
+.raw-material-card.status-safe {
+    border-left: 4px solid #16A34A;
+}
+
+.raw-material-card.status-low {
+    border-left: 4px solid #F59E0B;
+    background: #FFFDF7;
+}
+
+.raw-material-card.status-out {
+    border-left: 4px solid #DC2626;
+    background: #FEF8F8;
+}
+
+.raw-mat-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.raw-mat-name {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--secondary);
+}
+
+.raw-mat-id {
+    font-size: 11px;
+    font-family: monospace;
+    color: #94A3B8;
+}
+
+.stock-status-pill {
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 999px;
+    line-height: 1.2;
+}
+
+.stock-status-pill.status-safe {
+    background: #DCFCE7;
+    color: #15803D;
+}
+
+.stock-status-pill.status-low {
+    background: #FEF3C7;
+    color: #B45309;
+}
+
+.stock-status-pill.status-out {
+    background: #FEE2E2;
+    color: #B91C1C;
+}
+
+.raw-mat-stock-display {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.raw-mat-stock-val {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--secondary);
+    letter-spacing: -0.5px;
+}
+
+.raw-mat-unit {
+    font-size: 15px;
+    font-weight: 700;
+    color: #64748B;
+}
+
+.raw-mat-portions-box {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+}
+
+.portions-box-title {
+    font-weight: 700;
+    color: #475569;
+    margin-bottom: 6px;
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+.portion-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3px 0;
+    border-bottom: 1px dashed #E2E8F0;
+}
+
+.portion-row:last-child {
+    border-bottom: none;
+}
+
+.portion-count strong {
+    font-size: 13px;
+}
+
+.raw-mat-actions {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.quick-restock-group {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.btn-restock-pill {
+    background: #F1F5F9;
+    border: 1px solid #CBD5E1;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.btn-restock-pill:hover {
+    background: #E2E8F0;
+    border-color: #94A3B8;
+    color: var(--secondary);
+}
+
+.raw-mat-btn-row {
+    display: flex;
+    gap: 6px;
+}
+
+.btn-stock-custom-adjust {
+    flex: 1;
+    background: #F8FAFC;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--secondary);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+}
+
+.btn-stock-custom-adjust:hover {
+    background: #EDF2F7;
+    border-color: #CBD5E1;
+}
+
+.btn-stock-delete {
+    background: #FEE2E2;
+    border: 1px solid #FCA5A5;
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+    color: #DC2626;
+    font-size: 12px;
+    transition: all 0.15s;
+}
+
+.btn-stock-delete:hover {
+    background: #FECACA;
+}
+
+/* Stock Config Box in Product Modal */
+.stock-config-box {
+    background: #F8FAFC;
+    border: 1px solid #CBD5E1;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-top: 14px;
+}
+
+.stock-config-header {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+/* Stock Pill on Product Cards (Cashier View) */
+.stock-pill {
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 4px;
+    line-height: 1.2;
+}
+
+.stock-pill-avail {
+    background: #E2E8F0;
+    color: #334155;
+}
+
+.stock-pill-low {
+    background: #FEF3C7;
+    color: #B45309;
+    border: 1px solid #FCD34D;
+}
+
+.stock-pill-out {
+    background: #FEE2E2;
+    color: #DC2626;
+    border: 1px solid #FCA5A5;
+    font-weight: 900;
+}
+
+.product-card.is-out-of-stock {
+    opacity: 0.65;
+    filter: grayscale(40%);
+    border-color: #FECACA;
+    cursor: not-allowed !important;
+}
+
+.product-card.is-out-of-stock:hover {
+    transform: none;
+    box-shadow: var(--shadow-sm);
+}
+
+.quick-add-btn.btn-disabled {
+    background: #94A3B8 !important;
+    cursor: not-allowed !important;
+}
+
+/* Stock Type Badges */
+.badge-stock-type {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 4px;
+}
+
+.badge-stock-type.type-raw {
+    background: #DCFCE7;
+    color: #15803D;
+}
+
+.badge-stock-type.type-direct {
+    background: #EDE9FE;
+    color: #6D28D9;
+}
+
+.badge-stock-type.type-unlimited {
+    background: #F1F5F9;
+    color: #475569;
+}
+
 /* Quick Emoji Picker */
 .emoji-input-wrapper {
     display: flex;
@@ -2606,6 +2947,20 @@ input:checked + .slider:before {
 
     .history-table {
         min-width: 720px;
+    }
+
+    /* Kelola Stock Modal Mobile */
+    .raw-materials-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .stock-tabs-nav {
+        padding: 8px 12px;
+    }
+
+    .stock-tab-btn {
+        padding: 6px 12px;
+        font-size: 12px;
     }
 }
 

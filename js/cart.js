@@ -17,6 +17,21 @@ class CartManager {
         const product = productManager.getProductById(productId);
         if (!product) return;
 
+        // Cek ketersediaan stok
+        const available = (typeof inventoryManager !== 'undefined')
+            ? inventoryManager.getPortionsAvailable(product)
+            : Infinity;
+
+        const currentInCart = this.cart
+            .filter(item => item.id === productId)
+            .reduce((sum, item) => sum + item.qty, 0);
+
+        if (available !== Infinity && currentInCart >= available) {
+            sounds.playWarning();
+            alert(`Stok tidak mencukupi! Hanya tersedia ${available} porsi/unit.`);
+            return;
+        }
+
         // Kunci harga saat item ditambahkan sesuai mode promo yang sedang aktif
         const isPromoActive = productManager.isPromoMode;
         const priceLocked = isPromoActive ? product.pricePromo : product.priceNormal;
@@ -47,11 +62,28 @@ class CartManager {
 
     // Ubah kuantitas item
     changeQty(productId, priceLocked, isPromo, delta) {
+        const product = productManager.getProductById(productId);
         const item = this.cart.find(
             i => i.id === productId && i.priceLocked === priceLocked && i.isPromo === isPromo
         );
 
         if (item) {
+            if (delta > 0 && product) {
+                const available = (typeof inventoryManager !== 'undefined')
+                    ? inventoryManager.getPortionsAvailable(product)
+                    : Infinity;
+
+                const currentInCart = this.cart
+                    .filter(i => i.id === productId)
+                    .reduce((sum, i) => sum + i.qty, 0);
+
+                if (available !== Infinity && currentInCart + delta > available) {
+                    sounds.playWarning();
+                    alert(`Stok tidak mencukupi! Hanya tersedia ${available} porsi/unit.`);
+                    return;
+                }
+            }
+
             item.qty += delta;
             if (item.qty <= 0) {
                 this.removeItem(productId, priceLocked, isPromo);

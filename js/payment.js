@@ -156,6 +156,11 @@ class PaymentManager {
             const savedOrder = await db.saveOrder(orderData, items);
             this.lastCompletedOrder = savedOrder;
 
+            // Potong stok bahan baku master & barang jadi
+            if (typeof inventoryManager !== 'undefined') {
+                await inventoryManager.deductOrderStock(items);
+            }
+
             // Efek suara sukses kasir
             sounds.playSuccess();
 

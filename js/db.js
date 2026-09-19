@@ -10,6 +10,7 @@ class DatabaseService {
         this.statusListeners = [];
         this.storageKeyProducts = 'diasap_products_cache';
         this.storageKeyOrders = 'diasap_orders_cache';
+        this.storageKeyRawMaterials = 'diasap_raw_materials_cache';
     }
 
     // Daftarkan listener status koneksi
@@ -76,6 +77,10 @@ class DatabaseService {
                        price_normal::numeric as "priceNormal", 
                        price_promo::numeric as "pricePromo", 
                        cogs::numeric as "cogs",
+                       COALESCE(stock_type, 'unlimited') as "stockType",
+                       COALESCE(raw_material_id, '') as "rawMaterialId",
+                       COALESCE(raw_material_amount, 0)::numeric as "rawMaterialAmount",
+                       COALESCE(direct_stock, 0)::numeric as "directStock",
                        image_emoji as "emoji"
                 FROM products 
                 WHERE is_active = TRUE 
@@ -88,7 +93,11 @@ class DatabaseService {
                     ...r,
                     priceNormal: Number(r.priceNormal),
                     pricePromo: Number(r.pricePromo),
-                    cogs: Number(r.cogs) || 0
+                    cogs: Number(r.cogs) || 0,
+                    stockType: r.stockType || 'unlimited',
+                    rawMaterialId: r.rawMaterialId || '',
+                    rawMaterialAmount: Number(r.rawMaterialAmount) || 0,
+                    directStock: Number(r.directStock) || 0
                 }));
                 localStorage.setItem(this.storageKeyProducts, JSON.stringify(formatted));
                 return formatted;
@@ -117,8 +126,8 @@ class DatabaseService {
         // Update di Neon jika online
         try {
             await this.query(`
-                INSERT INTO products (id, name, description, category, price_normal, price_promo, cogs, image_emoji, sort_order, is_active)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, TRUE)
+                INSERT INTO products (id, name, description, category, price_normal, price_promo, cogs, stock_type, raw_material_id, raw_material_amount, direct_stock, image_emoji, sort_order, is_active)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, TRUE)
                 ON CONFLICT (id) DO UPDATE SET
                     name = EXCLUDED.name,
                     description = EXCLUDED.description,
@@ -126,6 +135,10 @@ class DatabaseService {
                     price_normal = EXCLUDED.price_normal,
                     price_promo = EXCLUDED.price_promo,
                     cogs = EXCLUDED.cogs,
+                    stock_type = EXCLUDED.stock_type,
+                    raw_material_id = EXCLUDED.raw_material_id,
+                    raw_material_amount = EXCLUDED.raw_material_amount,
+                    direct_stock = EXCLUDED.direct_stock,
                     image_emoji = EXCLUDED.image_emoji,
                     is_active = TRUE;
             `, [
@@ -136,6 +149,10 @@ class DatabaseService {
                 product.priceNormal,
                 product.pricePromo,
                 product.cogs || 0,
+                product.stockType || 'unlimited',
+                product.rawMaterialId || '',
+                product.rawMaterialAmount || 0,
+                product.directStock || 0,
                 product.emoji || '🍗',
                 product.sortOrder || 10
             ]);
@@ -299,6 +316,149 @@ class DatabaseService {
         }
 
         return this.getLocalOrders();
+    }
+
+    // ================= MANAJEMEN BAHAN BAKU MASTER (RAW MATERIALS) =================
+
+    // Mengambil daftar Bahan Baku Master (Neon DB / Cache Lokal)
+    async getRawMaterials() {
+        try {
+            const rows = await this.query(`
+                SELECT id, name, stock::numeric as "stock", unit, min_stock::numeric as "minStock"
+                FROM raw_materials
+                ORDER BY name ASC;
+            `);
+
+            if (rows && rows.length > 0) {
+                const formatted = rows.map(r => ({
+                    ...r,
+                    stock: Number(r.stock) || 0,
+                    minStock: Number(r.minStock) || 0
+                }));
+                localStorage.setItem(this.storageKeyRawMaterials, JSON.stringify(formatted));
+                return formatted;
+            }
+        } catch (e) {
+            console.warn('Gagal memuat raw_materials dari Neon, memuat dari cache:', e);
+        }
+
+        const cached = localStorage.getItem(this.storageKeyRawMaterials);
+        if (cached) {
+            try {
+                return JSON.parse(cached);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        localStorage.setItem(this.storageKeyRawMaterials, JSON.stringify(CONFIG.DEFAULT_RAW_MATERIALS));
+        return CONFIG.DEFAULT_RAW_MATERIALS;
+    }
+
+    // Simpan / Perbarui Bahan Baku Master
+    async saveRawMaterial(material) {
+        try {
+            await this.query(`
+                INSERT INTO raw_materials (id, name, stock, unit, min_stock)
+                VALUES ($1, $2, $3, $4, $5)
+                ON CONFLICT (id) DO UPDATE SET
+                    name = EXCLUDED.name,
+                    stock = EXCLUDED.stock,
+                    unit = EXCLUDED.unit,
+                    min_stock = EXCLUDED.min_stock;
+            `, [
+                material.id,
+                material.name,
+                material.stock || 0,
+                material.unit || 'gr',
+                material.minStock || 0
+            ]);
+        } catch (err) {
+            console.warn('Gagal menyimpan raw material ke Neon, disimpan lokal:', err);
+        }
+
+        const list = await this.getRawMaterials();
+        const idx = list.findIndex(m => m.id === material.id);
+        if (idx >= 0) {
+            list[idx] = { ...list[idx], ...material };
+        } else {
+            list.push(material);
+        }
+        localStorage.setItem(this.storageKeyRawMaterials, JSON.stringify(list));
+        return material;
+    }
+
+    // Hapus Bahan Baku
+    async deleteRawMaterial(id) {
+        try {
+            await this.query(`DELETE FROM raw_materials WHERE id = $1;`, [id]);
+        } catch (err) {
+            console.warn('Gagal hapus raw material di Neon:', err);
+        }
+
+        try {
+            let list = await this.getRawMaterials();
+            list = list.filter(m => m.id !== id);
+            localStorage.setItem(this.storageKeyRawMaterials, JSON.stringify(list));
+        } catch (e) {
+            console.error(e);
+        }
+        return true;
+    }
+
+    // Deduct stock saat transaksi kasir selesai
+    async deductStockForOrder(items) {
+        if (!items || items.length === 0) return;
+
+        const products = await this.getProducts();
+        const rawMaterials = await this.getRawMaterials();
+
+        const rawDeductions = {};
+        const directDeductions = {};
+
+        for (const item of items) {
+            const prod = products.find(p => p.id === item.id);
+            if (!prod) continue;
+
+            const qty = Number(item.qty) || 1;
+
+            if (prod.stockType === 'raw_material' && prod.rawMaterialId) {
+                const amountNeeded = (Number(prod.rawMaterialAmount) || 0) * qty;
+                rawDeductions[prod.rawMaterialId] = (rawDeductions[prod.rawMaterialId] || 0) + amountNeeded;
+            } else if (prod.stockType === 'direct') {
+                directDeductions[prod.id] = (directDeductions[prod.id] || 0) + qty;
+            }
+        }
+
+        // 1. Potong Bahan Baku
+        for (const rawId of Object.keys(rawDeductions)) {
+            const toDeduct = rawDeductions[rawId];
+            const mat = rawMaterials.find(m => m.id === rawId);
+            if (mat) {
+                mat.stock = Math.max(0, mat.stock - toDeduct);
+                try {
+                    await this.query(`UPDATE raw_materials SET stock = $1 WHERE id = $2;`, [mat.stock, rawId]);
+                } catch (e) {
+                    console.warn(`Gagal update stok bahan ${rawId} di Neon:`, e);
+                }
+            }
+        }
+        localStorage.setItem(this.storageKeyRawMaterials, JSON.stringify(rawMaterials));
+
+        // 2. Potong Barang Jadi
+        for (const prodId of Object.keys(directDeductions)) {
+            const toDeduct = directDeductions[prodId];
+            const prod = products.find(p => p.id === prodId);
+            if (prod) {
+                prod.directStock = Math.max(0, prod.directStock - toDeduct);
+                try {
+                    await this.query(`UPDATE products SET direct_stock = $1 WHERE id = $2;`, [prod.directStock, prodId]);
+                } catch (e) {
+                    console.warn(`Gagal update direct_stock produk ${prodId} di Neon:`, e);
+                }
+            }
+        }
+        localStorage.setItem(this.storageKeyProducts, JSON.stringify(products));
     }
 }
 

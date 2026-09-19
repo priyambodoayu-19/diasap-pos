@@ -20,16 +20,22 @@ const CONFIG = {
     // Password Akses Webapp Kasir
     APP_PASSWORD: "syalala123",
 
+    // Data Bahan Baku Master Default (jika offline)
+    DEFAULT_RAW_MATERIALS: [
+        { id: 'RAW-AYAM', name: 'Ayam Asap', stock: 3000, unit: 'gr', minStock: 500 },
+        { id: 'RAW-SAPI', name: 'Daging Sapi Asap', stock: 2000, unit: 'gr', minStock: 300 }
+    ],
+
     // Nilai default jika database offline / pertama kali load
     DEFAULT_PRODUCTS: [
-        { id: 'A', name: 'PAKET A', desc: 'Daging Ayam + Sayur + Sambal', category: 'makanan', priceNormal: 30000, pricePromo: 25000, cogs: 16000, emoji: '🍗' },
-        { id: 'B', name: 'PAKET B', desc: 'Daging Ayam + Nasi + Sayur', category: 'makanan', priceNormal: 35000, pricePromo: 30000, cogs: 18000, emoji: '🍱' },
-        { id: 'C', name: 'PAKET C (Dobel)', desc: 'Daging Dobel + Nasi + Sayur', category: 'makanan', priceNormal: 55000, pricePromo: 50000, cogs: 28000, emoji: '🍖' },
-        { id: 'D', name: 'PAKET D (Dobel)', desc: 'Daging Ayam Dobel + Sayur + Sambal', category: 'makanan', priceNormal: 50000, pricePromo: 45000, cogs: 25000, emoji: '🔥' },
-        { id: 'M1', name: 'Es Teh Manis', desc: 'Teh melati dingin segar manis', category: 'minuman', priceNormal: 5000, pricePromo: 5000, cogs: 1500, emoji: '🍹' },
-        { id: 'M2', name: 'Air Mineral', desc: 'Air mineral kemasan botol 600ml', category: 'minuman', priceNormal: 4000, pricePromo: 4000, cogs: 2000, emoji: '💧' },
-        { id: 'T1', name: 'Nasi Putih Ekstra', desc: 'Porsi nasi pulen hangat', category: 'tambahan', priceNormal: 6000, pricePromo: 5000, cogs: 2000, emoji: '🍚' },
-        { id: 'T2', name: 'Sambal Ekstra', desc: 'Sambal khas diasap super pedas', category: 'tambahan', priceNormal: 4000, pricePromo: 3000, cogs: 1500, emoji: '🌶️' }
+        { id: 'A', name: 'PAKET A', desc: 'Daging Ayam + Sayur + Sambal', category: 'makanan', priceNormal: 30000, pricePromo: 25000, cogs: 16000, stockType: 'raw_material', rawMaterialId: 'RAW-AYAM', rawMaterialAmount: 75, directStock: 0, emoji: '🍗' },
+        { id: 'B', name: 'PAKET B', desc: 'Daging Ayam + Nasi + Sayur', category: 'makanan', priceNormal: 35000, pricePromo: 30000, cogs: 18000, stockType: 'raw_material', rawMaterialId: 'RAW-AYAM', rawMaterialAmount: 75, directStock: 0, emoji: '🍱' },
+        { id: 'C', name: 'PAKET C (Dobel)', desc: 'Daging Dobel + Nasi + Sayur', category: 'makanan', priceNormal: 55000, pricePromo: 50000, cogs: 28000, stockType: 'raw_material', rawMaterialId: 'RAW-AYAM', rawMaterialAmount: 150, directStock: 0, emoji: '🍖' },
+        { id: 'D', name: 'PAKET D (Dobel)', desc: 'Daging Ayam Dobel + Sayur + Sambal', category: 'makanan', priceNormal: 50000, pricePromo: 45000, cogs: 25000, stockType: 'raw_material', rawMaterialId: 'RAW-AYAM', rawMaterialAmount: 150, directStock: 0, emoji: '🔥' },
+        { id: 'M1', name: 'Es Teh Manis', desc: 'Teh melati dingin segar manis', category: 'minuman', priceNormal: 5000, pricePromo: 5000, cogs: 1500, stockType: 'unlimited', rawMaterialId: '', rawMaterialAmount: 0, directStock: 0, emoji: '🍹' },
+        { id: 'M2', name: 'Air Mineral', desc: 'Air mineral kemasan botol 600ml', category: 'minuman', priceNormal: 4000, pricePromo: 4000, cogs: 2000, stockType: 'direct', rawMaterialId: '', rawMaterialAmount: 0, directStock: 24, emoji: '💧' },
+        { id: 'T1', name: 'Nasi Putih Ekstra', desc: 'Porsi nasi pulen hangat', category: 'tambahan', priceNormal: 6000, pricePromo: 5000, cogs: 2000, stockType: 'unlimited', rawMaterialId: '', rawMaterialAmount: 0, directStock: 0, emoji: '🍚' },
+        { id: 'T2', name: 'Sambal Ekstra', desc: 'Sambal khas diasap super pedas', category: 'tambahan', priceNormal: 4000, pricePromo: 3000, cogs: 1500, stockType: 'unlimited', rawMaterialId: '', rawMaterialAmount: 0, directStock: 0, emoji: '🌶️' }
     ]
 };
 
