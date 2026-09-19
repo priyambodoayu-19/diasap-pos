@@ -127,6 +127,20 @@ class CartManager {
         if (countBadge) countBadge.textContent = `${totalQty} item`;
         if (clearBtn) clearBtn.style.display = this.cart.length > 0 ? 'inline-flex' : 'none';
 
+        // Update Floating Cart Bar untuk tampilan Mobile
+        const mFloatingBar = document.getElementById('mobileFloatingCartBar');
+        const mCount = document.getElementById('mCartItemCount');
+        const mTotal = document.getElementById('mCartGrandTotal');
+        if (mFloatingBar) {
+            if (this.cart.length > 0) {
+                mFloatingBar.style.display = 'flex';
+                if (mCount) mCount.textContent = totalQty;
+                if (mTotal) mTotal.textContent = formatRupiah(this.getSubtotal());
+            } else {
+                mFloatingBar.style.display = 'none';
+            }
+        }
+
         if (this.cart.length === 0) {
             cartList.innerHTML = `
                 <div class="empty-cart-state">
@@ -174,6 +188,14 @@ class CartManager {
                 </div>
             `;
         }).join('');
+    }
+
+    // Scroll otomatis ke keranjang di perangkat mobile
+    scrollToCart() {
+        const cart = document.querySelector('.cart-container');
+        if (cart) {
+            cart.scrollIntoView({ behavior: 'smooth' });
+        }
     }
 }
 
