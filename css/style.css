@@ -1425,16 +1425,17 @@ input:checked + .slider:before {
         padding: 0 !important;
     }
 
-    .bill-qris-card {
-        border: 1px solid #000 !important;
-        box-shadow: none !important;
-        padding: 6px !important;
+    .bill-qris-fullwrap {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
 
-    .bill-qris-img {
-        width: 140px !important;
-        height: 140px !important;
+    .bill-qris-full-img {
+        width: 100% !important;
+        max-width: 280px !important;
         filter: grayscale(100%) contrast(150%) !important;
+        border: 1px solid #000 !important;
     }
 
     .bill-transfer-card {
@@ -4473,121 +4474,189 @@ input:checked + .slider:before {
     margin-bottom: 12px;
 }
 
-/* --- 12. Bagian QRIS & Transfer Bank di Lembar Bill Meja (Untuk Kirim WA / Kasir) --- */
-.bill-payment-section {
-    margin: 8px 0;
-    text-align: center;
+/* --- 12. Lembar Tagihan Sementara: Format Printer Label & Hitam Putih --- */
+.receipt-paper.bill-paper {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    border: 2px solid #000000 !important;
+    box-shadow: none !important;
+    padding: 12px 14px !important;
+    max-width: 320px !important;
+    font-family: 'Courier New', Courier, Consolas, monospace !important;
+    font-size: 12.5px !important;
+    line-height: 1.35 !important;
+    box-sizing: border-box !important;
 }
 
-.bill-pay-title {
-    font-size: 11.5px;
-    font-weight: 800;
-    color: #1E293B;
-    letter-spacing: 0.5px;
-    margin: 4px 0 8px;
-    text-transform: uppercase;
+/* Watermark banner: Bar hitam solid kontras tinggi format printer label */
+.receipt-paper.bill-paper .bill-watermark-banner {
+    background: #000000 !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 6px 4px !important;
+    font-size: 10.5px !important;
+    font-weight: 900 !important;
+    text-align: center !important;
+    letter-spacing: 0.5px !important;
+    margin-bottom: 10px !important;
 }
 
-.bill-qris-card {
-    background: #FFFFFF;
-    border: 1.5px solid #CBD5E1;
-    border-radius: 8px;
-    padding: 10px;
-    margin: 0 auto 8px;
-    max-width: 250px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+.receipt-paper.bill-paper .receipt-header {
+    text-align: center !important;
+    margin-bottom: 6px !important;
+    color: #000000 !important;
 }
 
-.bill-qris-img {
-    width: 175px;
-    height: 175px;
-    object-fit: contain;
-    border-radius: 4px;
-    display: block;
-    margin: 0 auto;
-    background: #ffffff;
+.receipt-paper.bill-paper .receipt-store {
+    font-size: 16px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.5px !important;
+    color: #000000 !important;
+    margin-bottom: 2px !important;
 }
 
-.bill-qris-placeholder-box {
-    width: 160px;
-    height: 160px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: #F8FAFC;
-    border: 1.5px dashed #94A3B8;
-    border-radius: 6px;
-    margin: 0 auto;
-    padding: 8px;
+.receipt-paper.bill-paper .receipt-meta {
+    font-size: 11px !important;
+    color: #000000 !important;
 }
 
-.bill-qris-label {
-    font-size: 10.5px;
-    font-weight: 700;
-    color: #0F172A;
-    margin-top: 6px;
-    line-height: 1.2;
+.receipt-paper.bill-paper .receipt-divider {
+    color: #000000 !important;
+    letter-spacing: 2px !important;
+    margin: 6px 0 !important;
+    font-weight: 700 !important;
 }
 
-.bill-qris-sub {
-    font-size: 9px;
-    color: #64748B;
-    margin-top: 4px;
-    line-height: 1.25;
-    text-align: center;
+.receipt-paper.bill-paper .receipt-info-row,
+.receipt-paper.bill-paper .receipt-item-row,
+.receipt-paper.bill-paper .receipt-calc-row {
+    color: #000000 !important;
 }
 
-.bill-transfer-card {
-    background: #F8FAFC;
-    border: 1.5px solid #E2E8F0;
-    border-radius: 8px;
-    padding: 8px 12px;
-    margin: 6px auto 8px;
-    max-width: 250px;
-    text-align: center;
+.receipt-paper.bill-paper .total-highlight {
+    color: #000000 !important;
+    font-weight: 900 !important;
+    font-size: 14.5px !important;
 }
 
-.bill-transfer-header {
-    font-size: 10px;
-    font-weight: 700;
-    color: #64748B;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 2px;
+/* Section Pembayaran QRIS & Bank */
+.receipt-paper.bill-paper .bill-payment-section {
+    margin: 6px 0 4px !important;
+    text-align: center !important;
 }
 
-.bill-transfer-bank {
-    font-size: 12px;
-    font-weight: 800;
-    color: #0F172A;
+.receipt-paper.bill-paper .bill-pay-title {
+    font-size: 11.5px !important;
+    font-weight: 900 !important;
+    color: #000000 !important;
+    letter-spacing: 0.5px !important;
+    margin: 4px 0 6px !important;
+    text-transform: uppercase !important;
 }
 
-.bill-transfer-acc {
-    font-size: 16px;
-    font-weight: 900;
-    color: #C2410C;
-    letter-spacing: 1px;
-    font-family: 'Courier New', Courier, monospace;
-    margin: 3px 0;
-    user-select: all;
+/* QRIS Ukuran Penuh (Maksimal Tanpa Frame / Padding Berlebih) */
+.receipt-paper.bill-paper .bill-qris-fullwrap {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    margin: 4px auto 6px !important;
+    padding: 0 !important;
+    background: transparent !important;
 }
 
-.bill-transfer-holder {
-    font-size: 11px;
-    font-weight: 600;
-    color: #334155;
+.receipt-paper.bill-paper .bill-qris-full-img {
+    width: 100% !important;
+    max-width: 290px !important;
+    height: auto !important;
+    object-fit: contain !important;
+    display: block !important;
+    margin: 0 auto !important;
+    border: 1px solid #000000 !important;
+    background: #FFFFFF !important;
+    padding: 2px !important;
+    box-sizing: border-box !important;
+    filter: contrast(120%) !important;
 }
 
-.bill-confirm-note {
-    font-size: 9.5px;
-    color: #64748B;
-    line-height: 1.35;
-    margin: 6px 0 2px;
-    font-style: italic;
-    text-align: center;
+.receipt-paper.bill-paper .bill-qris-placeholder-box {
+    width: 100% !important;
+    max-width: 200px !important;
+    height: 180px !important;
+    border: 2px dashed #000000 !important;
+    background: #FFFFFF !important;
+    margin: 4px auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #000000 !important;
+    padding: 8px !important;
+    box-sizing: border-box !important;
 }
+
+/* Box Transfer Bank Label Format */
+.receipt-paper.bill-paper .bill-transfer-card {
+    background: #FFFFFF !important;
+    border: 1.5px dashed #000000 !important;
+    border-radius: 0 !important;
+    padding: 6px 10px !important;
+    margin: 6px auto !important;
+    max-width: 100% !important;
+    text-align: center !important;
+    color: #000000 !important;
+    box-sizing: border-box !important;
+}
+
+.receipt-paper.bill-paper .bill-transfer-header {
+    font-size: 10px !important;
+    font-weight: 800 !important;
+    color: #000000 !important;
+    text-transform: uppercase !important;
+    margin-bottom: 2px !important;
+}
+
+.receipt-paper.bill-paper .bill-transfer-bank {
+    font-size: 12px !important;
+    font-weight: 900 !important;
+    color: #000000 !important;
+}
+
+.receipt-paper.bill-paper .bill-transfer-acc {
+    font-size: 16px !important;
+    font-weight: 900 !important;
+    color: #000000 !important;
+    letter-spacing: 1.5px !important;
+    font-family: 'Courier New', Courier, monospace !important;
+    margin: 2px 0 !important;
+    user-select: all !important;
+}
+
+.receipt-paper.bill-paper .bill-transfer-holder {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: #000000 !important;
+}
+
+.receipt-paper.bill-paper .bill-confirm-note {
+    font-size: 10px !important;
+    color: #000000 !important;
+    line-height: 1.3 !important;
+    margin: 6px 0 2px !important;
+    font-style: normal !important;
+    text-align: center !important;
+}
+
+.receipt-paper.bill-paper .receipt-footer {
+    color: #000000 !important;
+    text-align: center !important;
+    font-size: 10.5px !important;
+}
+
+.receipt-paper.bill-paper .receipt-footer p,
+.receipt-paper.bill-paper .receipt-footer small {
+    color: #000000 !important;
+}
+
 

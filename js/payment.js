@@ -524,21 +524,24 @@ class PaymentManager {
         const billNo = 'BILL-' + Date.now().toString().slice(-6);
 
         // Data Pembayaran Toko: Bank & QRIS
-        const bankName = settings.bankName || CONFIG.DEFAULT_SETTINGS?.bankName || 'BCA';
-        const bankAccountNo = settings.bankAccountNo || settings.bankAccount || CONFIG.DEFAULT_SETTINGS?.bankAccountNo || '123-456-7890';
-        const bankAccountHolder = settings.bankAccountHolder || settings.bankHolder || CONFIG.DEFAULT_SETTINGS?.bankAccountHolder || 'DIASAP RESTO';
-        const qrisImage = settings.qrisImage || '';
+        const rawBankName = (settings.bankName || CONFIG.DEFAULT_SETTINGS?.bankName || '').trim();
+        const rawBankAccountNo = (settings.bankAccountNo || settings.bankAccount || CONFIG.DEFAULT_SETTINGS?.bankAccountNo || '').trim();
+        const rawBankAccountHolder = (settings.bankAccountHolder || settings.bankHolder || CONFIG.DEFAULT_SETTINGS?.bankAccountHolder || '').trim();
+        const hasValidBank = rawBankAccountNo !== '' && rawBankAccountNo !== '-' && rawBankName !== '' && rawBankName !== '-';
+        const bankName = hasValidBank ? rawBankName : '';
+        const bankAccountNo = hasValidBank ? rawBankAccountNo : '';
+        const bankAccountHolder = hasValidBank ? rawBankAccountHolder : '';
+        const qrisImage = (settings.qrisImage || '').trim();
 
         content.innerHTML = `
             <div class="receipt-paper bill-paper" id="thermalBillPaper">
                 <div class="bill-watermark-banner">
-                    🧾 LEMBAR TAGIHAN SEMENTARA • BELUM LUNAS
+                    [ LEMBAR TAGIHAN SEMENTARA - BELUM LUNAS ]
                 </div>
 
                 <div class="receipt-header">
-                    <div class="receipt-logo">🔥 DIASAP 🔥</div>
-                    <div class="receipt-store">${storeName}</div>
-                    ${storeTagline ? `<div style="font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 2px;">${storeTagline}</div>` : ''}
+                    <div class="receipt-store">${storeName.toUpperCase()}</div>
+                    ${storeTagline ? `<div class="receipt-meta" style="font-weight: bold;">${storeTagline}</div>` : ''}
                     ${storeAddress ? `<div class="receipt-meta">${storeAddress}</div>` : ''}
                     ${storePhone ? `<div class="receipt-meta">Telp: ${storePhone}</div>` : ''}
                 </div>
@@ -595,65 +598,63 @@ class PaymentManager {
                         <span>Subtotal:</span>
                         <span>${formatRupiah(subtotal)}</span>
                     </div>
-                    <div class="receipt-info-row" style="font-size: 12px; color: #C0392B; margin-bottom: 3px;">
+                    <div class="receipt-info-row" style="font-size: 12px; margin-bottom: 3px;">
                         <span>Diskon Tambahan${finalDiscountNote}:</span>
                         <span>-${formatRupiah(finalDiscount)}</span>
                     </div>
                 ` : ''}
 
-                <div class="receipt-calc-row">
+                <div class="receipt-calc-row" style="font-size: 13.5px; font-weight: 900;">
                     <span>TOTAL TAGIHAN:</span>
                     <span class="total-highlight">${formatRupiah(grandTotal)}</span>
                 </div>
-                <div class="receipt-calc-row" style="color: #D97706; font-size: 13px;">
-                    <span>Status:</span>
-                    <strong>⏳ BELUM DIBAYAR</strong>
+                <div class="receipt-calc-row" style="font-size: 12px; font-weight: 800;">
+                    <span>STATUS:</span>
+                    <strong>BELUM DIBAYAR</strong>
                 </div>
 
                 <div class="receipt-divider">================================</div>
 
-                <!-- Bagian Pembayaran Non-Tunai / QRIS & Transfer -->
+                <!-- Bagian Pembayaran QRIS & Transfer Bank (Format Label Printer) -->
                 <div class="bill-payment-section">
-                    <div class="bill-pay-title">💳 CARA PEMBAYARAN NON-TUNAI</div>
+                    <div class="bill-pay-title">SCAN QRIS UNTUK BAYAR</div>
 
-                    <!-- Tampilan QRIS Resmi -->
-                    <div class="bill-qris-card">
-                        ${qrisImage ? `
-                            <img src="${qrisImage}" alt="QRIS ${storeName}" class="bill-qris-img" crossorigin="anonymous">
-                            <div class="bill-qris-label">SCAN QRIS UNTUK MEMBAYAR</div>
-                            <div class="bill-qris-sub">Semua Bank & E-Wallet (BCA, Mandiri, BRI, BNI, GoPay, OVO, DANA, ShopeePay)</div>
-                        ` : `
-                            <div class="bill-qris-placeholder-box">
-                                <div class="qris-code-mock" style="width: 105px; height: 105px; margin: 0 auto;"></div>
-                                <div class="bill-qris-label" style="font-size: 10px;">SCAN QRIS PEMBAYARAN</div>
-                            </div>
-                            <div class="bill-qris-sub">Semua Bank & E-Wallet (Silakan upload QRIS di Pengaturan Toko)</div>
-                        `}
-                    </div>
+                    <!-- Tampilan QRIS Ukuran Penuh (Maksimal, Tanpa Frame Tebal) -->
+                    ${qrisImage ? `
+                        <div class="bill-qris-fullwrap">
+                            <img src="${qrisImage}" alt="QRIS ${storeName}" class="bill-qris-full-img" crossorigin="anonymous">
+                        </div>
+                    ` : `
+                        <div class="bill-qris-placeholder-box">
+                            <div class="qris-code-mock" style="width: 140px; height: 140px; margin: 0 auto;"></div>
+                            <div style="font-size: 10px; font-weight: bold; margin-top: 4px;">SCAN QRIS PEMBAYARAN</div>
+                            <div style="font-size: 9px;">(Unggah QRIS di Pengaturan Toko)</div>
+                        </div>
+                    `}
 
-                    <!-- Tampilan Info Transfer Bank -->
-                    ${bankAccountNo ? `
+                    <!-- Tampilan Info Transfer Rekening Bank (Jika diisi) -->
+                    ${hasValidBank ? `
                         <div class="bill-transfer-card">
-                            <div class="bill-transfer-header">Atau Transfer Rekening:</div>
-                            <div class="bill-transfer-bank">BANK ${bankName}</div>
+                            <div class="bill-transfer-header">ATAU TRANSFER BANK:</div>
+                            <div class="bill-transfer-bank">BANK ${bankName.toUpperCase()}</div>
                             <div class="bill-transfer-acc">${bankAccountNo}</div>
-                            ${bankAccountHolder ? `<div class="bill-transfer-holder">a.n. ${bankAccountHolder}</div>` : ''}
+                            ${bankAccountHolder && bankAccountHolder !== '-' ? `<div class="bill-transfer-holder">a.n. ${bankAccountHolder}</div>` : ''}
                         </div>
                     ` : ''}
 
                     <div class="bill-confirm-note">
-                        * Mohon kirimkan bukti transfer / pembayaran ke nomor WhatsApp resto/kasir.
+                        * Konfirmasi bukti transfer / pembayaran ke kasir / WA resto.
                     </div>
                 </div>
 
                 <div class="receipt-divider">--------------------------------</div>
 
                 <div class="receipt-footer">
-                    <p style="font-size: 11px; font-weight: 600; color: #64748B;">
+                    <p style="font-size: 11px; font-weight: 600; margin: 2px 0;">
                         * Mohon periksa kembali pesanan Anda.<br>
                         Pembayaran dapat dilakukan ke kasir / staf bertugas.
                     </p>
-                    <small>Sistem Kasir DIASAP POS Cloud</small>
+                    <small>Sistem Kasir DIASAP POS</small>
                 </div>
             </div>
         `;
