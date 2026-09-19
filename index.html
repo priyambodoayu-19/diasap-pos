@@ -38,8 +38,17 @@
                         <span>Rekap Penjualan</span>
                     </button>
 
-                    <!-- Tombol Tambah Menu -->
-                    <button type="button" class="btn-nav-action" onclick="openMenuModal()" title="Tambah Menu Baru">
+                    <!-- Tombol Admin Panel (Kelola Menu, Ubah Harga, Edit Diskon) -->
+                    <button type="button" class="btn-nav-action btn-admin-nav" onclick="adminManager.openAdminModal()" title="Admin Panel: Kelola Produk, Ubah Harga & Diskon">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                        <span>Admin Panel</span>
+                    </button>
+
+                    <!-- Tombol Tambah Menu (Shortcut Cepat) -->
+                    <button type="button" class="btn-nav-action" onclick="adminManager.openAddModal()" title="Tambah Menu Baru Cepat">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -269,60 +278,215 @@
         </div>
     </div>
 
-    <!-- ================= MODAL: KELOLA & TAMBAH MENU ================= -->
-    <div class="modal-backdrop" id="menuModal">
-        <div class="modal-content">
+    <!-- ================= MODAL: ADMIN PANEL ================= -->
+    <div class="modal-backdrop" id="adminModal">
+        <div class="modal-content modal-admin">
             <div class="modal-header">
-                <h3>➕ Tambah Menu Produk Baru</h3>
-                <button type="button" class="modal-close-btn" onclick="closeMenuModal()">&times;</button>
-            </div>
-            <form id="formAddProduct" onsubmit="handleSaveNewProduct(event)">
-                <div class="modal-body">
-                    <div class="form-row">
-                        <div class="form-group" style="flex: 1;">
-                            <label for="newProdId">Kode Menu (ID)</label>
-                            <input type="text" id="newProdId" class="form-control" placeholder="E, F, M3..." required>
-                        </div>
-                        <div class="form-group" style="flex: 1;">
-                            <label for="newProdEmoji">Icon Emoji</label>
-                            <input type="text" id="newProdEmoji" class="form-control" placeholder="🍗, 🍖, 🍹..." value="🍗">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="newProdName">Nama Menu / Paket</label>
-                        <input type="text" id="newProdName" class="form-control" placeholder="Contoh: PAKET SPESIAL IGA" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="newProdCategory">Kategori</label>
-                        <select id="newProdCategory" class="form-control">
-                            <option value="makanan">Makanan / Paket</option>
-                            <option value="minuman">Minuman</option>
-                            <option value="tambahan">Tambahan / Topping</option>
-                        </select>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="newProdPriceNormal">Harga Normal (Rp)</label>
-                            <input type="number" id="newProdPriceNormal" class="form-control" placeholder="35000" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="newProdPricePromo">Harga Promo (Rp)</label>
-                            <input type="number" id="newProdPricePromo" class="form-control" placeholder="30000" required>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="newProdDesc">Deskripsi Menu</label>
-                        <input type="text" id="newProdDesc" class="form-control" placeholder="Daging Asap + Sambal Matah...">
+                <div class="admin-header-title">
+                    <span class="admin-title-badge">⚙️ ADMIN</span>
+                    <div>
+                        <h3>Admin Panel & Manajemen Menu</h3>
+                        <p class="admin-subtitle">Kelola harga produk, atur promo/diskon, tambah & hapus menu resto</p>
                     </div>
                 </div>
+                <button type="button" class="modal-close-btn" onclick="adminManager.closeAdminModal()">&times;</button>
+            </div>
+
+            <div class="modal-body admin-modal-body">
+                <!-- Statistik Ringkas -->
+                <div class="admin-stats-row">
+                    <div class="admin-stat-card">
+                        <div class="admin-stat-icon">📋</div>
+                        <div>
+                            <div class="admin-stat-label">Total Menu</div>
+                            <div class="admin-stat-val" id="adminStatTotal">0 Menu</div>
+                        </div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <div class="admin-stat-icon">🔥</div>
+                        <div>
+                            <div class="admin-stat-label">Sedang Promo</div>
+                            <div class="admin-stat-val" id="adminStatPromo" style="color: var(--promo);">0 Promo</div>
+                        </div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <div class="admin-stat-icon">🍗</div>
+                        <div>
+                            <div class="admin-stat-label">Makanan</div>
+                            <div class="admin-stat-val" id="adminStatFood">0</div>
+                        </div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <div class="admin-stat-icon">🍹</div>
+                        <div>
+                            <div class="admin-stat-label">Minuman</div>
+                            <div class="admin-stat-val" id="adminStatDrink">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Toolbar -->
+                <div class="admin-toolbar">
+                    <div class="admin-toolbar-left">
+                        <div class="admin-search-wrap">
+                            <span class="admin-search-icon">🔍</span>
+                            <input type="text" id="adminSearchInput" class="admin-search-input" placeholder="Cari nama atau kode menu...">
+                        </div>
+                        <div class="admin-cat-pills">
+                            <button type="button" class="admin-cat-btn active" data-category="all">Semua</button>
+                            <button type="button" class="admin-cat-btn" data-category="makanan">🍗 Makanan</button>
+                            <button type="button" class="admin-cat-btn" data-category="minuman">🍹 Minuman</button>
+                            <button type="button" class="admin-cat-btn" data-category="tambahan">🍚 Tambahan</button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-admin-add-new" onclick="adminManager.openAddModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        <span>Tambah Produk Baru</span>
+                    </button>
+                </div>
+
+                <!-- Tabel Produk Admin -->
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 45px; text-align: center;">#</th>
+                                <th>Menu & Kategori</th>
+                                <th style="width: 130px;">Harga Normal</th>
+                                <th style="width: 220px;">Harga Promo & Diskon</th>
+                                <th>Deskripsi</th>
+                                <th style="width: 175px; text-align: right;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminTableBody">
+                            <!-- Diisi secara dinamis oleh admin.js -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="modal-footer admin-modal-footer">
+                <div class="admin-footer-tip">
+                    <span>💡 <strong>Tips:</strong> Klik tombol <em>Edit / Diskon</em> pada baris produk untuk mengubah harga normal atau mengatur potongan diskon.</span>
+                </div>
+                <button type="button" class="btn-nav-action" onclick="adminManager.closeAdminModal()">Tutup Admin Panel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODAL: FORM PRODUK (TAMBAH / EDIT / UBAH HARGA & DISKON) ================= -->
+    <div class="modal-backdrop" id="adminProductModal" style="z-index: 1050;">
+        <div class="modal-content modal-product-edit">
+            <div class="modal-header">
+                <h3 id="adminProductModalTitle">➕ Tambah Menu Produk Baru</h3>
+                <button type="button" class="modal-close-btn" onclick="adminManager.closeProductModal()">&times;</button>
+            </div>
+
+            <form id="adminProductForm">
+                <div class="modal-body">
+                    <!-- Baris 1: ID & Icon Emoji -->
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="adminProdId">Kode Menu (ID) <span class="text-danger">*</span></label>
+                            <input type="text" id="adminProdId" class="form-control font-bold" placeholder="Contoh: E, M3, T3" required autocomplete="off">
+                            <small class="form-help">Kode unik menu di POS (huruf/angka)</small>
+                        </div>
+                        <div class="form-group" style="flex: 1.2;">
+                            <label for="adminProdEmoji">Icon Emoji</label>
+                            <div class="emoji-input-wrapper">
+                                <input type="text" id="adminProdEmoji" class="form-control emoji-input" placeholder="🍗" value="🍗" maxlength="4">
+                                <div class="emoji-quick-pills">
+                                    <button type="button" class="btn-emoji-quick" onclick="adminManager.setEmojiValue('🍗')">🍗</button>
+                                    <button type="button" class="btn-emoji-quick" onclick="adminManager.setEmojiValue('🍖')">🍖</button>
+                                    <button type="button" class="btn-emoji-quick" onclick="adminManager.setEmojiValue('🥩')">🥩</button>
+                                    <button type="button" class="btn-emoji-quick" onclick="adminManager.setEmojiValue('🍱')">🍱</button>
+                                    <button type="button" class="btn-emoji-quick" onclick="adminManager.setEmojiValue('🍹')">🍹</button>
+                                    <button type="button" class="btn-emoji-quick" onclick="adminManager.setEmojiValue('💧')">💧</button>
+                                    <button type="button" class="btn-emoji-quick" onclick="adminManager.setEmojiValue('🍚')">🍚</button>
+                                    <button type="button" class="btn-emoji-quick" onclick="adminManager.setEmojiValue('🌶️')">🌶️</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Baris 2: Nama & Kategori -->
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2;">
+                            <label for="adminProdName">Nama Menu / Paket <span class="text-danger">*</span></label>
+                            <input type="text" id="adminProdName" class="form-control" placeholder="Contoh: PAKET SPECIAL IGA ASAP" required autocomplete="off">
+                        </div>
+                        <div class="form-group" style="flex: 1.2;">
+                            <label for="adminProdCategory">Kategori <span class="text-danger">*</span></label>
+                            <select id="adminProdCategory" class="form-control">
+                                <option value="makanan">🍗 Makanan / Paket</option>
+                                <option value="minuman">🍹 Minuman</option>
+                                <option value="tambahan">🍚 Tambahan / Sambal</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Section Harga Normal -->
+                    <div class="form-group">
+                        <label for="adminProdPriceNormal">Harga Normal (Rp) <span class="text-danger">*</span></label>
+                        <div class="input-currency-wrapper">
+                            <span class="currency-prefix">Rp</span>
+                            <input type="number" id="adminProdPriceNormal" class="form-control price-input" placeholder="35000" min="0" step="500" required>
+                        </div>
+                    </div>
+
+                    <!-- Section Kalkulator Diskon & Harga Promo -->
+                    <div class="discount-calculator-box">
+                        <div class="discount-calc-header">
+                            <span class="calc-icon">🏷️</span>
+                            <div class="calc-title">
+                                <strong>Pengaturan Diskon & Harga Promo</strong>
+                                <p>Isi potongan nominal (Rp), persentase (%), atau harga promo akhir. Sistem akan menghitung otomatis.</p>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 1;">
+                                <label for="adminProdDiscountNominal">Potongan Diskon (Rp)</label>
+                                <div class="input-currency-wrapper">
+                                    <span class="currency-prefix">Rp</span>
+                                    <input type="number" id="adminProdDiscountNominal" class="form-control" placeholder="5000" min="0" step="500">
+                                </div>
+                            </div>
+
+                            <div class="form-group" style="flex: 0.9;">
+                                <label for="adminProdDiscountPercent">Diskon (%)</label>
+                                <div class="input-currency-wrapper">
+                                    <span class="currency-prefix">%</span>
+                                    <input type="number" id="adminProdDiscountPercent" class="form-control" placeholder="15" min="0" max="100" step="0.5">
+                                </div>
+                            </div>
+
+                            <div class="form-group" style="flex: 1.2;">
+                                <label for="adminProdPricePromo">Harga Promo Akhir (Rp)</label>
+                                <div class="input-currency-wrapper">
+                                    <span class="currency-prefix">Rp</span>
+                                    <input type="number" id="adminProdPricePromo" class="form-control price-input promo-highlight" placeholder="30000" min="0" step="500">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="adminDiscountPreview"></div>
+                    </div>
+
+                    <!-- Deskripsi -->
+                    <div class="form-group" style="margin-top: 14px;">
+                        <label for="adminProdDesc">Deskripsi Menu (Opsional)</label>
+                        <input type="text" id="adminProdDesc" class="form-control" placeholder="Contoh: Daging sapi asap 150g + nasi pulen + sambal matah">
+                    </div>
+                </div>
+
                 <div class="modal-footer">
-                    <button type="button" class="btn-nav-action" onclick="closeMenuModal()">Batal</button>
-                    <button type="submit" class="btn-nav-action" id="btnSaveMenu" style="background: var(--primary); color: white; border-color: var(--primary);">
-                        Simpan Menu
+                    <button type="button" class="btn-nav-action" onclick="adminManager.closeProductModal()">Batal</button>
+                    <button type="submit" class="btn-nav-action btn-primary-submit" id="adminBtnSaveProduct">
+                        Simpan Produk
                     </button>
                 </div>
             </form>
@@ -373,6 +537,7 @@
     <script src="js/cart.js"></script>
     <script src="js/payment.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/admin.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

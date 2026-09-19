@@ -9,6 +9,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         authManager.init();
     }
 
+    // Inisialisasi Admin Panel Manager
+    if (typeof adminManager !== 'undefined') {
+        adminManager.init();
+    }
+
     // 1. Setup Status Koneksi Database
     const dbStatusBadge = document.getElementById('dbStatusBadge');
     const dbStatusText = document.getElementById('dbStatusText');

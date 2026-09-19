@@ -58,9 +58,14 @@ Aplikasi ini dibuat dengan arsitektur web modern tanpa ketergantungan (*zero-dep
   - `order_items`: Rincian item pesanan dengan riwayat harga terkunci.
 - **Offline-First Resilience**: Jika koneksi internet kasir mengalami gangguan, aplikasi otomatis beralih ke cache lokal (*LocalStorage*) dan menyinkronkannya kembali saat online. Indikator status koneksi terlihat jelas di bilah navigasi atas (🟢 Online / 🟡 Mode Lokal).
 
-### 7. Kelola & Tambah Menu Baru
-- Tambah menu baru langsung dari aplikasi kasir melalui modal **Tambah Menu**.
-- Data otomatis tersimpan ke Neon PostgreSQL dan cache lokal.
+### 7. Admin Panel: Kelola Menu, Ubah Harga, Diskon & Hapus Produk
+- **Akses Admin Panel**: Buka dashboard manajemen melalui tombol **⚙️ Admin Panel** di bilah atas.
+- **Ubah Harga & Edit Diskon**:
+  - Pengaturan harga normal dan harga promo.
+  - **Kalkulator Diskon Otomatis**: Masukkan nominal diskon (Rp) atau persentase (%), sistem langsung menghitung harga promo dan estimasi penghematan pembeli secara *real-time*.
+- **Tambah Menu Baru**: Tambahkan menu dengan kode unik, nama, kategori, harga, emoji picker, dan deskripsi.
+- **Hapus Menu**: Hapus menu yang sudah tidak dijual dari Neon PostgreSQL & cache lokal dengan aman.
+- **Sinkronisasi Otomatis**: Perubahan langsung tersimpan ke cloud Neon DB dan tampilan kasir diperbarui seketika.
 
 ---
 
@@ -79,9 +84,9 @@ Aplikasi ini dibuat dengan arsitektur web modern tanpa ketergantungan (*zero-dep
 
 ```
 d:\_DOCUMENTS\diasap\
-├── index.html              # Antarmuka utama aplikasi POS
+├── index.html              # Antarmuka utama aplikasi POS & modal Admin Panel
 ├── css\
-│   └── style.css           # Styling modern POS, warna DIASAP, & print struk
+│   └── style.css           # Styling modern POS, Admin Panel, & print struk
 ├── js\
 │   ├── config.js           # Konfigurasi database Neon & konstanta toko
 │   ├── sound.js            # Efek suara kasir (Web Audio API)
@@ -89,6 +94,8 @@ d:\_DOCUMENTS\diasap\
 │   ├── products.js         # Pengelolaan katalog produk & render menu
 │   ├── cart.js             # Pengelolaan keranjang & penguncian harga promo
 │   ├── payment.js          # Hitung pembayaran, kembalian, & cetak struk
+│   ├── auth.js             # Pengamanan lock screen & autentikasi
+│   ├── admin.js            # Controller Admin Panel (Ubah Harga, Diskon, Tambah/Hapus Produk)
 │   └── app.js              # Integrasi sistem, event listener, & reporting
 ├── .env                    # Connection string database Neon
 └── README.md               # Dokumentasi petunjuk aplikasi

@@ -115,15 +115,16 @@ class DatabaseService {
         // Update di Neon jika online
         try {
             await this.query(`
-                INSERT INTO products (id, name, description, category, price_normal, price_promo, image_emoji, sort_order)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                INSERT INTO products (id, name, description, category, price_normal, price_promo, image_emoji, sort_order, is_active)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE)
                 ON CONFLICT (id) DO UPDATE SET
                     name = EXCLUDED.name,
                     description = EXCLUDED.description,
                     category = EXCLUDED.category,
                     price_normal = EXCLUDED.price_normal,
                     price_promo = EXCLUDED.price_promo,
-                    image_emoji = EXCLUDED.image_emoji;
+                    image_emoji = EXCLUDED.image_emoji,
+                    is_active = TRUE;
             `, [
                 product.id,
                 product.name,
@@ -148,6 +149,35 @@ class DatabaseService {
         }
         localStorage.setItem(this.storageKeyProducts, JSON.stringify(products));
         return product;
+    }
+
+    // Hapus Produk (Database Cloud & Cache Lokal)
+    async deleteProduct(productId) {
+        // 1. Hapus atau nonaktifkan di Neon PostgreSQL
+        try {
+            await this.query(`DELETE FROM products WHERE id = $1;`, [productId]);
+        } catch (err) {
+            console.warn('Gagal hard delete di Neon, mencoba soft delete:', err);
+            try {
+                await this.query(`UPDATE products SET is_active = FALSE WHERE id = $1;`, [productId]);
+            } catch (softErr) {
+                console.warn('Gagal soft delete di Neon:', softErr);
+            }
+        }
+
+        // 2. Hapus dari cache lokal
+        try {
+            const cached = localStorage.getItem(this.storageKeyProducts);
+            if (cached) {
+                let list = JSON.parse(cached);
+                list = list.filter(p => p.id !== productId);
+                localStorage.setItem(this.storageKeyProducts, JSON.stringify(list));
+            }
+        } catch (e) {
+            console.error('Gagal menghapus produk dari cache lokal:', e);
+        }
+
+        return true;
     }
 
     // Simpan Transaksi Baru

@@ -1467,3 +1467,598 @@ input:checked + .slider:before {
     animation: shake 0.4s ease-in-out;
 }
 
+/* ==========================================================================
+   ADMIN PANEL STYLING & PRODUCT MANAGEMENT
+   ========================================================================== */
+
+/* Tombol Admin di Header */
+.btn-admin-nav {
+    background: #FFF7ED;
+    border-color: #FDBA74;
+    color: #C2410C;
+    font-weight: 700;
+}
+
+.btn-admin-nav:hover {
+    background: #FFEDD5;
+    border-color: #FB923C;
+    color: #9A3412;
+}
+
+/* Modal Admin Container */
+.modal-content.modal-admin {
+    max-width: 1040px;
+    width: 95%;
+    max-height: 92vh;
+}
+
+.modal-content.modal-product-edit {
+    max-width: 620px;
+    width: 92%;
+    max-height: 92vh;
+}
+
+.admin-header-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.admin-title-badge {
+    background: #EA580C;
+    color: white;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+}
+
+.admin-subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.admin-modal-body {
+    padding: 16px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+}
+
+/* Statistik Ringkas Bar */
+.admin-stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+.admin-stat-card {
+    background: #F8FAFC;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.admin-stat-icon {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.admin-stat-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.admin-stat-val {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--secondary);
+    margin-top: 2px;
+}
+
+/* Admin Toolbar */
+.admin-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    background: white;
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+}
+
+.admin-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    flex: 1;
+}
+
+.admin-search-wrap {
+    position: relative;
+    min-width: 240px;
+    flex: 1;
+    max-width: 340px;
+}
+
+.admin-search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.admin-search-input {
+    width: 100%;
+    padding: 8px 12px 8px 34px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 13px;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.admin-search-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(211, 84, 0, 0.12);
+}
+
+.admin-cat-pills {
+    display: flex;
+    gap: 6px;
+}
+
+.admin-cat-btn {
+    background: #F1F5F9;
+    border: 1px solid transparent;
+    color: #475569;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.admin-cat-btn:hover {
+    background: #E2E8F0;
+    color: #1E293B;
+}
+
+.admin-cat-btn.active {
+    background: var(--secondary);
+    color: white;
+}
+
+.btn-admin-add-new {
+    background: linear-gradient(135deg, var(--primary), #E67E22);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 3px 8px rgba(211, 84, 0, 0.25);
+    transition: all 0.2s;
+}
+
+.btn-admin-add-new:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 12px rgba(211, 84, 0, 0.35);
+}
+
+/* Tabel Produk Admin */
+.admin-table-container {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: white;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    text-align: left;
+}
+
+.admin-table thead th {
+    background: #F8FAFC;
+    padding: 12px 14px;
+    font-weight: 700;
+    color: #475569;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+.admin-table tbody td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #F1F5F9;
+    vertical-align: middle;
+}
+
+.admin-table tbody tr:hover {
+    background: #FDFBF7;
+}
+
+.admin-prod-identity {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.admin-prod-emoji {
+    font-size: 26px;
+    background: #F8FAFC;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.admin-prod-name {
+    font-weight: 700;
+    color: var(--secondary);
+    font-size: 14px;
+}
+
+.admin-prod-code {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.admin-price-normal {
+    font-weight: 700;
+    color: #334155;
+    font-size: 14px;
+}
+
+.admin-price-promo-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.admin-price-promo {
+    font-weight: 800;
+    font-size: 14px;
+    color: #334155;
+}
+
+.admin-price-promo.has-discount {
+    color: var(--promo);
+}
+
+.admin-discount-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.badge-pct {
+    background: #FEE2E2;
+    color: #DC2626;
+    font-weight: 800;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.badge-saving {
+    font-size: 11px;
+    color: #059669;
+    font-weight: 700;
+}
+
+.admin-no-discount-tag {
+    font-size: 11px;
+    color: #94A3B8;
+    font-style: italic;
+}
+
+.admin-prod-desc-cell {
+    max-width: 220px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* Tombol Aksi di Tabel */
+.admin-action-btns {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.btn-admin-action {
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid var(--border);
+    background: white;
+    transition: all 0.15s;
+}
+
+.btn-admin-edit {
+    color: #0284C7;
+    border-color: #BAE6FD;
+    background: #F0F9FF;
+}
+
+.btn-admin-edit:hover {
+    background: #E0F2FE;
+    border-color: #7DD3FC;
+    color: #0369A1;
+}
+
+.btn-admin-delete {
+    color: #DC2626;
+    border-color: #FECACA;
+    background: #FEF2F2;
+}
+
+.btn-admin-delete:hover {
+    background: #FEE2E2;
+    border-color: #FCA5A5;
+    color: #B91C1C;
+}
+
+.admin-modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.admin-footer-tip {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* ==========================================================================
+   KALKULATOR DISKON & FORM EDIT PRODUK
+   ========================================================================== */
+
+.font-bold {
+    font-weight: 700;
+}
+
+.text-danger {
+    color: var(--danger);
+}
+
+.form-help {
+    font-size: 11px;
+    color: var(--text-light);
+    margin-top: 3px;
+    display: block;
+}
+
+.input-currency-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.currency-prefix {
+    position: absolute;
+    left: 12px;
+    font-weight: 700;
+    font-size: 13px;
+    color: #64748B;
+    pointer-events: none;
+}
+
+.input-currency-wrapper .form-control {
+    padding-left: 36px;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.price-input.promo-highlight {
+    color: var(--promo);
+    border-color: #FCA5A5;
+    background: #FFFBFB;
+}
+
+.price-input.promo-highlight:focus {
+    border-color: var(--promo);
+    box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.15);
+}
+
+/* Kotak Kalkulator Diskon */
+.discount-calculator-box {
+    background: #FFF9F5;
+    border: 1px solid #FFEDD5;
+    border-radius: var(--radius-md);
+    padding: 14px;
+    margin-top: 10px;
+}
+
+.discount-calc-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.calc-icon {
+    font-size: 20px;
+    line-height: 1;
+}
+
+.calc-title strong {
+    font-size: 13px;
+    color: #9A3412;
+    display: block;
+}
+
+.calc-title p {
+    font-size: 11px;
+    color: #7C2D12;
+    margin-top: 2px;
+}
+
+/* Discount Preview Card */
+.discount-preview-card {
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.discount-preview-card.active-discount {
+    background: #ECFDF5;
+    border: 1px solid #A7F3D0;
+    color: #065F46;
+}
+
+.discount-preview-card.no-discount {
+    background: #F1F5F9;
+    border: 1px solid #E2E8F0;
+    color: #475569;
+}
+
+.discount-preview-card.invalid-discount {
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    color: #991B1B;
+}
+
+.preview-tag {
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    background: rgba(0,0,0,0.06);
+}
+
+/* Quick Emoji Picker */
+.emoji-input-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.emoji-input {
+    font-size: 20px;
+    text-align: center;
+    width: 65px;
+}
+
+.emoji-quick-pills {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.btn-emoji-quick {
+    background: #F1F5F9;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 16px;
+    padding: 3px 6px;
+    cursor: pointer;
+    line-height: 1;
+    transition: transform 0.1s, background 0.15s;
+}
+
+.btn-emoji-quick:hover {
+    background: #E2E8F0;
+    transform: scale(1.15);
+}
+
+.btn-primary-submit {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    font-weight: 700;
+}
+
+.btn-primary-submit:hover:not(:disabled) {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+/* Floating Toast Notification */
+.admin-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: #1E293B;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: var(--shadow-lg);
+    z-index: 2000;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+}
+
+.admin-toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+/* Responsive adjustments for admin modal */
+@media (max-width: 768px) {
+    .admin-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .admin-toolbar-left {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .admin-search-wrap {
+        max-width: none;
+    }
+
+    .btn-admin-add-new {
+        justify-content: center;
+    }
+
+    .admin-modal-footer {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+}
