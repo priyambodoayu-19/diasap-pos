@@ -3001,7 +3001,16 @@ input:checked + .slider:before {
         max-width: 100% !important;
         box-shadow: none !important;
         border-top: 2px solid var(--border) !important;
-        padding: 18px 14px 60px !important;
+        padding: 18px 14px 120px !important;
+    }
+
+    .payment-container {
+        padding-bottom: 24px !important;
+        margin-bottom: 20px !important;
+    }
+
+    .checkout-btn {
+        margin-bottom: 20px !important;
     }
 
     /* Header Nav */

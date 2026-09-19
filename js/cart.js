@@ -278,19 +278,8 @@ class CartManager {
         if (countBadge) countBadge.textContent = `${totalQty} item`;
         if (clearBtn) clearBtn.style.display = this.cart.length > 0 ? 'inline-flex' : 'none';
 
-        // Update Floating Cart Bar HANYA untuk tampilan Mobile (<= 860px)
-        const mFloatingBar = document.getElementById('mobileFloatingCartBar');
-        const mCount = document.getElementById('mCartItemCount');
-        const mTotal = document.getElementById('mCartGrandTotal');
-        if (mFloatingBar) {
-            if (this.cart.length > 0 && window.innerWidth <= 860) {
-                mFloatingBar.style.display = 'flex';
-                if (mCount) mCount.textContent = totalQty;
-                if (mTotal) mTotal.textContent = formatRupiah(this.getGrandTotal());
-            } else {
-                mFloatingBar.style.display = 'none';
-            }
-        }
+        // Update Floating Cart Bar untuk tampilan Mobile dengan deteksi posisi akurat
+        this.updateFloatingBarVisibility();
 
         if (this.cart.length === 0) {
             cartList.innerHTML = `
@@ -375,56 +364,57 @@ class CartManager {
     }
 
     init() {
-        this.setupMobileCartObserver();
+        // Event scroll window & document untuk mendeteksi posisi keranjang secara real-time
+        window.addEventListener('scroll', () => {
+            this.updateFloatingBarVisibility();
+        }, { passive: true });
+
+        // Event resize layar
         window.addEventListener('resize', () => {
-            const mFloatingBar = document.getElementById('mobileFloatingCartBar');
-            if (mFloatingBar) {
-                if (window.innerWidth > 860 || this.cart.length === 0) {
-                    mFloatingBar.style.display = 'none';
-                } else if (this.cart.length > 0 && window.innerWidth <= 860) {
-                    mFloatingBar.style.display = 'flex';
-                }
-            }
+            this.updateFloatingBarVisibility();
         });
+
+        // Pengecekan visibilitas awal
+        this.updateFloatingBarVisibility();
     }
 
-    setupMobileCartObserver() {
-        const cartEl = document.querySelector('.cart-container');
+    updateFloatingBarVisibility() {
         const mFloatingBar = document.getElementById('mobileFloatingCartBar');
-        if (!cartEl || !mFloatingBar) return;
+        if (!mFloatingBar) return;
 
-        if ('IntersectionObserver' in window) {
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        mFloatingBar.classList.add('cart-in-view');
-                    } else {
-                        mFloatingBar.classList.remove('cart-in-view');
-                    }
-                });
-            }, {
-                threshold: 0.08
-            });
-            observer.observe(cartEl);
-        } else {
-            window.addEventListener('scroll', () => {
-                const rect = cartEl.getBoundingClientRect();
-                if (rect.top < window.innerHeight - 80) {
-                    mFloatingBar.classList.add('cart-in-view');
-                } else {
-                    mFloatingBar.classList.remove('cart-in-view');
-                }
-            }, { passive: true });
+        // 1. Desktop (> 860px) atau keranjang kosong: SELALU sembunyikan
+        if (window.innerWidth > 860 || !this.cart || this.cart.length === 0) {
+            mFloatingBar.style.display = 'none';
+            return;
         }
+
+        // 2. Mobile (<= 860px): Cek posisi cart container (.cart-container)
+        const cartEl = document.querySelector('.cart-container');
+        if (cartEl) {
+            const rect = cartEl.getBoundingClientRect();
+            // Jika area keranjang sudah mulai terlihat di layar (mendekati viewport), sembunyikan floating bar seketika!
+            if (rect.top < window.innerHeight - 40) {
+                mFloatingBar.style.display = 'none';
+                return;
+            }
+        }
+
+        // 3. Pengguna masih berada di atas melihat daftar menu: tampilkan floating bar
+        const totalQty = this.getTotalItemsCount();
+        const mCount = document.getElementById('mCartItemCount');
+        const mTotal = document.getElementById('mCartGrandTotal');
+        if (mCount) mCount.textContent = totalQty;
+        if (mTotal) mTotal.textContent = formatRupiah(this.getGrandTotal());
+        mFloatingBar.style.display = 'flex';
     }
 
     // Scroll otomatis ke keranjang di perangkat mobile
     scrollToCart() {
-        const cart = document.querySelector('.cart-container');
         const mFloatingBar = document.getElementById('mobileFloatingCartBar');
         if (mFloatingBar) {
-            mFloatingBar.classList.add('cart-in-view');
+            mFloatingBar.style.display = 'none';
         }
+        const cart = document.querySelector('.cart-container');
         if (cart) {
             cart.scrollIntoView({ behavior: 'smooth' });
         }
