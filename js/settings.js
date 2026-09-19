@@ -76,19 +76,40 @@ class SettingsManager {
     }
 
     updateCheckoutPaymentInfo() {
-        // Update tampilan QRIS di checkout kasir jika ada gambar
+        // Update tampilan QRIS di checkout kasir
         const qrisBox = document.getElementById('qrisInfoGroup');
         if (qrisBox) {
-            const mockQr = qrisBox.querySelector('.qris-code-mock');
+            const imgEl = document.getElementById('qrisDisplayImg');
+            const mockQr = document.getElementById('qrisDefaultMock') || qrisBox.querySelector('.qris-code-mock');
+            const titleEl = document.getElementById('qrisStoreTitle');
+            const zoomBtn = document.getElementById('qrisZoomBtn');
+
+            if (titleEl && this.settings.storeName) {
+                titleEl.textContent = `Scan QRIS ${this.settings.storeName}`;
+            }
+
             if (this.settings.qrisImage) {
-                if (mockQr) {
-                    mockQr.style.backgroundImage = `url(${this.settings.qrisImage})`;
-                    mockQr.style.backgroundSize = 'contain';
-                    mockQr.style.backgroundRepeat = 'no-repeat';
-                    mockQr.style.backgroundPosition = 'center';
+                if (imgEl) {
+                    imgEl.src = this.settings.qrisImage;
+                    imgEl.style.display = 'block';
                 }
-            } else if (mockQr) {
-                mockQr.style.backgroundImage = 'none';
+                if (mockQr) {
+                    mockQr.style.display = 'none';
+                }
+                if (zoomBtn) {
+                    zoomBtn.style.display = 'inline-flex';
+                }
+            } else {
+                if (imgEl) {
+                    imgEl.src = '';
+                    imgEl.style.display = 'none';
+                }
+                if (mockQr) {
+                    mockQr.style.display = 'block';
+                }
+                if (zoomBtn) {
+                    zoomBtn.style.display = 'none';
+                }
             }
         }
 
@@ -402,6 +423,43 @@ class SettingsManager {
                 submitBtn.textContent = 'Simpan Pengaturan Toko';
             }
         }
+    }
+
+    // ================= ZOOM MODAL QRIS FULLSCREEN =================
+
+    openQrisZoomModal() {
+        const modal = document.getElementById('qrisZoomModal');
+        const img = document.getElementById('qrisZoomModalImg');
+        const totalEl = document.getElementById('qrisZoomModalTotal');
+        const titleEl = document.getElementById('qrisZoomModalTitle');
+        const mockZoom = document.getElementById('qrisZoomModalMock');
+
+        const qrisSrc = this.settings.qrisImage;
+        if (titleEl) titleEl.textContent = `QRIS ${this.settings.storeName || 'DIASAP RESTO'}`;
+        if (totalEl && typeof cartManager !== 'undefined') {
+            totalEl.textContent = formatRupiah(cartManager.getGrandTotal());
+        }
+
+        if (qrisSrc) {
+            if (img) {
+                img.src = qrisSrc;
+                img.style.display = 'block';
+            }
+            if (mockZoom) mockZoom.style.display = 'none';
+        } else {
+            if (img) {
+                img.src = '';
+                img.style.display = 'none';
+            }
+            if (mockZoom) mockZoom.style.display = 'block';
+        }
+
+        if (modal) modal.classList.add('active');
+    }
+
+    closeQrisZoomModal() {
+        const modal = document.getElementById('qrisZoomModal');
+        if (modal) modal.classList.remove('active');
     }
 }
 

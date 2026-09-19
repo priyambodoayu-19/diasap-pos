@@ -83,6 +83,10 @@ class PaymentManager {
         if (qrisTotalEl) {
             qrisTotalEl.textContent = formatRupiah(grandTotal);
         }
+        const qrisZoomTotalEl = document.getElementById('qrisZoomModalTotal');
+        if (qrisZoomTotalEl) {
+            qrisZoomTotalEl.textContent = formatRupiah(grandTotal);
+        }
 
         // Jika keranjang kosong
         if (cartManager.cart.length === 0) {
