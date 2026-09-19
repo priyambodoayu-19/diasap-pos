@@ -523,6 +523,12 @@ class PaymentManager {
         const grandTotal = cartManager.getGrandTotal();
         const billNo = 'BILL-' + Date.now().toString().slice(-6);
 
+        // Data Pembayaran Toko: Bank & QRIS
+        const bankName = settings.bankName || CONFIG.DEFAULT_SETTINGS?.bankName || 'BCA';
+        const bankAccountNo = settings.bankAccountNo || settings.bankAccount || CONFIG.DEFAULT_SETTINGS?.bankAccountNo || '123-456-7890';
+        const bankAccountHolder = settings.bankAccountHolder || settings.bankHolder || CONFIG.DEFAULT_SETTINGS?.bankAccountHolder || 'DIASAP RESTO';
+        const qrisImage = settings.qrisImage || '';
+
         content.innerHTML = `
             <div class="receipt-paper bill-paper" id="thermalBillPaper">
                 <div class="bill-watermark-banner">
@@ -604,14 +610,41 @@ class PaymentManager {
                     <strong>⏳ BELUM DIBAYAR</strong>
                 </div>
 
-                ${settings.bankName && settings.bankAccount ? `
-                    <div class="receipt-divider">--------------------------------</div>
-                    <div style="font-size: 11px; text-align: center; color: #475569; margin: 4px 0;">
-                        <div>Info Pembayaran Transfer Bank:</div>
-                        <strong>${settings.bankName} - ${settings.bankAccount}</strong>
-                        ${settings.bankHolder ? `<div>a.n ${settings.bankHolder}</div>` : ''}
+                <div class="receipt-divider">================================</div>
+
+                <!-- Bagian Pembayaran Non-Tunai / QRIS & Transfer -->
+                <div class="bill-payment-section">
+                    <div class="bill-pay-title">💳 CARA PEMBAYARAN NON-TUNAI</div>
+
+                    <!-- Tampilan QRIS Resmi -->
+                    <div class="bill-qris-card">
+                        ${qrisImage ? `
+                            <img src="${qrisImage}" alt="QRIS ${storeName}" class="bill-qris-img" crossorigin="anonymous">
+                            <div class="bill-qris-label">SCAN QRIS UNTUK MEMBAYAR</div>
+                            <div class="bill-qris-sub">Semua Bank & E-Wallet (BCA, Mandiri, BRI, BNI, GoPay, OVO, DANA, ShopeePay)</div>
+                        ` : `
+                            <div class="bill-qris-placeholder-box">
+                                <div class="qris-code-mock" style="width: 105px; height: 105px; margin: 0 auto;"></div>
+                                <div class="bill-qris-label" style="font-size: 10px;">SCAN QRIS PEMBAYARAN</div>
+                            </div>
+                            <div class="bill-qris-sub">Semua Bank & E-Wallet (Silakan upload QRIS di Pengaturan Toko)</div>
+                        `}
                     </div>
-                ` : ''}
+
+                    <!-- Tampilan Info Transfer Bank -->
+                    ${bankAccountNo ? `
+                        <div class="bill-transfer-card">
+                            <div class="bill-transfer-header">Atau Transfer Rekening:</div>
+                            <div class="bill-transfer-bank">BANK ${bankName}</div>
+                            <div class="bill-transfer-acc">${bankAccountNo}</div>
+                            ${bankAccountHolder ? `<div class="bill-transfer-holder">a.n. ${bankAccountHolder}</div>` : ''}
+                        </div>
+                    ` : ''}
+
+                    <div class="bill-confirm-note">
+                        * Mohon kirimkan bukti transfer / pembayaran ke nomor WhatsApp resto/kasir.
+                    </div>
+                </div>
 
                 <div class="receipt-divider">--------------------------------</div>
 
@@ -664,7 +697,8 @@ class PaymentManager {
             const canvas = await html2canvas(billEl, {
                 scale: 2,
                 backgroundColor: '#ffffff',
-                useCORS: true
+                useCORS: true,
+                allowTaint: true
             });
 
             const link = document.createElement('a');
@@ -698,7 +732,8 @@ class PaymentManager {
             const canvas = await html2canvas(billEl, {
                 scale: 2,
                 backgroundColor: '#ffffff',
-                useCORS: true
+                useCORS: true,
+                allowTaint: true
             });
 
             canvas.toBlob(async (blob) => {

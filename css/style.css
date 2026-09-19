@@ -1424,6 +1424,27 @@ input:checked + .slider:before {
         margin: 0 !important;
         padding: 0 !important;
     }
+
+    .bill-qris-card {
+        border: 1px solid #000 !important;
+        box-shadow: none !important;
+        padding: 6px !important;
+    }
+
+    .bill-qris-img {
+        width: 140px !important;
+        height: 140px !important;
+        filter: grayscale(100%) contrast(150%) !important;
+    }
+
+    .bill-transfer-card {
+        background: transparent !important;
+        border: 1px dashed #000 !important;
+    }
+
+    .bill-transfer-acc {
+        color: #000 !important;
+    }
 }
 
 /* ==========================================================================
@@ -4451,3 +4472,122 @@ input:checked + .slider:before {
     letter-spacing: 0.5px;
     margin-bottom: 12px;
 }
+
+/* --- 12. Bagian QRIS & Transfer Bank di Lembar Bill Meja (Untuk Kirim WA / Kasir) --- */
+.bill-payment-section {
+    margin: 8px 0;
+    text-align: center;
+}
+
+.bill-pay-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #1E293B;
+    letter-spacing: 0.5px;
+    margin: 4px 0 8px;
+    text-transform: uppercase;
+}
+
+.bill-qris-card {
+    background: #FFFFFF;
+    border: 1.5px solid #CBD5E1;
+    border-radius: 8px;
+    padding: 10px;
+    margin: 0 auto 8px;
+    max-width: 250px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.bill-qris-img {
+    width: 175px;
+    height: 175px;
+    object-fit: contain;
+    border-radius: 4px;
+    display: block;
+    margin: 0 auto;
+    background: #ffffff;
+}
+
+.bill-qris-placeholder-box {
+    width: 160px;
+    height: 160px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #F8FAFC;
+    border: 1.5px dashed #94A3B8;
+    border-radius: 6px;
+    margin: 0 auto;
+    padding: 8px;
+}
+
+.bill-qris-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #0F172A;
+    margin-top: 6px;
+    line-height: 1.2;
+}
+
+.bill-qris-sub {
+    font-size: 9px;
+    color: #64748B;
+    margin-top: 4px;
+    line-height: 1.25;
+    text-align: center;
+}
+
+.bill-transfer-card {
+    background: #F8FAFC;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin: 6px auto 8px;
+    max-width: 250px;
+    text-align: center;
+}
+
+.bill-transfer-header {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+
+.bill-transfer-bank {
+    font-size: 12px;
+    font-weight: 800;
+    color: #0F172A;
+}
+
+.bill-transfer-acc {
+    font-size: 16px;
+    font-weight: 900;
+    color: #C2410C;
+    letter-spacing: 1px;
+    font-family: 'Courier New', Courier, monospace;
+    margin: 3px 0;
+    user-select: all;
+}
+
+.bill-transfer-holder {
+    font-size: 11px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.bill-confirm-note {
+    font-size: 9.5px;
+    color: #64748B;
+    line-height: 1.35;
+    margin: 6px 0 2px;
+    font-style: italic;
+    text-align: center;
+}
+
