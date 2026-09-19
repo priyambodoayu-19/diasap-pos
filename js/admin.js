@@ -641,6 +641,17 @@ class AdminManager {
         const section = document.getElementById('adminVariantsSection');
         if (section) section.style.display = enable ? 'block' : 'none';
 
+        // Kontrol binding stok: jika varian aktif, sembunyikan kontrol stok tunggal & tampilkan notifikasi binding
+        const singleStockFields = document.getElementById('stockSingleControlFields');
+        const variantNotice = document.getElementById('stockVariantBindingNotice');
+
+        if (singleStockFields) {
+            singleStockFields.style.display = enable ? 'none' : 'block';
+        }
+        if (variantNotice) {
+            variantNotice.style.display = enable ? 'flex' : 'none';
+        }
+
         if (enable && (!this.currentVariants || this.currentVariants.length === 0)) {
             this.currentVariants = [
                 {
@@ -651,6 +662,8 @@ class AdminManager {
                     ingredients: [{ rawMaterialId: '', amount: 0 }]
                 }
             ];
+        } else if (!enable) {
+            this.updateStockPortionPreview();
         }
         this.renderVariantsUI();
     }
@@ -826,19 +839,59 @@ class AdminManager {
         const priceNormal = parseFloat(document.getElementById('adminProdPriceNormal').value) || 0;
         let pricePromo = parseFloat(document.getElementById('adminProdPricePromo').value);
 
-        const stockType = document.getElementById('adminProdStockType')?.value || 'unlimited';
+        const rawStockType = document.getElementById('adminProdStockType')?.value || 'unlimited';
         const rawMaterialId = document.getElementById('adminProdRawMaterialId')?.value || '';
         const rawMaterialAmount = parseFloat(document.getElementById('adminProdRawMaterialAmount')?.value) || 0;
         const directStock = parseFloat(document.getElementById('adminProdDirectStock')?.value) || 0;
 
-        if (stockType === 'raw_material') {
-            if (!rawMaterialId) {
-                alert('Mohon pilih Bahan Baku Master untuk menu dengan tipe Resep Bahan!');
+        // Validasi dan pengumpulan Varian Menu
+        const hasVariants = document.getElementById('adminProdHasVariants')?.checked;
+        let variants = [];
+        let finalStockType = rawStockType;
+        let finalRawMaterialId = rawMaterialId;
+        let finalRawMaterialAmount = rawMaterialAmount;
+        let finalDirectStock = directStock;
+
+        if (hasVariants) {
+            // Saat varian aktif, kontrol stok otomatis terikat ke varian menu di bawah
+            finalStockType = 'variant';
+            finalRawMaterialId = '';
+            finalRawMaterialAmount = 0;
+            finalDirectStock = 0;
+
+            this.collectVariantsFromUI();
+            if (!this.currentVariants || this.currentVariants.length === 0) {
+                alert('Opsi Varian Menu diaktifkan tetapi belum ada varian yang ditambahkan!');
                 return;
             }
-            if (rawMaterialAmount <= 0) {
-                alert('Takaran bahan baku per porsi harus lebih besar dari 0!');
-                return;
+
+            for (let i = 0; i < this.currentVariants.length; i++) {
+                const v = this.currentVariants[i];
+                const vName = (v.name || '').trim();
+                if (!vName) {
+                    alert(`Varian #${i + 1} wajib memiliki nama (misal: Paha, Dada, Campur)!`);
+                    return;
+                }
+
+                variants.push({
+                    id: v.id || ('var_' + Date.now() + '_' + i),
+                    name: vName,
+                    priceExtra: parseFloat(v.priceExtra) || 0,
+                    cogsExtra: parseFloat(v.cogsExtra) || 0,
+                    ingredients: (v.ingredients || []).filter(ing => ing.rawMaterialId && Number(ing.amount) > 0)
+                });
+            }
+        } else {
+            // Jika bukan varian, jalankan validasi stok tunggal
+            if (finalStockType === 'raw_material') {
+                if (!finalRawMaterialId) {
+                    alert('Mohon pilih Bahan Baku Master untuk menu dengan tipe Resep Bahan!');
+                    return;
+                }
+                if (finalRawMaterialAmount <= 0) {
+                    alert('Takaran bahan baku per porsi harus lebih besar dari 0!');
+                    return;
+                }
             }
         }
 
@@ -884,34 +937,6 @@ class AdminManager {
             }
         }
 
-        // Validasi dan pengumpulan Varian Menu
-        const hasVariants = document.getElementById('adminProdHasVariants')?.checked;
-        let variants = [];
-        if (hasVariants) {
-            this.collectVariantsFromUI();
-            if (!this.currentVariants || this.currentVariants.length === 0) {
-                alert('Opsi Varian Menu diaktifkan tetapi belum ada varian yang ditambahkan!');
-                return;
-            }
-
-            for (let i = 0; i < this.currentVariants.length; i++) {
-                const v = this.currentVariants[i];
-                const vName = (v.name || '').trim();
-                if (!vName) {
-                    alert(`Varian #${i + 1} wajib memiliki nama (misal: Paha, Dada, Campur)!`);
-                    return;
-                }
-
-                variants.push({
-                    id: v.id || ('var_' + Date.now() + '_' + i),
-                    name: vName,
-                    priceExtra: parseFloat(v.priceExtra) || 0,
-                    cogsExtra: parseFloat(v.cogsExtra) || 0,
-                    ingredients: (v.ingredients || []).filter(ing => ing.rawMaterialId && Number(ing.amount) > 0)
-                });
-            }
-        }
-
         const sortOrderInput = document.getElementById('adminProdSortOrder');
         const sortOrder = sortOrderInput ? (parseInt(sortOrderInput.value) || 10) : 10;
 
@@ -924,10 +949,10 @@ class AdminManager {
             cogs,
             priceNormal,
             pricePromo,
-            stockType,
-            rawMaterialId,
-            rawMaterialAmount,
-            directStock,
+            stockType: finalStockType,
+            rawMaterialId: finalRawMaterialId,
+            rawMaterialAmount: finalRawMaterialAmount,
+            directStock: finalDirectStock,
             sortOrder,
             variants
         };

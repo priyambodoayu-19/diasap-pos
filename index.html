@@ -631,44 +631,56 @@
                             </div>
                         </div>
 
-                        <div class="form-group" style="margin-top: 10px;">
-                            <label for="adminProdStockType">Metode Kontrol Stok</label>
-                            <select id="adminProdStockType" class="form-control">
-                                <option value="unlimited">♾️ Tidak Dibatasi (Selalu Tersedia)</option>
-                                <option value="raw_material">🌾 Resep Bahan Baku Master (Berdasarkan Ketersediaan Gramasi)</option>
-                                <option value="direct">🥤 Stok Barang Jadi (Fisik per Unit / Botol / Pcs)</option>
-                            </select>
-                        </div>
+                        <!-- Kontainer Kontrol Stok Tunggal (Nonaktif saat Varian Aktif) -->
+                        <div id="stockSingleControlFields">
+                            <div class="form-group" style="margin-top: 10px;">
+                                <label for="adminProdStockType">Metode Kontrol Stok</label>
+                                <select id="adminProdStockType" class="form-control">
+                                    <option value="unlimited">♾️ Tidak Dibatasi (Selalu Tersedia)</option>
+                                    <option value="raw_material">🌾 Resep Bahan Baku Master (Berdasarkan Ketersediaan Gramasi)</option>
+                                    <option value="direct">🥤 Stok Barang Jadi (Fisik per Unit / Botol / Pcs)</option>
+                                </select>
+                            </div>
 
-                        <!-- Sub-form: Bahan Baku Master -->
-                        <div id="stockGroupRawMaterial" style="display: none; margin-top: 10px;">
-                            <div class="form-row">
-                                <div class="form-group" style="flex: 1.4;">
-                                    <label for="adminProdRawMaterialId">Pilih Bahan Baku Master <span class="text-danger">*</span></label>
-                                    <select id="adminProdRawMaterialId" class="form-control">
-                                        <!-- Diisi dinamis oleh admin.js -->
-                                    </select>
-                                </div>
-                                <div class="form-group" style="flex: 1;">
-                                    <label for="adminProdRawMaterialAmount">Takaran per Porsi (gr) <span class="text-danger">*</span></label>
-                                    <div class="input-currency-wrapper">
-                                        <input type="number" id="adminProdRawMaterialAmount" class="form-control" placeholder="75" min="0" step="1">
+                            <!-- Sub-form: Bahan Baku Master -->
+                            <div id="stockGroupRawMaterial" style="display: none; margin-top: 10px;">
+                                <div class="form-row">
+                                    <div class="form-group" style="flex: 1.4;">
+                                        <label for="adminProdRawMaterialId">Pilih Bahan Baku Master <span class="text-danger">*</span></label>
+                                        <select id="adminProdRawMaterialId" class="form-control">
+                                            <!-- Diisi dinamis oleh admin.js -->
+                                        </select>
                                     </div>
-                                    <small class="form-help">Contoh: 75 untuk 75 gr</small>
+                                    <div class="form-group" style="flex: 1;">
+                                        <label for="adminProdRawMaterialAmount">Takaran per Porsi (gr) <span class="text-danger">*</span></label>
+                                        <div class="input-currency-wrapper">
+                                            <input type="number" id="adminProdRawMaterialAmount" class="form-control" placeholder="75" min="0" step="1">
+                                        </div>
+                                        <small class="form-help">Contoh: 75 untuk 75 gr</small>
+                                    </div>
                                 </div>
                             </div>
+
+                            <!-- Sub-form: Stok Barang Jadi -->
+                            <div id="stockGroupDirect" style="display: none; margin-top: 10px;">
+                                <div class="form-group">
+                                    <label for="adminProdDirectStock">Jumlah Stok Barang Jadi Saat Ini (Pcs / Unit)</label>
+                                    <input type="number" id="adminProdDirectStock" class="form-control" placeholder="24" min="0" step="1">
+                                </div>
+                            </div>
+
+                            <!-- Live Preview Porsi -->
+                            <div id="adminStockPortionPreview" style="margin-top: 8px;"></div>
                         </div>
 
-                        <!-- Sub-form: Stok Barang Jadi -->
-                        <div id="stockGroupDirect" style="display: none; margin-top: 10px;">
-                            <div class="form-group">
-                                <label for="adminProdDirectStock">Jumlah Stok Barang Jadi Saat Ini (Pcs / Unit)</label>
-                                <input type="number" id="adminProdDirectStock" class="form-control" placeholder="24" min="0" step="1">
+                        <!-- Notifikasi Otomatis Terikat ke Varian -->
+                        <div id="stockVariantBindingNotice" class="stock-variant-notice" style="display: none;">
+                            <div class="stock-variant-notice-icon">🔗</div>
+                            <div class="stock-variant-notice-body">
+                                <strong>Kontrol Stok Otomatis Terikat ke Varian Menu</strong>
+                                <p>Menu ini memiliki varian aktif. Resep bahan baku master (seperti paha, dada, dll) dan takaran gramasi kini diatur langsung pada masing-masing varian di bawah. Kontrol stok tunggal otomatis dinonaktifkan.</p>
                             </div>
                         </div>
-
-                        <!-- Live Preview Porsi -->
-                        <div id="adminStockPortionPreview" style="margin-top: 8px;"></div>
                     </div>
 
                     <!-- Section Varian Menu (Paha, Dada, Campur, dll) -->

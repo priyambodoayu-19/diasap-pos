@@ -2571,6 +2571,12 @@ input:checked + .slider:before {
     color: #475569;
 }
 
+.badge-stock-type.type-variant {
+    background: #EFF6FF;
+    color: #1D4ED8;
+    border: 1px solid #BFDBFE;
+}
+
 /* Quick Emoji Picker */
 .emoji-input-wrapper {
     display: flex;
@@ -4289,6 +4295,72 @@ input:checked + .slider:before {
     font-size: 14px;
     color: #1E293B;
     margin-top: 4px;
+}
+
+/* --- 10. Notifikasi Binding Kontrol Stok ke Varian --- */
+.stock-variant-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: linear-gradient(135deg, #EFF6FF 0%, #F0FDF4 100%);
+    border: 1.5px solid #93C5FD;
+    border-radius: var(--radius-md);
+    padding: 13px 16px;
+    margin-top: 10px;
+    animation: fadeIn 0.25s ease-out;
+}
+
+.stock-variant-notice-icon {
+    font-size: 24px;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.stock-variant-notice-body strong {
+    display: block;
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #1E40AF;
+    margin-bottom: 4px;
+}
+
+.stock-variant-notice-body p {
+    font-size: 12px;
+    color: #334155;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Badge Varian Mini pada Kartu Bahan Baku (Kelola Stock) */
+.badge-var-mini {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #1D4ED8;
+    background: #DBEAFE;
+    border: 1px solid #BFDBFE;
+    border-radius: 4px;
+    padding: 1px 5px;
+    margin: 0 3px;
+    vertical-align: middle;
+}
+
+/* Rincian Ketersediaan Multi-Varian di Tabel Kesiapan Jual */
+.variant-avail-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.variant-avail-row {
+    font-size: 12px;
+    color: #1E293B;
+}
+
+.variant-avail-ing {
+    font-size: 11px;
+    color: #64748B;
 }
 
 

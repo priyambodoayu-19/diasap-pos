@@ -30,6 +30,23 @@ class InventoryManager {
     getPortionsAvailable(product) {
         if (!product) return Infinity;
 
+        // Jika produk memiliki varian menu aktif
+        if (product.variants && Array.isArray(product.variants) && product.variants.length > 0) {
+            let totalVariantPortions = 0;
+            let hasAnyUnlimited = false;
+
+            for (const v of product.variants) {
+                const portions = this.getVariantPortions(v);
+                if (portions === Infinity) {
+                    hasAnyUnlimited = true;
+                } else {
+                    totalVariantPortions += portions;
+                }
+            }
+            if (hasAnyUnlimited && totalVariantPortions === 0) return Infinity;
+            return totalVariantPortions;
+        }
+
         if (product.stockType === 'raw_material') {
             if (!product.rawMaterialId || !product.rawMaterialAmount || Number(product.rawMaterialAmount) <= 0) {
                 return Infinity;
@@ -46,6 +63,32 @@ class InventoryManager {
         }
 
         return Infinity;
+    }
+
+    /**
+     * Hitung porsi tersedia untuk varian spesifik berdasarkan bahan baku masternya
+     * @param {Object} variant
+     * @returns {number} Jumlah porsi tersedia (atau Infinity jika resep kosong)
+     */
+    getVariantPortions(variant) {
+        if (!variant || !variant.ingredients || !Array.isArray(variant.ingredients) || variant.ingredients.length === 0) {
+            return Infinity;
+        }
+        let minPortions = Infinity;
+        for (const ing of variant.ingredients) {
+            if (!ing.rawMaterialId || Number(ing.amount) <= 0) continue;
+            const mat = this.getRawMaterialById(ing.rawMaterialId);
+            if (!mat) {
+                return 0;
+            }
+            const stock = Number(mat.stock) || 0;
+            const needed = Number(ing.amount);
+            const portions = Math.floor(stock / needed);
+            if (portions < minPortions) {
+                minPortions = portions;
+            }
+        }
+        return minPortions === Infinity ? Infinity : Math.max(0, minPortions);
     }
 
     // ================= MODAL KELOLA STOCK =================
@@ -117,10 +160,31 @@ class InventoryManager {
                     const isLow = stock <= minStock && stock > 0;
                     const isOut = stock <= 0;
 
-                    // Menu-menu yang memakai bahan baku ini
-                    const relatedProducts = products.filter(
-                        p => p.stockType === 'raw_material' && p.rawMaterialId === mat.id
-                    );
+                    // Cari seluruh pemakaian bahan baku ini (baik menu resep tunggal maupun varian menu)
+                    const usages = [];
+                    products.forEach(p => {
+                        const hasVariants = p.variants && Array.isArray(p.variants) && p.variants.length > 0;
+                        if (hasVariants) {
+                            p.variants.forEach(v => {
+                                const ing = (v.ingredients || []).find(i => i.rawMaterialId === mat.id);
+                                if (ing && Number(ing.amount) > 0) {
+                                    usages.push({
+                                        productId: p.id,
+                                        productName: p.name,
+                                        variantName: v.name,
+                                        amount: Number(ing.amount)
+                                    });
+                                }
+                            });
+                        } else if (p.stockType === 'raw_material' && p.rawMaterialId === mat.id) {
+                            usages.push({
+                                productId: p.id,
+                                productName: p.name,
+                                variantName: null,
+                                amount: Number(p.rawMaterialAmount) || 0
+                            });
+                        }
+                    });
 
                     let statusClass = 'status-safe';
                     let statusLabel = '✅ Stok Aman';
@@ -149,11 +213,15 @@ class InventoryManager {
 
                             <div class="raw-mat-portions-box">
                                 <div class="portions-box-title">Estimasi Porsi Menu Terkait:</div>
-                                ${relatedProducts.length > 0 ? relatedProducts.map(p => {
-                                    const portions = Math.floor(stock / (Number(p.rawMaterialAmount) || 1));
+                                ${usages.length > 0 ? usages.map(u => {
+                                    const portions = u.amount > 0 ? Math.floor(stock / u.amount) : 0;
                                     return `
                                         <div class="portion-row">
-                                            <span><strong>${p.name}</strong> (${p.rawMaterialAmount} ${mat.unit}):</span>
+                                            <span>
+                                                <strong>${u.productName}</strong>
+                                                ${u.variantName ? `<span class="badge-var-mini">[Varian: ${u.variantName}]</span>` : ''} 
+                                                (${u.amount} ${mat.unit}):
+                                            </span>
                                             <span class="portion-count ${portions === 0 ? 'text-danger' : 'text-success'}">
                                                 <strong>${portions}</strong> porsi
                                             </span>
@@ -300,6 +368,7 @@ class InventoryManager {
                     </thead>
                     <tbody>
                         ${products.map((p, idx) => {
+                            const hasVariants = p.variants && Array.isArray(p.variants) && p.variants.length > 0;
                             const portions = this.getPortionsAvailable(p);
                             const stockType = p.stockType || 'unlimited';
 
@@ -307,7 +376,37 @@ class InventoryManager {
                             let detailText = 'Selalu tersedia';
                             let portionDisplay = '<span class="text-success font-bold">Tersedia (Bebas)</span>';
 
-                            if (stockType === 'raw_material') {
+                            if (hasVariants) {
+                                typeBadge = '<span class="badge-stock-type type-variant">✨ Multi-Varian</span>';
+                                const varBreakdown = p.variants.map(v => {
+                                    const vPortions = this.getVariantPortions(v);
+                                    const ingTexts = (v.ingredients || []).map(ing => {
+                                        const mat = this.getRawMaterialById(ing.rawMaterialId);
+                                        return mat ? `${mat.name} (${ing.amount} ${mat.unit})` : '';
+                                    }).filter(Boolean).join(' + ');
+
+                                    let vBadge = '';
+                                    if (vPortions === 0) {
+                                        vBadge = '<strong class="text-danger">Habis (0)</strong>';
+                                    } else if (vPortions === Infinity) {
+                                        vBadge = '<strong class="text-success">Bebas</strong>';
+                                    } else {
+                                        vBadge = `<strong class="text-success">${vPortions} porsi</strong>`;
+                                    }
+
+                                    return `<div class="variant-avail-row">• <strong>${v.name}</strong>: ${vBadge} ${ingTexts ? `<span class="variant-avail-ing">(${ingTexts})</span>` : ''}</div>`;
+                                }).join('');
+
+                                detailText = `<div class="variant-avail-list">${varBreakdown}</div>`;
+
+                                if (portions === 0) {
+                                    portionDisplay = '<span class="stock-status-pill status-out">❌ Semua Habis</span>';
+                                } else if (portions <= 5) {
+                                    portionDisplay = `<span class="stock-status-pill status-low">⚠️ Sisa <strong>${portions}</strong> porsi total</span>`;
+                                } else {
+                                    portionDisplay = `<span class="stock-status-pill status-safe">✅ <strong>${portions}</strong> porsi total</span>`;
+                                }
+                            } else if (stockType === 'raw_material') {
                                 const mat = this.getRawMaterialById(p.rawMaterialId);
                                 const matName = mat ? mat.name : p.rawMaterialId;
                                 const matStock = mat ? mat.stock : 0;

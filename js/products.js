@@ -70,7 +70,20 @@ class ProductManager {
             let stockBadge = '';
 
             if (hasVariants) {
-                stockBadge = `<span class="stock-pill stock-pill-avail" style="background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE;">✨ ${product.variants.length} Varian</span>`;
+                portions = (typeof inventoryManager !== 'undefined')
+                    ? inventoryManager.getPortionsAvailable(product)
+                    : Infinity;
+                isOutOfStock = portions === 0;
+
+                if (isOutOfStock) {
+                    stockBadge = `<span class="stock-pill stock-pill-out">❌ Habis</span>`;
+                } else if (portions <= 5 && portions > 0) {
+                    stockBadge = `<span class="stock-pill stock-pill-low">Sisa ${portions} (${product.variants.length} Var)</span>`;
+                } else if (portions !== Infinity) {
+                    stockBadge = `<span class="stock-pill stock-pill-avail" style="background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE;">✨ ${product.variants.length} Varian (${portions} porsi)</span>`;
+                } else {
+                    stockBadge = `<span class="stock-pill stock-pill-avail" style="background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE;">✨ ${product.variants.length} Varian</span>`;
+                }
             } else {
                 portions = (typeof inventoryManager !== 'undefined')
                     ? inventoryManager.getPortionsAvailable(product)
