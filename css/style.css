@@ -1384,11 +1384,15 @@ input:checked + .slider:before {
     
     #receiptModal,
     #receiptPrintArea,
-    #receiptPrintArea * {
+    #receiptPrintArea *,
+    #billModal,
+    #billPrintArea,
+    #billPrintArea * {
         visibility: visible;
     }
 
-    #receiptModal {
+    #receiptModal,
+    #billModal {
         position: absolute;
         left: 0;
         top: 0;
@@ -4387,4 +4391,63 @@ input:checked + .slider:before {
     color: #64748B;
 }
 
+/* --- 11. Tombol Cetak Bill & Watermark Tagihan Sementara --- */
+.bill-action-row {
+    margin: 10px 0 12px;
+}
 
+.btn-print-bill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 14px;
+    background: #F8FAFC;
+    color: #1E293B;
+    border: 1.5px solid #CBD5E1;
+    border-radius: var(--radius-md);
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-print-bill:hover {
+    background: #EFF6FF;
+    color: #1D4ED8;
+    border-color: #93C5FD;
+    box-shadow: 0 3px 8px rgba(29, 78, 216, 0.12);
+}
+
+.btn-print-bill:active {
+    transform: scale(0.985);
+}
+
+/* Watermark Banner pada Struk & Bill */
+.bill-watermark-banner {
+    background: #FEF3C7;
+    color: #92400E;
+    border: 1.5px dashed #F59E0B;
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 11px;
+    font-weight: 800;
+    text-align: center;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+}
+
+.reprint-watermark-banner {
+    background: #FEE2E2;
+    color: #991B1B;
+    border: 1.5px dashed #EF4444;
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 11px;
+    font-weight: 800;
+    text-align: center;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+}

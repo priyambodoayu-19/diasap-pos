@@ -490,6 +490,252 @@ class PaymentManager {
         if (modal) modal.classList.remove('active');
         this.currentViewingOrder = null;
     }
+
+    // ================= MODAL BILL / TAGIHAN SEMENTARA (LANGKAH 1 RESTORAN) =================
+
+    showBillModal() {
+        if (!cartManager || cartManager.cart.length === 0) {
+            sounds.playWarning();
+            alert('Keranjang pesanan masih kosong! Silakan pilih menu terlebih dahulu sebelum mencetak bill.');
+            return;
+        }
+
+        const modal = document.getElementById('billModal');
+        const content = document.getElementById('billPrintArea');
+        if (!modal || !content) return;
+
+        const settings = (typeof settingsManager !== 'undefined' && settingsManager.settings)
+            ? settingsManager.settings
+            : CONFIG;
+
+        const storeName = settings.storeName || CONFIG.STORE_NAME || 'DIASAP RESTO';
+        const storeTagline = settings.storeTagline || 'Smoked Meat & Kitchen';
+        const storeAddress = settings.storeAddress || CONFIG.STORE_ADDRESS || '';
+        const storePhone = settings.storePhone || CONFIG.STORE_PHONE || '';
+        const activeCashier = (typeof authManager !== 'undefined') ? authManager.getActiveCashier() : 'Kasir';
+        const customerName = (document.getElementById('customerNameInput')?.value || '').trim() || 'Pelanggan / Meja';
+        const notes = (document.getElementById('orderNotesInput')?.value || '').trim();
+        const orderTypeLabel = cartManager.orderType === 'dine_in' ? 'Dine In (Makan di Tempat)' : 'Take Away (Bungkus)';
+
+        const subtotal = cartManager.getSubtotal();
+        const finalDiscount = cartManager.getFinalDiscountAmount();
+        const finalDiscountNote = cartManager.finalDiscount.note ? ` (${cartManager.finalDiscount.note})` : '';
+        const grandTotal = cartManager.getGrandTotal();
+        const billNo = 'BILL-' + Date.now().toString().slice(-6);
+
+        content.innerHTML = `
+            <div class="receipt-paper bill-paper" id="thermalBillPaper">
+                <div class="bill-watermark-banner">
+                    🧾 LEMBAR TAGIHAN SEMENTARA • BELUM LUNAS
+                </div>
+
+                <div class="receipt-header">
+                    <div class="receipt-logo">🔥 DIASAP 🔥</div>
+                    <div class="receipt-store">${storeName}</div>
+                    ${storeTagline ? `<div style="font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 2px;">${storeTagline}</div>` : ''}
+                    ${storeAddress ? `<div class="receipt-meta">${storeAddress}</div>` : ''}
+                    ${storePhone ? `<div class="receipt-meta">Telp: ${storePhone}</div>` : ''}
+                </div>
+
+                <div class="receipt-divider">================================</div>
+
+                <div class="receipt-info-row">
+                    <span>No. Bill:</span>
+                    <span><strong>${billNo}</strong></span>
+                </div>
+                <div class="receipt-info-row">
+                    <span>Waktu:</span>
+                    <span>${formatDateTime(new Date().toISOString())}</span>
+                </div>
+                <div class="receipt-info-row">
+                    <span>Kasir:</span>
+                    <span><strong>${activeCashier}</strong></span>
+                </div>
+                <div class="receipt-info-row">
+                    <span>Meja / Pelanggan:</span>
+                    <span><strong>${customerName}</strong></span>
+                </div>
+                <div class="receipt-info-row">
+                    <span>Layanan:</span>
+                    <span>${orderTypeLabel}</span>
+                </div>
+                ${notes ? `
+                    <div class="receipt-info-row">
+                        <span>Catatan:</span>
+                        <span>${notes}</span>
+                    </div>
+                ` : ''}
+
+                <div class="receipt-divider">--------------------------------</div>
+
+                <div class="receipt-items">
+                    ${cartManager.cart.map(item => `
+                        <div class="receipt-item-row">
+                            <div class="item-name-line">
+                                <strong>${item.name}</strong> ${item.isPromo ? '(PROMO)' : ''}
+                            </div>
+                            <div class="item-calc-line">
+                                <span>${item.qty} x ${formatRupiah(item.priceLocked)}</span>
+                                <span><strong>${formatRupiah(item.qty * item.priceLocked)}</strong></span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div class="receipt-divider">================================</div>
+
+                ${finalDiscount > 0 ? `
+                    <div class="receipt-info-row" style="font-size: 12px; margin-bottom: 3px;">
+                        <span>Subtotal:</span>
+                        <span>${formatRupiah(subtotal)}</span>
+                    </div>
+                    <div class="receipt-info-row" style="font-size: 12px; color: #C0392B; margin-bottom: 3px;">
+                        <span>Diskon Tambahan${finalDiscountNote}:</span>
+                        <span>-${formatRupiah(finalDiscount)}</span>
+                    </div>
+                ` : ''}
+
+                <div class="receipt-calc-row">
+                    <span>TOTAL TAGIHAN:</span>
+                    <span class="total-highlight">${formatRupiah(grandTotal)}</span>
+                </div>
+                <div class="receipt-calc-row" style="color: #D97706; font-size: 13px;">
+                    <span>Status:</span>
+                    <strong>⏳ BELUM DIBAYAR</strong>
+                </div>
+
+                ${settings.bankName && settings.bankAccount ? `
+                    <div class="receipt-divider">--------------------------------</div>
+                    <div style="font-size: 11px; text-align: center; color: #475569; margin: 4px 0;">
+                        <div>Info Pembayaran Transfer Bank:</div>
+                        <strong>${settings.bankName} - ${settings.bankAccount}</strong>
+                        ${settings.bankHolder ? `<div>a.n ${settings.bankHolder}</div>` : ''}
+                    </div>
+                ` : ''}
+
+                <div class="receipt-divider">--------------------------------</div>
+
+                <div class="receipt-footer">
+                    <p style="font-size: 11px; font-weight: 600; color: #64748B;">
+                        * Mohon periksa kembali pesanan Anda.<br>
+                        Pembayaran dapat dilakukan ke kasir / staf bertugas.
+                    </p>
+                    <small>Sistem Kasir DIASAP POS Cloud</small>
+                </div>
+            </div>
+        `;
+
+        modal.classList.add('active');
+    }
+
+    closeBillModal() {
+        const modal = document.getElementById('billModal');
+        if (modal) modal.classList.remove('active');
+    }
+
+    printBill() {
+        window.print();
+    }
+
+    proceedToPayment() {
+        this.closeBillModal();
+        const paymentTabs = document.querySelector('.payment-methods-tabs');
+        if (paymentTabs) {
+            paymentTabs.scrollIntoView({ behavior: 'smooth' });
+        }
+        const cashInput = document.getElementById('cashInput');
+        if (cashInput && this.paymentMethod === 'cash') {
+            setTimeout(() => cashInput.focus(), 200);
+        }
+    }
+
+    async saveBillAsImage() {
+        const billEl = document.getElementById('thermalBillPaper');
+        if (!billEl) return;
+
+        const filename = `Bill_DIASAP_${Date.now().toString().slice(-6)}.png`;
+
+        if (typeof html2canvas === 'undefined') {
+            alert('Pustaka renderer sedang dimuat, silakan coba sesaat lagi.');
+            return;
+        }
+
+        try {
+            const canvas = await html2canvas(billEl, {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                useCORS: true
+            });
+
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            if (typeof adminManager !== 'undefined' && adminManager.showToast) {
+                adminManager.showToast('Gambar bill berhasil disimpan!');
+            }
+        } catch (err) {
+            console.error('Gagal simpan gambar bill:', err);
+            alert('Gagal menyimpan gambar bill: ' + err.message);
+        }
+    }
+
+    async shareBill() {
+        const billEl = document.getElementById('thermalBillPaper');
+        if (!billEl) return;
+
+        const filename = `Bill_DIASAP_${Date.now().toString().slice(-6)}.png`;
+
+        if (typeof html2canvas === 'undefined') {
+            alert('Pustaka renderer sedang dimuat, silakan coba sesaat lagi.');
+            return;
+        }
+
+        try {
+            const canvas = await html2canvas(billEl, {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                useCORS: true
+            });
+
+            canvas.toBlob(async (blob) => {
+                if (!blob) {
+                    this.saveBillAsImage();
+                    return;
+                }
+
+                const file = new File([blob], filename, { type: 'image/png' });
+
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            title: `Bill Tagihan DIASAP`,
+                            text: `Lembar tagihan pesanan DIASAP sebesar ${formatRupiah(cartManager?.getGrandTotal() || 0)}`,
+                            files: [file]
+                        });
+                        return;
+                    } catch (shareErr) {
+                        if (shareErr.name === 'AbortError') return;
+                    }
+                }
+
+                const link = document.createElement('a');
+                link.download = filename;
+                link.href = URL.createObjectURL(blob);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                alert('Gambar bill telah diunduh ke perangkat Anda. Anda dapat langsung mengirimkannya lewat WhatsApp ke pelanggan.');
+            }, 'image/png');
+        } catch (err) {
+            console.error('Gagal share bill:', err);
+            this.saveBillAsImage();
+        }
+    }
 }
 
 const paymentManager = new PaymentManager();

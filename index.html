@@ -6,7 +6,7 @@
     <title>🔥 DIASAP POS - Kasir & Manajemen Penjualan</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔥</text></svg>">
     <!-- Stylesheet POS -->
-    <link rel="stylesheet" href="css/style.css?v=4.0">
+    <link rel="stylesheet" href="css/style.css?v=4.1">
     <!-- Pustaka Eksternal: Excel XLSX Export, Canvas Struk, PDF Generator -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -209,6 +209,20 @@
                     <span id="grandTotal">Rp 0</span>
                 </div>
 
+                <!-- Tombol Cetak Bill Sementara (Langkah 1: Tagihan Meja / Customer) -->
+                <div class="bill-action-row">
+                    <button type="button" class="btn-print-bill" id="btnPrintBill" onclick="paymentManager.showBillModal()" title="Cetak atau tampilkan bill sementara untuk dicek pelanggan sebelum bayar">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        <span>🧾 Cetak Bill / Tagihan Sementara</span>
+                    </button>
+                </div>
+
                 <!-- Metode Pembayaran -->
                 <div class="payment-methods-tabs">
                     <button type="button" class="pay-method-btn active" data-method="cash">
@@ -296,6 +310,36 @@
                 </button>
                 <button type="button" class="btn-nav-action btn-receipt-print" onclick="paymentManager.printReceipt()" title="Cetak struk ke printer thermal kasir">
                     🖨️ Cetak Struk
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODAL: BILL / TAGIHAN SEMENTARA (LANGKAH 1 RESTORAN) ================= -->
+    <div class="modal-backdrop" id="billModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🧾 Lembar Tagihan Sementara (Bill Meja)</h3>
+                <button type="button" class="modal-close-btn" onclick="paymentManager.closeBillModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="billPrintArea">
+                    <!-- Format Lembar Bill Meja digenerate oleh payment.js -->
+                </div>
+            </div>
+            <div class="modal-footer receipt-actions-footer">
+                <button type="button" class="btn-nav-action" onclick="paymentManager.closeBillModal()">Tutup</button>
+                <button type="button" class="btn-nav-action btn-receipt-share" onclick="paymentManager.shareBill()" title="Kirim tagihan bill ini ke WhatsApp pelanggan">
+                    📲 Kirim WA / Bagikan
+                </button>
+                <button type="button" class="btn-nav-action btn-receipt-save" onclick="paymentManager.saveBillAsImage()" title="Simpan lembar bill sebagai file gambar">
+                    🖼️ Simpan Gambar
+                </button>
+                <button type="button" class="btn-nav-action btn-receipt-print" onclick="paymentManager.printBill()" title="Cetak bill sementara ke printer kasir">
+                    🖨️ Cetak Bill
+                </button>
+                <button type="button" class="btn-nav-action btn-primary-submit" onclick="paymentManager.proceedToPayment()" style="margin-left: auto;" title="Lanjut ke proses pembayaran kasir">
+                    ➡️ Lanjut Pembayaran
                 </button>
             </div>
         </div>
@@ -1179,8 +1223,8 @@
     <script src="js/settings.js?v=4.0"></script>
     <script src="js/inventory.js?v=4.0"></script>
     <script src="js/products.js?v=4.0"></script>
-    <script src="js/cart.js?v=4.0"></script>
-    <script src="js/payment.js?v=4.0"></script>
+    <script src="js/cart.js?v=4.1"></script>
+    <script src="js/payment.js?v=4.1"></script>
     <script src="js/auth.js?v=4.0"></script>
     <script src="js/admin.js?v=4.0"></script>
     <script src="js/app.js?v=4.0"></script>
