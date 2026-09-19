@@ -536,7 +536,7 @@ class PaymentManager {
         content.innerHTML = `
             <div class="receipt-paper bill-paper" id="thermalBillPaper">
                 <div class="bill-watermark-banner">
-                    [ LEMBAR TAGIHAN SEMENTARA - BELUM LUNAS ]
+                    TAGIHAN SEMENTARA - BELUM LUNAS
                 </div>
 
                 <div class="receipt-header">
@@ -594,21 +594,21 @@ class PaymentManager {
                 <div class="receipt-divider">================================</div>
 
                 ${finalDiscount > 0 ? `
-                    <div class="receipt-info-row" style="font-size: 12px; margin-bottom: 3px;">
+                    <div class="receipt-info-row" style="margin-bottom: 3px;">
                         <span>Subtotal:</span>
                         <span>${formatRupiah(subtotal)}</span>
                     </div>
-                    <div class="receipt-info-row" style="font-size: 12px; margin-bottom: 3px;">
+                    <div class="receipt-info-row" style="margin-bottom: 3px;">
                         <span>Diskon Tambahan${finalDiscountNote}:</span>
                         <span>-${formatRupiah(finalDiscount)}</span>
                     </div>
                 ` : ''}
 
-                <div class="receipt-calc-row" style="font-size: 13.5px; font-weight: 900;">
+                <div class="receipt-calc-row">
                     <span>TOTAL TAGIHAN:</span>
                     <span class="total-highlight">${formatRupiah(grandTotal)}</span>
                 </div>
-                <div class="receipt-calc-row" style="font-size: 12px; font-weight: 800;">
+                <div class="receipt-calc-row">
                     <span>STATUS:</span>
                     <strong>BELUM DIBAYAR</strong>
                 </div>
@@ -627,8 +627,8 @@ class PaymentManager {
                     ` : `
                         <div class="bill-qris-placeholder-box">
                             <div class="qris-code-mock" style="width: 140px; height: 140px; margin: 0 auto;"></div>
-                            <div style="font-size: 10px; font-weight: bold; margin-top: 4px;">SCAN QRIS PEMBAYARAN</div>
-                            <div style="font-size: 9px;">(Unggah QRIS di Pengaturan Toko)</div>
+                            <div style="font-weight: bold; margin-top: 4px;">SCAN QRIS PEMBAYARAN</div>
+                            <div>(Unggah QRIS di Pengaturan Toko)</div>
                         </div>
                     `}
 
@@ -650,11 +650,11 @@ class PaymentManager {
                 <div class="receipt-divider">--------------------------------</div>
 
                 <div class="receipt-footer">
-                    <p style="font-size: 11px; font-weight: 600; margin: 2px 0;">
+                    <p style="margin: 2px 0;">
                         * Mohon periksa kembali pesanan Anda.<br>
                         Pembayaran dapat dilakukan ke kasir / staf bertugas.
                     </p>
-                    <small>Sistem Kasir DIASAP POS</small>
+                    <div style="margin-top: 4px; font-weight: bold;">Sistem Kasir DIASAP POS</div>
                 </div>
             </div>
         `;
