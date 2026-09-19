@@ -14,3 +14,6 @@ Thumbs.db
 # Temporary & backup files
 *.tmp
 *~
+
+.vercel
+.env*
