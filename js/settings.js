@@ -53,7 +53,12 @@ class SettingsManager {
             authManager.updateCashierList(this.settings.cashiers || ['Ayu', 'Dina', 'Nining']);
         }
 
-        // 5. Update QRIS & Bank Info di Checkout
+        // 5. Update Pilihan Kurir / Ojol di Keranjang Kasir
+        if (typeof cartManager !== 'undefined' && cartManager.updateCourierOptions) {
+            cartManager.updateCourierOptions(this.settings.couriers || (CONFIG.DEFAULT_SETTINGS.couriers || ['GoSend', 'GrabExpress', 'Paxel', 'Lalamove', 'Maxim']));
+        }
+
+        // 6. Update QRIS & Bank Info di Checkout
         this.updateCheckoutPaymentInfo();
     }
 
@@ -231,6 +236,7 @@ class SettingsManager {
         this.renderQrisPreview();
         this.renderFaviconPreview();
         this.renderCashiersList();
+        this.renderCouriersList();
     }
 
     renderFaviconPreview() {
@@ -376,6 +382,83 @@ class SettingsManager {
         }
     }
 
+    // ================= MANAJEMEN DAFTAR OJOL / KURIR =================
+
+    renderCouriersList() {
+        const container = document.getElementById('settingCouriersList');
+        if (!container) return;
+
+        const couriers = this.settings.couriers || (CONFIG.DEFAULT_SETTINGS.couriers || ['GoSend', 'GrabExpress', 'Paxel', 'Lalamove', 'Maxim']);
+
+        if (couriers.length === 0) {
+            container.innerHTML = `<div style="color: #94A3B8; font-size: 13px; font-style: italic;">Belum ada pilihan kurir. Tambahkan kurir di bawah.</div>`;
+            return;
+        }
+
+        container.innerHTML = couriers.map((name, idx) => `
+            <div class="cashier-tag-pill">
+                <span class="cashier-avatar-badge">🛵</span>
+                <span class="cashier-name-text">${name}</span>
+                <button type="button" class="btn-del-cashier" onclick="settingsManager.removeCourier(${idx})" title="Hapus opsi kurir ini">
+                    &times;
+                </button>
+            </div>
+        `).join('');
+    }
+
+    addCourier() {
+        const input = document.getElementById('settingNewCourierName');
+        if (!input) return;
+
+        const name = input.value.trim();
+        if (!name) {
+            alert('Nama ojol / kurir tidak boleh kosong!');
+            input.focus();
+            return;
+        }
+
+        if (!this.settings.couriers) {
+            this.settings.couriers = [...(CONFIG.DEFAULT_SETTINGS.couriers || ['GoSend', 'GrabExpress', 'Paxel', 'Lalamove', 'Maxim'])];
+        }
+
+        if (this.settings.couriers.map(c => c.toLowerCase()).includes(name.toLowerCase())) {
+            alert(`Pilihan kurir "${name}" sudah ada.`);
+            input.focus();
+            return;
+        }
+
+        this.settings.couriers.push(name);
+        input.value = '';
+        this.renderCouriersList();
+        if (typeof cartManager !== 'undefined' && cartManager.updateCourierOptions) {
+            cartManager.updateCourierOptions(this.settings.couriers);
+        }
+    }
+
+    removeCourier(index) {
+        if (!this.settings.couriers || !this.settings.couriers[index]) return;
+
+        if (this.settings.couriers.length <= 1) {
+            alert('Minimal harus ada 1 opsi kurir yang terdaftar!');
+            return;
+        }
+
+        const name = this.settings.couriers[index];
+        if (confirm(`Hapus pilihan kurir "${name}" dari daftar?`)) {
+            this.settings.couriers.splice(index, 1);
+            this.renderCouriersList();
+            if (typeof cartManager !== 'undefined' && cartManager.updateCourierOptions) {
+                cartManager.updateCourierOptions(this.settings.couriers);
+            }
+        }
+    }
+
+    getCourierList() {
+        return (this.settings && this.settings.couriers && this.settings.couriers.length > 0)
+            ? this.settings.couriers
+            : (CONFIG.DEFAULT_SETTINGS.couriers || ['GoSend', 'GrabExpress', 'Paxel', 'Lalamove', 'Maxim']);
+    }
+
     // ================= SIMPAN PENGATURAN TOKO =================
 
     async handleSaveSettings() {
@@ -395,7 +478,10 @@ class SettingsManager {
             bankAccountHolder: val('settingBankAccountHolder'),
             cashiers: (this.settings.cashiers && this.settings.cashiers.length > 0) 
                 ? this.settings.cashiers 
-                : ['Ayu', 'Dina', 'Nining']
+                : ['Ayu', 'Dina', 'Nining'],
+            couriers: (this.settings.couriers && this.settings.couriers.length > 0)
+                ? this.settings.couriers
+                : (CONFIG.DEFAULT_SETTINGS.couriers || ['GoSend', 'GrabExpress', 'Paxel', 'Lalamove', 'Maxim'])
         };
 
         const submitBtn = document.getElementById('settingBtnSave');

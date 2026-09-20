@@ -13,6 +13,7 @@ class CartManager {
         this.poPickupDate = '';
         this.poPickupTime = '';
         this.poPickupMethod = 'self_pickup'; // 'self_pickup', 'ojol', 'delivery'
+        this.selectedCourier = '';
         this.poPickupAddress = '';
         this.deliveryFee = 0;
         this.editingPendingInvoiceNo = null;
@@ -217,6 +218,9 @@ class CartManager {
         if (timeInput) timeInput.value = '';
         const addrInput = document.getElementById('poPickupAddress');
         if (addrInput) addrInput.value = '';
+        const courierSelect = document.getElementById('poCourierSelect');
+        if (courierSelect) courierSelect.value = '';
+        this.selectedCourier = '';
         const feeInput = document.getElementById('poDeliveryFee');
         if (feeInput) feeInput.value = '';
         this.deliveryFee = 0;
@@ -274,6 +278,53 @@ class CartManager {
         }
     }
 
+    // Perbarui opsi dropdown ojol / kurir berdasarkan pengaturan toko
+    updateCourierOptions(list = null) {
+        const select = document.getElementById('poCourierSelect');
+        if (!select) return;
+
+        let couriers = list;
+        if (!couriers) {
+            if (typeof settingsManager !== 'undefined' && settingsManager.getCourierList) {
+                couriers = settingsManager.getCourierList();
+            } else if (typeof CONFIG !== 'undefined' && CONFIG.DEFAULT_SETTINGS && CONFIG.DEFAULT_SETTINGS.couriers) {
+                couriers = CONFIG.DEFAULT_SETTINGS.couriers;
+            } else {
+                couriers = ['GoSend', 'GrabExpress', 'Paxel', 'Lalamove', 'Maxim'];
+            }
+        }
+
+        const currentVal = select.value || this.selectedCourier || '';
+        
+        let html = '<option value="">-- Pilih Ojol / Kurir --</option>';
+        couriers.forEach(c => {
+            html += `<option value="${c}">🛵 ${c}</option>`;
+        });
+        html += '<option value="Lainnya">➕ Lainnya (Tulis Manual)</option>';
+
+        select.innerHTML = html;
+
+        if (currentVal) {
+            select.value = currentVal;
+        }
+    }
+
+    // Tangani perubahan dropdown ojol / kurir
+    onCourierSelectChange(val) {
+        this.selectedCourier = val;
+        const addrInput = document.getElementById('poPickupAddress');
+        if (!addrInput) return;
+
+        if (val === 'Lainnya') {
+            addrInput.placeholder = 'Tulis nama kurir / info driver & plat motor';
+            addrInput.focus();
+        } else if (val) {
+            addrInput.placeholder = `Catatan driver / plat motor / no. resi ${val} (opsional)`;
+        } else {
+            addrInput.placeholder = 'Info Ojol / Kurir (misal: GoSend, Plat / Driver)';
+        }
+    }
+
     // Set metode pickup PO (Ambil di Toko / Ojol / Antar ke Lokasi)
     setPoPickupMethod(method) {
         this.poPickupMethod = method;
@@ -285,26 +336,35 @@ class CartManager {
             }
         });
 
+        const courierWrapper = document.getElementById('poCourierWrapper');
         const addressWrapper = document.getElementById('poAddressWrapper');
         const addressInput = document.getElementById('poPickupAddress');
         const feeWrapper = document.getElementById('poDeliveryFeeWrapper');
         const feeInput = document.getElementById('poDeliveryFee');
 
-        if (addressWrapper) {
-            if (method === 'self_pickup') {
-                addressWrapper.style.display = 'none';
-                if (feeWrapper) feeWrapper.style.display = 'none';
-                this.deliveryFee = 0;
-                if (feeInput) feeInput.value = '';
-            } else if (method === 'ojol') {
+        if (method === 'self_pickup') {
+            if (courierWrapper) courierWrapper.style.display = 'none';
+            if (addressWrapper) addressWrapper.style.display = 'none';
+            if (feeWrapper) feeWrapper.style.display = 'none';
+            this.deliveryFee = 0;
+            if (feeInput) feeInput.value = '';
+        } else if (method === 'ojol') {
+            if (courierWrapper) {
+                courierWrapper.style.display = 'block';
+                this.updateCourierOptions();
+            }
+            if (addressWrapper) {
                 addressWrapper.style.display = 'block';
-                if (addressInput) addressInput.placeholder = 'Info Ojol / Kurir (misal: Paxel / GoSend, Plat / Driver)';
-                if (feeWrapper) feeWrapper.style.display = 'block';
-            } else if (method === 'delivery') {
+                this.onCourierSelectChange(this.selectedCourier || document.getElementById('poCourierSelect')?.value || '');
+            }
+            if (feeWrapper) feeWrapper.style.display = 'block';
+        } else if (method === 'delivery') {
+            if (courierWrapper) courierWrapper.style.display = 'none';
+            if (addressWrapper) {
                 addressWrapper.style.display = 'block';
                 if (addressInput) addressInput.placeholder = 'Alamat Pengantaran Lengkap & No. HP Penerima';
-                if (feeWrapper) feeWrapper.style.display = 'block';
             }
+            if (feeWrapper) feeWrapper.style.display = 'block';
         }
 
         this.renderDiscountUI();
@@ -337,12 +397,29 @@ class CartManager {
         const dateInput = document.getElementById('poPickupDate');
         const timeInput = document.getElementById('poPickupTime');
         const addrInput = document.getElementById('poPickupAddress');
+        const courierSelect = document.getElementById('poCourierSelect');
+
+        let finalAddress = addrInput ? addrInput.value.trim() : (this.poPickupAddress || '');
+
+        if (this.poPickupMethod === 'ojol') {
+            const courier = courierSelect ? courierSelect.value : (this.selectedCourier || '');
+            if (courier && courier !== 'Lainnya') {
+                if (finalAddress) {
+                    // Cegah duplikasi jika sudah diawali nama kurir
+                    if (!finalAddress.toLowerCase().startsWith(courier.toLowerCase())) {
+                        finalAddress = `${courier} (${finalAddress})`;
+                    }
+                } else {
+                    finalAddress = courier;
+                }
+            }
+        }
 
         return {
             pickupDate: dateInput ? dateInput.value : this.poPickupDate,
             pickupTime: timeInput ? timeInput.value : this.poPickupTime,
             pickupMethod: this.poPickupMethod || 'self_pickup',
-            pickupAddress: addrInput ? addrInput.value.trim() : (this.poPickupAddress || ''),
+            pickupAddress: finalAddress,
             deliveryFee: this.deliveryFee || 0
         };
     }
@@ -370,8 +447,50 @@ class CartManager {
             if (order.pickupMethod) {
                 this.setPoPickupMethod(order.pickupMethod);
             }
+
             const addrInput = document.getElementById('poPickupAddress');
-            if (addrInput && order.pickupAddress) addrInput.value = order.pickupAddress;
+            const courierSelect = document.getElementById('poCourierSelect');
+
+            if (order.pickupMethod === 'ojol') {
+                const fullAddr = (order.pickupAddress || '').trim();
+                let matchedCourier = '';
+                let extraNote = fullAddr;
+
+                const availableCouriers = (typeof settingsManager !== 'undefined' && settingsManager.getCourierList)
+                    ? settingsManager.getCourierList()
+                    : (CONFIG.DEFAULT_SETTINGS.couriers || ['GoSend', 'GrabExpress', 'Paxel', 'Lalamove', 'Maxim']);
+
+                for (const c of availableCouriers) {
+                    if (fullAddr.toLowerCase().startsWith(c.toLowerCase())) {
+                        matchedCourier = c;
+                        let remainder = fullAddr.slice(c.length).trim();
+                        if (remainder.startsWith('(') && remainder.endsWith(')')) {
+                            remainder = remainder.slice(1, -1).trim();
+                        } else if (remainder.startsWith('-')) {
+                            remainder = remainder.slice(1).trim();
+                        }
+                        extraNote = remainder;
+                        break;
+                    }
+                }
+
+                if (matchedCourier) {
+                    this.selectedCourier = matchedCourier;
+                    if (courierSelect) courierSelect.value = matchedCourier;
+                    if (addrInput) addrInput.value = extraNote;
+                } else if (fullAddr) {
+                    this.selectedCourier = 'Lainnya';
+                    if (courierSelect) courierSelect.value = 'Lainnya';
+                    if (addrInput) addrInput.value = fullAddr;
+                } else {
+                    this.selectedCourier = '';
+                    if (courierSelect) courierSelect.value = '';
+                    if (addrInput) addrInput.value = '';
+                }
+                this.onCourierSelectChange(this.selectedCourier);
+            } else {
+                if (addrInput && order.pickupAddress) addrInput.value = order.pickupAddress;
+            }
 
             this.deliveryFee = Number(order.deliveryFee || 0);
             const feeInput = document.getElementById('poDeliveryFee');
@@ -631,6 +750,9 @@ class CartManager {
     }
 
     init() {
+        // Inisialisasi opsi kurir
+        this.updateCourierOptions();
+
         // Event scroll window & document untuk mendeteksi posisi keranjang secara real-time
         window.addEventListener('scroll', () => {
             this.updateFloatingBarVisibility();

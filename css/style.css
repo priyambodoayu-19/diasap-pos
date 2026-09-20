@@ -6251,8 +6251,39 @@ input[type="password"]::-ms-clear {
     font-weight: 700;
 }
 
+.po-courier-row {
+    margin-top: 4px;
+}
+
+.po-sublabel {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #9A3412;
+    margin-bottom: 3px;
+}
+
+.po-courier-select {
+    width: 100%;
+    padding: 6px 8px;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid #FED7AA;
+    border-radius: 6px;
+    background: #FFFFFF;
+    color: #1E293B;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.po-courier-select:focus {
+    border-color: #F97316;
+    box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.15);
+}
+
 .po-address-row {
-    margin-top: 2px;
+    margin-top: 4px;
 }
 
 .po-address-input {

@@ -33,7 +33,8 @@ const CONFIG = {
         qrisImage: "",
         receiptHeader: "🔥 DIASAP 🔥\nSmoked Meat & Kitchen",
         receiptFooter: "Terima Kasih Atas Kunjungan Anda!\nNikmati Sensasi Daging Asap Khas Kami.",
-        cashiers: ["Ayu", "Dina", "Nining"]
+        cashiers: ["Ayu", "Dina", "Nining"],
+        couriers: ["GoSend", "GrabExpress", "Paxel", "Lalamove", "Maxim", "ShopeeXpress"]
     },
 
     // Data Bahan Baku Master Default (jika offline)

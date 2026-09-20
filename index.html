@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
     <!-- Stylesheet POS -->
-    <link rel="stylesheet" href="css/style.css?v=8.0">
+    <link rel="stylesheet" href="css/style.css?v=8.1">
     <!-- Pustaka Eksternal: Excel XLSX Export, Canvas Struk, PDF Generator -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -232,6 +232,13 @@
                         <button type="button" class="po-method-btn active" data-method="self_pickup" onclick="cartManager.setPoPickupMethod('self_pickup')">🏪 Ambil di Toko</button>
                         <button type="button" class="po-method-btn" data-method="ojol" onclick="cartManager.setPoPickupMethod('ojol')">🛵 Ojol / Kurir</button>
                         <button type="button" class="po-method-btn" data-method="delivery" onclick="cartManager.setPoPickupMethod('delivery')">🚚 Diantar Toko</button>
+                    </div>
+                    <!-- Pilihan Ojol / Kurir (muncul saat metode 'ojol') -->
+                    <div class="po-courier-row" id="poCourierWrapper" style="display: none;">
+                        <label for="poCourierSelect" class="po-sublabel">🛵 Pilihan Ojol / Kurir:</label>
+                        <select id="poCourierSelect" class="form-control po-courier-select" onchange="cartManager.onCourierSelectChange(this.value)">
+                            <option value="">-- Pilih Ojol / Kurir --</option>
+                        </select>
                     </div>
                     <div class="po-address-row" id="poAddressWrapper" style="display: none;">
                         <input type="text" id="poPickupAddress" class="form-control po-address-input" placeholder="Info Ojol / Alamat (misal: Paxel / GoSend, Plat / Alamat)">
@@ -1367,6 +1374,9 @@
                 <button type="button" class="settings-tab-btn" data-tab="cashiers">
                     👥 Kelola Daftar Kasir
                 </button>
+                <button type="button" class="settings-tab-btn" data-tab="couriers">
+                    🛵 Ojol & Kurir
+                </button>
             </div>
 
             <form id="storeSettingsForm">
@@ -1475,7 +1485,24 @@
                                     + Tambah Kasir
                                 </button>
                             </div>
-                            <small class="form-help">Kasir yang didaftarkan di sini akan muncul pada opsi pilih kasir saat buka kunci kasir dan laporan audit riwayat.</small>
+                        </div>
+                    </div>
+
+                    <!-- TAB 4: DAFTAR OJOL & KURIR -->
+                    <div class="settings-tab-pane" id="settingsTab-couriers" style="display: none;">
+                        <div class="cashiers-manager-card">
+                            <label>Daftar Pilihan Ojol / Ekspedisi Kurir:</label>
+                            <div class="cashiers-tags-container" id="settingCouriersList">
+                                <!-- Diisi dinamis oleh settingsManager -->
+                            </div>
+
+                            <div class="add-cashier-input-row">
+                                <input type="text" id="settingNewCourierName" class="form-control" placeholder="Nama Ojol / Kurir Baru (misal: GoSend, GrabExpress, Paxel)" onkeydown="if(event.key==='Enter'){event.preventDefault(); settingsManager.addCourier();}">
+                                <button type="button" class="btn-nav-action btn-add-cashier-act" onclick="settingsManager.addCourier()">
+                                    + Tambah Ojol / Kurir
+                                </button>
+                            </div>
+                            <small class="form-help">Pilihan ojol / kurir yang ditambahkan di sini akan otomatis muncul sebagai opsi dropdown pilihan di kasir saat transaksi Take Away (PO) dengan pengiriman Ojol / Kurir.</small>
                         </div>
                     </div>
                 </div>
@@ -1569,16 +1596,16 @@
     <div id="bulkPrintArea" class="bulk-print-only-container"></div>
 
     <!-- ================= JAVASCRIPT MODULES ================= -->
-    <script src="js/config.js?v=8.0"></script>
-    <script src="js/sound.js?v=8.0"></script>
-    <script src="js/db.js?v=8.0"></script>
-    <script src="js/settings.js?v=8.0"></script>
-    <script src="js/inventory.js?v=8.0"></script>
-    <script src="js/products.js?v=8.0"></script>
-    <script src="js/cart.js?v=8.0"></script>
-    <script src="js/payment.js?v=8.0"></script>
-    <script src="js/auth.js?v=8.0"></script>
-    <script src="js/admin.js?v=8.0"></script>
-    <script src="js/app.js?v=8.0"></script>
+    <script src="js/config.js?v=8.1"></script>
+    <script src="js/sound.js?v=8.1"></script>
+    <script src="js/db.js?v=8.1"></script>
+    <script src="js/settings.js?v=8.1"></script>
+    <script src="js/inventory.js?v=8.1"></script>
+    <script src="js/products.js?v=8.1"></script>
+    <script src="js/cart.js?v=8.1"></script>
+    <script src="js/payment.js?v=8.1"></script>
+    <script src="js/auth.js?v=8.1"></script>
+    <script src="js/admin.js?v=8.1"></script>
+    <script src="js/app.js?v=8.1"></script>
 </body>
 </html>
