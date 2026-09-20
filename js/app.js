@@ -24,11 +24,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         await settingsManager.init();
     }
 
-    // Inisialisasi Transaksi Aktif / Diproses (Badge & Antrean)
-    if (typeof activeOrdersManager !== 'undefined') {
-        await activeOrdersManager.init();
-    }
-
     // 1. Setup Status Koneksi Database
     const dbStatusBadge = document.getElementById('dbStatusBadge');
     const dbStatusText = document.getElementById('dbStatusText');
@@ -47,8 +42,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Cek koneksi awal
+    // Cek koneksi awal & sinkronkan database
     await db.checkConnection();
+
+    // Inisialisasi Transaksi Aktif / Diproses (Badge & Antrean)
+    if (typeof activeOrdersManager !== 'undefined') {
+        await activeOrdersManager.init();
+    }
 
     // 2. Muat Produk
     await productManager.loadProducts();
@@ -1212,4 +1212,5 @@ class ActiveOrdersManager {
     }
 }
 
-const activeOrdersManager = new ActiveOrdersManager();
+window.activeOrdersManager = new ActiveOrdersManager();
+const activeOrdersManager = window.activeOrdersManager;

@@ -65,6 +65,7 @@ class DatabaseService {
         try {
             await this.query('SELECT 1 as ping;');
             await this.ensureSchema();
+            await this.syncUnsyncedOrders();
             return true;
         } catch {
             return false;
@@ -73,18 +74,38 @@ class DatabaseService {
 
     // Pastikan kolom baru (status, pickup_date, dll) tersedia di tabel orders Neon
     async ensureSchema() {
+        const statements = [
+            `ALTER TABLE orders ADD COLUMN IF NOT EXISTS status VARCHAR(30) DEFAULT 'completed';`,
+            `ALTER TABLE orders ADD COLUMN IF NOT EXISTS pickup_date VARCHAR(20);`,
+            `ALTER TABLE orders ADD COLUMN IF NOT EXISTS pickup_time VARCHAR(10);`,
+            `ALTER TABLE orders ADD COLUMN IF NOT EXISTS pickup_method VARCHAR(30) DEFAULT 'self_pickup';`,
+            `ALTER TABLE orders ADD COLUMN IF NOT EXISTS pickup_address TEXT;`,
+            `ALTER TABLE orders ADD COLUMN IF NOT EXISTS picked_up_at TIMESTAMP;`,
+            `ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_fee NUMERIC DEFAULT 0;`
+        ];
+        for (const sql of statements) {
+            try {
+                await this.query(sql);
+            } catch (e) {
+                // Abaikan jika sudah ada atau offline
+            }
+        }
+    }
+
+    // Sinkronkan order lokal yang belum tersimpan ke database Neon saat online
+    async syncUnsyncedOrders() {
         try {
-            await this.query(`
-                ALTER TABLE orders ADD COLUMN IF NOT EXISTS status VARCHAR(30) DEFAULT 'completed';
-                ALTER TABLE orders ADD COLUMN IF NOT EXISTS pickup_date VARCHAR(20);
-                ALTER TABLE orders ADD COLUMN IF NOT EXISTS pickup_time VARCHAR(10);
-                ALTER TABLE orders ADD COLUMN IF NOT EXISTS pickup_method VARCHAR(30) DEFAULT 'self_pickup';
-                ALTER TABLE orders ADD COLUMN IF NOT EXISTS pickup_address TEXT;
-                ALTER TABLE orders ADD COLUMN IF NOT EXISTS picked_up_at TIMESTAMP;
-                ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_fee NUMERIC DEFAULT 0;
-            `);
-        } catch (e) {
-            console.warn('ensureSchema check (aman jika offline / kolom sudah ada):', e);
+            const local = this.getLocalOrders();
+            const unsynced = local.filter(o => o.synced === false);
+            for (const order of unsynced) {
+                try {
+                    await this.saveOrder(order, order.items || []);
+                } catch (e) {
+                    console.warn('Gagal sync order ke Neon:', order.invoiceNo, e);
+                }
+            }
+        } catch (err) {
+            console.warn('Gagal jalankan syncUnsyncedOrders:', err);
         }
     }
 
@@ -617,6 +638,8 @@ class DatabaseService {
                     pickedUpAt: r.pickedUpAt || null,
                     items: Array.isArray(r.items) ? r.items : (typeof r.items === 'string' ? JSON.parse(r.items) : [])
                 }));
+                localStorage.setItem(this.storageKeyOrders, JSON.stringify(mappedOrders));
+                return mappedOrders;
             }
         } catch (e) {
             console.warn('Gagal memuat history dari Neon, menggunakan cache:', e);
