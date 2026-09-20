@@ -6695,27 +6695,65 @@ input[type="password"]::-ms-clear {
 
 /* ==========================================================================
    58mm THERMAL LABEL RESI STYLING (MONOCHROME / PRINTER LABEL COMPLIANT)
-   Only 2 font sizes: 11px (Normal/Standard) & 15px (Large/Bold). NO EMOJI.
+   Strictly 2 Font Sizes: 12px (Standard) & 16px (Large). 100% Solid Black (#000000).
+   NO EMOJI. HIGH CONTRAST.
    ========================================================================== */
-.resi-label-58mm {
-    width: 220px;
-    margin: 0 auto;
-    background: #FFFFFF !important;
+.resi-label-58mm,
+.resi-label-58mm * {
     color: #000000 !important;
+    border-color: #000000 !important;
+    box-sizing: border-box !important;
+}
+
+.resi-label-58mm {
+    width: 220px !important;
+    margin: 0 auto !important;
+    background: #FFFFFF !important;
     font-family: 'Courier New', Courier, monospace !important;
-    font-size: 11px;
-    line-height: 1.35;
-    padding: 8px 6px;
-    box-sizing: border-box;
+    font-size: 12px !important;
+    line-height: 1.35 !important;
+    padding: 6px 4px !important;
 }
 
-.resi-f-normal {
-    font-size: 11px;
+/* ==========================================================================
+   STRICTLY 2 FONT SIZES ONLY:
+   SIZE 1: Standard (12px)
+   SIZE 2: Large / Bold (16px)
+   ========================================================================== */
+
+/* SIZE 1: Standard (12px) */
+.resi-f-normal,
+.resi-header div,
+.resi-subtitle,
+.resi-tag,
+.resi-divider,
+.resi-recipient-box,
+.resi-schedule-box,
+.resi-schedule-box div,
+.resi-notes-header,
+.resi-section-title,
+.resi-item-row,
+.resi-item-row span,
+.resi-meta-row,
+.resi-meta-row span,
+.resi-footer,
+.resi-footer div {
+    font-size: 12px !important;
+    color: #000000 !important;
+    line-height: 1.35 !important;
 }
 
-.resi-f-large {
-    font-size: 15px;
-    font-weight: bold;
+/* SIZE 2: Large / Bold (16px) */
+.resi-f-large,
+.resi-title,
+.resi-recipient-name,
+.resi-notes-body,
+.resi-total-line,
+.resi-total-line span {
+    font-size: 16px !important;
+    font-weight: 900 !important;
+    color: #000000 !important;
+    line-height: 1.25 !important;
 }
 
 .resi-header {
@@ -6724,21 +6762,17 @@ input[type="password"]::-ms-clear {
 }
 
 .resi-title {
-    font-size: 15px;
-    font-weight: 900;
     letter-spacing: 1px;
 }
 
 .resi-subtitle {
-    font-size: 11px;
     font-weight: bold;
 }
 
 .resi-tag {
     display: inline-block;
-    font-size: 11px;
     font-weight: bold;
-    border: 1.5px solid #000000;
+    border: 1.5px solid #000000 !important;
     padding: 1px 6px;
     margin-top: 3px;
 }
@@ -6747,9 +6781,7 @@ input[type="password"]::-ms-clear {
     text-align: center;
     letter-spacing: 1px;
     margin: 3px 0;
-    font-size: 11px;
     font-weight: bold;
-    color: #000000;
 }
 
 .resi-recipient-box {
@@ -6757,64 +6789,55 @@ input[type="password"]::-ms-clear {
 }
 
 .resi-recipient-name {
-    font-size: 15px;
-    font-weight: 900;
     text-transform: uppercase;
-    line-height: 1.2;
     margin-bottom: 3px;
     word-break: break-word;
 }
 
 .resi-schedule-box {
-    border: 1.5px solid #000000;
-    padding: 3px 5px;
+    border: 1.5px solid #000000 !important;
+    padding: 4px 6px;
     margin: 4px 0;
-    font-size: 11px;
-    background: #FFFFFF;
+    background: #FFFFFF !important;
 }
 
 .resi-notes-box {
-    border: 2px solid #000000;
-    padding: 5px 6px;
+    border: 2px solid #000000 !important;
+    padding: 6px 6px;
     margin: 6px 0;
-    background: #FFFFFF;
+    background: #FFFFFF !important;
     text-align: left;
 }
 
 .resi-notes-header {
-    font-size: 11px;
     font-weight: 900;
     letter-spacing: 0.5px;
-    border-bottom: 1px solid #000000;
+    border-bottom: 1.5px solid #000000 !important;
     padding-bottom: 2px;
-    margin-bottom: 3px;
+    margin-bottom: 4px;
 }
 
 .resi-notes-body {
-    font-size: 15px;
-    font-weight: 900;
-    line-height: 1.25;
     word-break: break-word;
     text-transform: uppercase;
 }
 
 .resi-section-title {
-    font-size: 11px;
     font-weight: 900;
     margin-bottom: 3px;
+    text-decoration: underline;
 }
 
 .resi-item-row {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    font-size: 11px;
     margin-bottom: 3px;
 }
 
 .resi-item-qty {
     font-weight: 900;
-    margin-right: 4px;
+    margin-right: 6px;
     min-width: 24px;
 }
 
@@ -6826,23 +6849,21 @@ input[type="password"]::-ms-clear {
 .resi-meta-row {
     display: flex;
     justify-content: space-between;
-    font-size: 11px;
     margin-bottom: 2px;
 }
 
-.resi-meta-row.total-row {
-    font-size: 15px;
-    font-weight: 900;
-    border-top: 1.5px solid #000000;
-    padding-top: 3px;
-    margin-top: 3px;
+.resi-total-line {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    border-top: 2px solid #000000 !important;
+    padding-top: 4px !important;
+    margin-top: 4px !important;
 }
 
 .resi-footer {
     text-align: center;
-    font-size: 11px;
     margin-top: 5px;
-    line-height: 1.3;
 }
 
 

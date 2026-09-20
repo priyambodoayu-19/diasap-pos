@@ -1474,7 +1474,7 @@ class ActiveOrdersManager {
                         <span>${formatRupiah(order.deliveryFee)}</span>
                     </div>
                 ` : ''}
-                <div class="resi-meta-row total-row">
+                <div class="resi-total-line">
                     <span>TOTAL:</span>
                     <span>${formatRupiah(order.totalAmount)}</span>
                 </div>
