@@ -1600,19 +1600,35 @@ class ActiveOrdersManager {
                 renderBox.innerHTML = this.generateResi58mmHtml(order);
 
                 // Tunggu sebentar agar font dirender
-                await new Promise(resolve => setTimeout(resolve, 60));
+                await new Promise(resolve => setTimeout(resolve, 80));
 
                 const canvas = await html2canvas(renderBox.firstElementChild, {
-                    scale: 2,
+                    scale: 3,
                     backgroundColor: '#ffffff',
                     useCORS: true,
                     logging: false
                 });
 
+                // Binarization: snap every pixel to pure black or pure white (eliminates thermal dotted dithering)
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    const imgDataObj = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const d = imgDataObj.data;
+                    for (let p = 0; p < d.length; p += 4) {
+                        const lum = 0.299 * d[p] + 0.587 * d[p + 1] + 0.114 * d[p + 2];
+                        const val = lum < 215 ? 0 : 255;
+                        d[p] = val;
+                        d[p + 1] = val;
+                        d[p + 2] = val;
+                        d[p + 3] = 255;
+                    }
+                    ctx.putImageData(imgDataObj, 0, 0);
+                }
+
                 const imgData = canvas.toDataURL('image/png');
-                const imgWidthMm = 54;
-                const imgHeightMm = (canvas.height * imgWidthMm) / canvas.width;
-                const pageHeightMm = Math.max(65, imgHeightMm + 4);
+                const contentWidthMm = 48; // 58mm label width with exactly 5mm margin on both sides (58 - 5 - 5 = 48mm)
+                const imgHeightMm = (canvas.height * contentWidthMm) / canvas.width;
+                const pageHeightMm = imgHeightMm + 10; // Exactly 5mm top + 5mm bottom margin
 
                 if (i === 0) {
                     pdf = new jsPDF({
@@ -1624,7 +1640,7 @@ class ActiveOrdersManager {
                     pdf.addPage([58, pageHeightMm], 'portrait');
                 }
 
-                pdf.addImage(imgData, 'PNG', 2, 2, imgWidthMm, imgHeightMm);
+                pdf.addImage(imgData, 'PNG', 5, 5, contentWidthMm, imgHeightMm);
             }
 
             renderBox.innerHTML = '';
