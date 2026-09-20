@@ -4026,7 +4026,7 @@ input[type="password"]::-ms-clear {
     }
 
     .history-table {
-        min-width: 720px;
+        min-width: 980px;
     }
 
     /* Kelola Stock Modal Mobile */
@@ -4071,6 +4071,7 @@ input[type="password"]::-ms-clear {
     }
 
     .quick-cash-row {
+        display: grid !important;
         grid-template-columns: repeat(2, 1fr);
         gap: 6px;
     }
@@ -5187,25 +5188,34 @@ input[type="password"]::-ms-clear {
 
 /* --- 11. Tombol Cetak Bill & Watermark Tagihan Sementara --- */
 .bill-action-row {
+    display: flex;
+    gap: 8px;
     margin: 10px 0 12px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
-.btn-print-bill {
-    display: flex;
+.btn-print-bill,
+.btn-save-pending-bill {
+    flex: 1;
+    min-width: 0;
+    width: auto;
+    box-sizing: border-box;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    width: 100%;
-    padding: 11px 16px;
+    gap: 6px;
+    padding: 10px 8px;
     background: #FFFFFF;
     color: var(--secondary);
     border: 1.5px solid var(--border);
     border-radius: 12px;
-    font-size: 13.5px;
+    font-size: 12.5px;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: var(--shadow-sm);
+    white-space: nowrap;
 }
 
 .btn-print-bill:hover {
@@ -5215,7 +5225,14 @@ input[type="password"]::-ms-clear {
     box-shadow: 0 4px 12px rgba(45, 113, 248, 0.12);
 }
 
-.btn-print-bill:active {
+.btn-save-pending-bill:hover {
+    background: #F1F5F9;
+    border-color: #94A3B8;
+    color: #0F172A;
+}
+
+.btn-print-bill:active,
+.btn-save-pending-bill:active {
     transform: scale(0.985);
 }
 
@@ -5484,12 +5501,17 @@ input[type="password"]::-ms-clear {
 }
 
 .po-datetime-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .po-field-group {
-    flex: 1;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     gap: 3px;
@@ -5510,6 +5532,9 @@ input[type="password"]::-ms-clear {
     color: #1E293B;
     outline: none;
     width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .po-input:focus {
@@ -5517,13 +5542,18 @@ input[type="password"]::-ms-clear {
 }
 
 .po-method-pills {
-    display: flex;
-    gap: 4px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .po-method-btn {
-    flex: 1;
-    padding: 6px 4px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 7px 4px;
     font-size: 11px;
     font-weight: 600;
     border: 1px solid #FED7AA;
@@ -5533,6 +5563,14 @@ input[type="password"]::-ms-clear {
     color: #475569;
     transition: all 0.15s;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    line-height: 1.2;
+    white-space: normal;
+    word-break: break-word;
 }
 
 .po-method-btn:hover {
@@ -5566,29 +5604,6 @@ input[type="password"]::-ms-clear {
     border-color: #F97316;
 }
 
-/* Tombol Simpan Tagihan Sementara */
-.btn-save-pending-bill {
-    flex: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 8px 12px;
-    border: 1px solid #CBD5E1;
-    background: #F8FAFC;
-    color: #334155;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s;
-}
-
-.btn-save-pending-bill:hover {
-    background: #F1F5F9;
-    border-color: #94A3B8;
-    color: #0F172A;
-}
 
 .btn-save-bill-pending {
     background: #F1F5F9;

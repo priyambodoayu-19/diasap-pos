@@ -630,83 +630,158 @@ async function exportHistoryToExcel() {
         return;
     }
 
-    const calculateOrderCogs = (order) => {
-        let orderCogs = 0;
-        if (order.items && order.items.length > 0) {
-            order.items.forEach(item => {
-                let itemCogs = Number(item.cogsLocked) || 0;
-                if (itemCogs === 0 && item.id) {
-                    const p = (typeof productManager !== 'undefined') ? productManager.getProductById(item.id) : null;
-                    if (p) itemCogs = Number(p.cogs) || 0;
-                }
-                orderCogs += itemCogs * (Number(item.qty) || 1);
-            });
-        }
-        return orderCogs;
-    };
-
     const header = [
-        'No', 'No Invoice', 'Waktu', 'Kasir', 'Pelanggan',
-        'Layanan', 'Metode Bayar', 'Status Transaksi', 'Dibatalkan Oleh', 'Alasan Void',
-        'Subtotal (Rp)', 'Diskon Final (Rp)', 'Ongkir Kurir (Rp)', 'Total Bayar (Rp)', 'Total Modal (HPP)', 'Untung Bersih (Rp)',
-        'Margin %', 'Bayar Diterima (Rp)', 'Kembalian (Rp)', 'Catatan'
+        'No',
+        'No Invoice',
+        'Waktu',
+        'Kasir',
+        'Pelanggan',
+        'Layanan',
+        'Metode Bayar',
+        'Status Transaksi',
+        'Item Pesanan',
+        'Varian',
+        'Qty',
+        'Harga Normal / Item (Rp)',
+        'Harga Jual / Item (Rp)',
+        'Diskon / Item (Rp)',
+        'Total Diskon Item (Rp)',
+        'Subtotal Item (Rp)',
+        'Modal Satuan (HPP) (Rp)',
+        'Total Modal (HPP) (Rp)',
+        'Untung Bersih Item (Rp)',
+        'Ongkir Kurir (Rp)',
+        'Diskon Final Nota (Rp)',
+        'Total Bayar Nota (Rp)',
+        'Catatan / Info PO',
+        'Dibatalkan Oleh',
+        'Alasan Void'
     ];
 
     const dataRows = [header];
 
-    let sumOmset = 0;
-    let sumOngkir = 0;
+    let rowNum = 1;
+    let sumQty = 0;
+    let sumDiscountItem = 0;
+    let sumSubtotalItem = 0;
     let sumCogs = 0;
     let sumProfit = 0;
+    let sumOngkir = 0;
+    let sumFinalDiscount = 0;
+    let sumOmset = 0;
 
-    orders.forEach((o, idx) => {
+    orders.forEach((o) => {
         const isVoid = Boolean(o.isVoid);
         const totalPaid = isVoid ? 0 : (Number(o.totalAmount) || 0);
         const ongkir = isVoid ? 0 : (Number(o.deliveryFee) || 0);
-        const foodRev = Math.max(0, totalPaid - ongkir);
-        const cogs = isVoid ? 0 : calculateOrderCogs(o);
-        const profit = foodRev - cogs;
-        const marginPct = foodRev > 0 ? Number(((profit / foodRev) * 100).toFixed(1)) : 0;
-        const subtotal = Number(o.subtotalAmount) || totalPaid;
         const finalDiscount = Number(o.finalDiscountAmount) || 0;
+        const notes = [
+            o.notes,
+            (o.orderType === 'take_away' && o.pickupDate) ? `PO: ${o.pickupDate} ${o.pickupTime || ''} (${o.pickupMethod || 'Ambil Toko'}) ${o.pickupAddress ? ' - ' + o.pickupAddress : ''}` : ''
+        ].filter(Boolean).join(' | ');
 
         if (!isVoid) {
-            sumOmset += totalPaid;
             sumOngkir += ongkir;
-            sumCogs += cogs;
-            sumProfit += profit;
+            sumFinalDiscount += finalDiscount;
+            sumOmset += totalPaid;
         }
 
-        dataRows.push([
-            idx + 1,
-            o.invoiceNo,
-            formatDateTime(o.createdAt),
-            o.cashierName || 'Kasir',
-            o.customerName || 'Pelanggan',
-            o.orderType === 'dine_in' ? 'Dine In' : 'Take Away',
-            (o.paymentMethod || 'cash').toUpperCase(),
-            isVoid ? 'VOID / DIBATALKAN' : 'SUKSES',
-            o.voidBy || '',
-            o.voidReason || '',
-            subtotal,
-            finalDiscount,
-            ongkir,
-            totalPaid,
-            cogs,
-            profit,
-            `${marginPct}%`,
-            Number(o.cashReceived) || 0,
-            Number(o.changeAmount) || 0,
-            o.notes || ''
-        ]);
+        const items = (Array.isArray(o.items) && o.items.length > 0) ? o.items : [null];
+
+        items.forEach((item, itemIdx) => {
+            const isFirstItem = (itemIdx === 0);
+
+            let itemName = '-';
+            let variantName = '-';
+            let qty = 0;
+            let priceNormal = 0;
+            let priceLocked = 0;
+            let discountPerItem = 0;
+            let totalDiscountItem = 0;
+            let subtotalItem = 0;
+            let cogsLocked = 0;
+            let totalItemCogs = 0;
+            let itemProfit = 0;
+
+            if (item) {
+                itemName = item.name || '-';
+                variantName = item.variantName || '-';
+                qty = Number(item.qty) || 1;
+                priceLocked = Number(item.priceLocked) || 0;
+                priceNormal = Number(item.priceNormal) || priceLocked;
+                discountPerItem = Math.max(0, priceNormal - priceLocked);
+                totalDiscountItem = discountPerItem * qty;
+                subtotalItem = priceLocked * qty;
+
+                cogsLocked = Number(item.cogsLocked) || 0;
+                if (cogsLocked === 0 && item.id && typeof productManager !== 'undefined') {
+                    const p = productManager.getProductById(item.id);
+                    if (p) cogsLocked = Number(p.cogs) || 0;
+                }
+                totalItemCogs = cogsLocked * qty;
+                itemProfit = subtotalItem - totalItemCogs;
+
+                if (!isVoid) {
+                    sumQty += qty;
+                    sumDiscountItem += totalDiscountItem;
+                    sumSubtotalItem += subtotalItem;
+                    sumCogs += totalItemCogs;
+                    sumProfit += itemProfit;
+                }
+            } else {
+                // Fallback untuk transaksi tanpa data detail item
+                subtotalItem = isVoid ? 0 : Math.max(0, totalPaid - ongkir);
+                if (!isVoid) {
+                    sumSubtotalItem += subtotalItem;
+                    sumProfit += subtotalItem;
+                }
+            }
+
+            dataRows.push([
+                rowNum++,
+                o.invoiceNo,
+                formatDateTime(o.createdAt),
+                o.cashierName || 'Kasir',
+                o.customerName || 'Pelanggan',
+                o.orderType === 'dine_in' ? 'Dine In' : 'Take Away (PO)',
+                (o.paymentMethod || 'cash').toUpperCase(),
+                isVoid ? 'VOID / DIBATALKAN' : 'SUKSES',
+                itemName,
+                variantName,
+                qty,
+                priceNormal,
+                priceLocked,
+                discountPerItem,
+                totalDiscountItem,
+                subtotalItem,
+                cogsLocked,
+                totalItemCogs,
+                itemProfit,
+                isFirstItem ? ongkir : 0,
+                isFirstItem ? finalDiscount : 0,
+                isFirstItem ? totalPaid : 0,
+                isFirstItem ? notes : '',
+                isFirstItem ? (o.voidBy || '') : '',
+                isFirstItem ? (o.voidReason || '') : ''
+            ]);
+        });
     });
 
     // Baris Total Akumulasi
     dataRows.push([]);
     dataRows.push([
-        '', '', '', '', '', '', '', 'TOTAL AKUMULASI:', '', '',
-        '', '', sumOngkir, sumOmset, sumCogs, sumProfit,
-        sumOmset > 0 ? `${((sumProfit / (sumOmset - sumOngkir || sumOmset)) * 100).toFixed(1)}%` : '0%',
+        '', '', '', '', '', '', '', 'TOTAL AKUMULASI:',
+        '', '',
+        sumQty,
+        '', '', '',
+        sumDiscountItem,
+        sumSubtotalItem,
+        '',
+        sumCogs,
+        sumProfit,
+        sumOngkir,
+        sumFinalDiscount,
+        sumOmset,
         '', '', ''
     ]);
 
@@ -718,10 +793,31 @@ async function exportHistoryToExcel() {
         const ws = XLSX.utils.aoa_to_sheet(dataRows);
 
         ws['!cols'] = [
-            { wch: 5 }, { wch: 22 }, { wch: 20 }, { wch: 14 }, { wch: 18 },
-            { wch: 14 }, { wch: 14 }, { wch: 18 }, { wch: 15 }, { wch: 22 },
-            { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 16 }, { wch: 16 },
-            { wch: 12 }, { wch: 16 }, { wch: 14 }, { wch: 25 }
+            { wch: 6 },  // No
+            { wch: 22 }, // No Invoice
+            { wch: 20 }, // Waktu
+            { wch: 12 }, // Kasir
+            { wch: 18 }, // Pelanggan
+            { wch: 15 }, // Layanan
+            { wch: 14 }, // Metode Bayar
+            { wch: 18 }, // Status Transaksi
+            { wch: 26 }, // Item Pesanan
+            { wch: 12 }, // Varian
+            { wch: 8 },  // Qty
+            { wch: 16 }, // Harga Normal / Item (Rp)
+            { wch: 16 }, // Harga Jual / Item (Rp)
+            { wch: 14 }, // Diskon / Item (Rp)
+            { wch: 16 }, // Total Diskon Item (Rp)
+            { wch: 16 }, // Subtotal Item (Rp)
+            { wch: 16 }, // Modal Satuan (HPP) (Rp)
+            { wch: 16 }, // Total Modal (HPP) (Rp)
+            { wch: 16 }, // Untung Bersih Item (Rp)
+            { wch: 15 }, // Ongkir Kurir (Rp)
+            { wch: 16 }, // Diskon Final Nota (Rp)
+            { wch: 18 }, // Total Bayar Nota (Rp)
+            { wch: 28 }, // Catatan / Info PO
+            { wch: 14 }, // Dibatalkan Oleh
+            { wch: 22 }  // Alasan Void
         ];
 
         const wb = XLSX.utils.book_new();
