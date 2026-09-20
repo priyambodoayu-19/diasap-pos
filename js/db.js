@@ -64,9 +64,26 @@ class DatabaseService {
     async checkConnection() {
         try {
             await this.query('SELECT 1 as ping;');
+            await this.ensureSchema();
             return true;
         } catch {
             return false;
+        }
+    }
+
+    // Pastikan kolom baru (status, pickup_date, dll) tersedia di tabel orders Neon
+    async ensureSchema() {
+        try {
+            await this.query(`
+                ALTER TABLE orders ADD COLUMN IF NOT EXISTS status VARCHAR(30) DEFAULT 'completed';
+                ALTER TABLE orders ADD COLUMN IF NOT EXISTS pickup_date VARCHAR(20);
+                ALTER TABLE orders ADD COLUMN IF NOT EXISTS pickup_time VARCHAR(10);
+                ALTER TABLE orders ADD COLUMN IF NOT EXISTS pickup_method VARCHAR(30) DEFAULT 'self_pickup';
+                ALTER TABLE orders ADD COLUMN IF NOT EXISTS pickup_address TEXT;
+                ALTER TABLE orders ADD COLUMN IF NOT EXISTS picked_up_at TIMESTAMP;
+            `);
+        } catch (e) {
+            console.warn('ensureSchema check (aman jika offline / kolom sudah ada):', e);
         }
     }
 
@@ -309,50 +326,117 @@ class DatabaseService {
         return true;
     }
 
-    // Simpan Transaksi Baru
+    // Simpan Transaksi Baru atau Perbarui Transaksi Pending
     async saveOrder(orderData, items) {
         // 1. Simpan ke Local Storage terlebih dahulu untuk kecepatan & jaminan data
         let orders = this.getLocalOrders();
+        const existingIdx = orders.findIndex(o => o.invoiceNo === orderData.invoiceNo);
+        
+        const defaultStatus = orderData.orderType === 'dine_in' ? 'completed' : 'paid';
+        const targetStatus = orderData.status || (existingIdx >= 0 && orders[existingIdx].status ? orders[existingIdx].status : defaultStatus);
+
         const localOrderRecord = {
+            ...(existingIdx >= 0 ? orders[existingIdx] : {}),
             ...orderData,
+            status: targetStatus,
+            pickupDate: orderData.pickupDate || (existingIdx >= 0 ? orders[existingIdx].pickupDate : '') || '',
+            pickupTime: orderData.pickupTime || (existingIdx >= 0 ? orders[existingIdx].pickupTime : '') || '',
+            pickupMethod: orderData.pickupMethod || (existingIdx >= 0 ? orders[existingIdx].pickupMethod : '') || 'self_pickup',
+            pickupAddress: orderData.pickupAddress || (existingIdx >= 0 ? orders[existingIdx].pickupAddress : '') || '',
+            pickedUpAt: orderData.pickedUpAt || (existingIdx >= 0 ? orders[existingIdx].pickedUpAt : null) || null,
             items: items,
             synced: false
         };
-        orders.unshift(localOrderRecord);
+
+        if (existingIdx >= 0) {
+            orders[existingIdx] = localOrderRecord;
+        } else {
+            orders.unshift(localOrderRecord);
+        }
         localStorage.setItem(this.storageKeyOrders, JSON.stringify(orders));
 
-        // 2. Simpan ke Neon PostgreSQL
+        // 2. Simpan / Perbarui ke Neon PostgreSQL
         try {
-            const orderRes = await this.query(`
-                INSERT INTO orders (invoice_no, customer_name, order_type, payment_method, total_amount, cash_received, change_amount, notes, cashier_name, subtotal_amount, final_discount_amount, final_discount_note)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-                RETURNING id;
-            `, [
-                orderData.invoiceNo,
-                orderData.customerName || 'Pelanggan',
-                orderData.orderType || 'dine_in',
-                orderData.paymentMethod || 'cash',
-                orderData.totalAmount,
-                orderData.cashReceived || 0,
-                orderData.changeAmount || 0,
-                orderData.notes || '',
-                orderData.cashierName || 'Kasir',
-                orderData.subtotalAmount || orderData.totalAmount,
-                orderData.finalDiscountAmount || 0,
-                orderData.finalDiscountNote || ''
-            ]);
+            const existingInDb = await this.query(`SELECT id FROM orders WHERE invoice_no = $1 LIMIT 1;`, [orderData.invoiceNo]);
+            let targetOrderId = null;
 
-            const newOrderId = orderRes[0]?.id;
+            if (existingInDb && existingInDb.length > 0) {
+                targetOrderId = existingInDb[0].id;
+                await this.query(`
+                    UPDATE orders SET
+                        customer_name = $1, order_type = $2, payment_method = $3,
+                        total_amount = $4, cash_received = $5, change_amount = $6,
+                        notes = $7, cashier_name = $8, subtotal_amount = $9,
+                        final_discount_amount = $10, final_discount_note = $11,
+                        status = $12, pickup_date = $13, pickup_time = $14,
+                        pickup_method = $15, pickup_address = $16, picked_up_at = $17
+                    WHERE id = $18;
+                `, [
+                    orderData.customerName || 'Pelanggan',
+                    orderData.orderType || 'dine_in',
+                    orderData.paymentMethod || 'cash',
+                    orderData.totalAmount,
+                    orderData.cashReceived || 0,
+                    orderData.changeAmount || 0,
+                    orderData.notes || '',
+                    orderData.cashierName || 'Kasir',
+                    orderData.subtotalAmount || orderData.totalAmount,
+                    orderData.finalDiscountAmount || 0,
+                    orderData.finalDiscountNote || '',
+                    localOrderRecord.status,
+                    localOrderRecord.pickupDate || null,
+                    localOrderRecord.pickupTime || null,
+                    localOrderRecord.pickupMethod || 'self_pickup',
+                    localOrderRecord.pickupAddress || '',
+                    localOrderRecord.pickedUpAt || null,
+                    targetOrderId
+                ]);
+            } else {
+                const orderRes = await this.query(`
+                    INSERT INTO orders (
+                        invoice_no, customer_name, order_type, payment_method, 
+                        total_amount, cash_received, change_amount, notes, 
+                        cashier_name, subtotal_amount, final_discount_amount, final_discount_note,
+                        status, pickup_date, pickup_time, pickup_method, pickup_address, picked_up_at
+                    )
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+                    RETURNING id;
+                `, [
+                    orderData.invoiceNo,
+                    orderData.customerName || 'Pelanggan',
+                    orderData.orderType || 'dine_in',
+                    orderData.paymentMethod || 'cash',
+                    orderData.totalAmount,
+                    orderData.cashReceived || 0,
+                    orderData.changeAmount || 0,
+                    orderData.notes || '',
+                    orderData.cashierName || 'Kasir',
+                    orderData.subtotalAmount || orderData.totalAmount,
+                    orderData.finalDiscountAmount || 0,
+                    orderData.finalDiscountNote || '',
+                    localOrderRecord.status,
+                    localOrderRecord.pickupDate || null,
+                    localOrderRecord.pickupTime || null,
+                    localOrderRecord.pickupMethod || 'self_pickup',
+                    localOrderRecord.pickupAddress || '',
+                    localOrderRecord.pickedUpAt || null
+                ]);
+                targetOrderId = orderRes[0]?.id;
+            }
 
-            if (newOrderId && items && items.length > 0) {
-                // Simpan item-item transaksi
+            if (targetOrderId && items && items.length > 0) {
+                // Refresh items
+                try {
+                    await this.query(`DELETE FROM order_items WHERE order_id = $1;`, [targetOrderId]);
+                } catch (e) {}
+
                 for (const item of items) {
                     const priceNormalVal = Number(item.normalPriceLocked || item.priceNormal || item.priceLocked) || 0;
                     await this.query(`
                         INSERT INTO order_items (order_id, product_id, product_name, price_locked, price_normal, is_promo, quantity, item_total, cogs_locked, variant_id, variant_name, ingredients_snapshot)
                         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);
                     `, [
-                        newOrderId,
+                        targetOrderId,
                         item.id,
                         item.name,
                         item.priceLocked,
@@ -370,7 +454,7 @@ class DatabaseService {
 
             // Tandai sudah tersinkronisasi di lokal
             localOrderRecord.synced = true;
-            localOrderRecord.dbId = newOrderId;
+            localOrderRecord.dbId = targetOrderId;
             localStorage.setItem(this.storageKeyOrders, JSON.stringify(orders));
         } catch (err) {
             console.warn('Transaksi disimpan di cache lokal dan akan disinkronkan kemudian:', err);
@@ -379,12 +463,77 @@ class DatabaseService {
         return localOrderRecord;
     }
 
+    // Perbarui status pesanan (unpaid -> paid -> completed)
+    async updateOrderStatus(invoiceNo, newStatus, extraData = {}) {
+        let orders = this.getLocalOrders();
+        const order = orders.find(o => o.invoiceNo === invoiceNo);
+        if (order) {
+            order.status = newStatus;
+            if (newStatus === 'completed' && !order.pickedUpAt) {
+                order.pickedUpAt = new Date().toISOString();
+            }
+            Object.assign(order, extraData);
+            localStorage.setItem(this.storageKeyOrders, JSON.stringify(orders));
+        }
+
+        try {
+            const pickedUpVal = (newStatus === 'completed') ? (extraData.pickedUpAt || new Date().toISOString()) : null;
+            if (pickedUpVal) {
+                await this.query(`UPDATE orders SET status = $1, picked_up_at = $2 WHERE invoice_no = $3;`, [newStatus, pickedUpVal, invoiceNo]);
+            } else {
+                await this.query(`UPDATE orders SET status = $1 WHERE invoice_no = $2;`, [newStatus, invoiceNo]);
+            }
+        } catch (e) {
+            console.warn('Gagal update status order di Neon:', e);
+        }
+
+        return true;
+    }
+
+    // Hapus pesanan pending yang belum dibayar jika dibatalkan pelanggan
+    async deletePendingOrder(invoiceNo) {
+        let orders = this.getLocalOrders();
+        const order = orders.find(o => o.invoiceNo === invoiceNo);
+        if (order) {
+            orders = orders.filter(o => o.invoiceNo !== invoiceNo);
+            localStorage.setItem(this.storageKeyOrders, JSON.stringify(orders));
+
+            try {
+                const row = await this.query(`SELECT id FROM orders WHERE invoice_no = $1;`, [invoiceNo]);
+                if (row && row.length > 0) {
+                    const orderId = row[0].id;
+                    await this.query(`DELETE FROM order_items WHERE order_id = $1;`, [orderId]);
+                    await this.query(`DELETE FROM orders WHERE id = $1;`, [orderId]);
+                }
+            } catch (e) {
+                console.warn('Gagal hapus pending order di Neon:', e);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    // Ambil daftar transaksi aktif (tagihan sementara & PO menunggu diambil)
+    async getActiveOrders() {
+        const allOrders = await this.getOrdersHistory(300);
+        return allOrders.filter(o => !o.isVoid && (o.status === 'unpaid' || (o.orderType === 'take_away' && o.status === 'paid')));
+    }
+
     // Ambil order dari cache lokal
     getLocalOrders() {
         const raw = localStorage.getItem(this.storageKeyOrders);
         if (!raw) return [];
         try {
-            return JSON.parse(raw);
+            const list = JSON.parse(raw);
+            return list.map(o => ({
+                ...o,
+                status: o.status || (o.isVoid ? 'void' : (o.orderType === 'dine_in' ? 'completed' : 'paid')),
+                pickupDate: o.pickupDate || '',
+                pickupTime: o.pickupTime || '',
+                pickupMethod: o.pickupMethod || 'self_pickup',
+                pickupAddress: o.pickupAddress || '',
+                pickedUpAt: o.pickedUpAt || null
+            }));
         } catch {
             return [];
         }
@@ -408,6 +557,12 @@ class DatabaseService {
                        COALESCE(o.subtotal_amount, o.total_amount)::numeric as "subtotalAmount",
                        COALESCE(o.final_discount_amount, 0)::numeric as "finalDiscountAmount",
                        COALESCE(o.final_discount_note, '') as "finalDiscountNote",
+                       COALESCE(o.status, 'completed') as "status",
+                       COALESCE(o.pickup_date, '') as "pickupDate",
+                       COALESCE(o.pickup_time, '') as "pickupTime",
+                       COALESCE(o.pickup_method, 'self_pickup') as "pickupMethod",
+                       COALESCE(o.pickup_address, '') as "pickupAddress",
+                       o.picked_up_at as "pickedUpAt",
                        COALESCE(
                            json_agg(
                                 json_build_object(
@@ -445,6 +600,12 @@ class DatabaseService {
                     voidReason: r.voidReason || '',
                     voidBy: r.voidBy || '',
                     voidAt: r.voidAt || null,
+                    status: r.status || (r.isVoid ? 'void' : (r.orderType === 'dine_in' ? 'completed' : 'paid')),
+                    pickupDate: r.pickupDate || '',
+                    pickupTime: r.pickupTime || '',
+                    pickupMethod: r.pickupMethod || 'self_pickup',
+                    pickupAddress: r.pickupAddress || '',
+                    pickedUpAt: r.pickedUpAt || null,
                     items: Array.isArray(r.items) ? r.items : (typeof r.items === 'string' ? JSON.parse(r.items) : [])
                 }));
             }

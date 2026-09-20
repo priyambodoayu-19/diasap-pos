@@ -149,8 +149,10 @@ class PaymentManager {
 
         const customerName = (document.getElementById('customerNameInput')?.value || '').trim() || 'Pelanggan';
         const notes = (document.getElementById('orderNotesInput')?.value || '').trim();
-        const invoiceNo = generateInvoiceNumber();
+        const poDetails = cartManager.getPoDetails();
+        const invoiceNo = cartManager.editingPendingInvoiceNo || generateInvoiceNumber();
         const activeCashier = (typeof authManager !== 'undefined') ? authManager.getActiveCashier() : 'Kasir';
+        const targetStatus = cartManager.orderType === 'dine_in' ? 'completed' : 'paid';
 
         const orderData = {
             invoiceNo: invoiceNo,
@@ -165,6 +167,12 @@ class PaymentManager {
             changeAmount: changeAmount,
             notes: notes,
             cashierName: activeCashier,
+            status: targetStatus,
+            pickupDate: poDetails.pickupDate,
+            pickupTime: poDetails.pickupTime,
+            pickupMethod: poDetails.pickupMethod,
+            pickupAddress: poDetails.pickupAddress,
+            pickedUpAt: (targetStatus === 'completed') ? new Date().toISOString() : null,
             createdAt: new Date().toISOString()
         };
 
@@ -197,6 +205,11 @@ class PaymentManager {
             cartManager.clearCart(true);
             if (document.getElementById('cashInput')) document.getElementById('cashInput').value = '';
             this.calculate();
+
+            // Perbarui badge transaksi diproses di navbar
+            if (typeof activeOrdersManager !== 'undefined') {
+                await activeOrdersManager.refreshBadge();
+            }
         } catch (err) {
             console.error('Error saat checkout:', err);
             alert('Terjadi kesalahan saat memproses transaksi: ' + err.message);
@@ -210,6 +223,65 @@ class PaymentManager {
                     <span>SELESAI TRANSAKSI</span>
                 `;
             }
+        }
+    }
+
+    // Simpan pesanan sebagai Tagihan Sementara (Unpaid / Open Bill)
+    async savePendingOrder() {
+        const subtotal = cartManager.getSubtotal();
+        const grandTotal = cartManager.getGrandTotal();
+        const finalDiscountAmount = cartManager.getFinalDiscountAmount();
+        const finalDiscountNote = cartManager.finalDiscount.note || '';
+
+        if (cartManager.cart.length === 0) {
+            sounds.playWarning();
+            alert('Keranjang pesanan masih kosong! Silakan pilih menu terlebih dahulu.');
+            return;
+        }
+
+        const customerName = (document.getElementById('customerNameInput')?.value || '').trim() || 'Pelanggan / Meja';
+        const notes = (document.getElementById('orderNotesInput')?.value || '').trim();
+        const poDetails = cartManager.getPoDetails();
+        const invoiceNo = cartManager.editingPendingInvoiceNo || generateInvoiceNumber();
+        const activeCashier = (typeof authManager !== 'undefined') ? authManager.getActiveCashier() : 'Kasir';
+
+        const orderData = {
+            invoiceNo: invoiceNo,
+            customerName: customerName,
+            orderType: cartManager.orderType,
+            paymentMethod: this.paymentMethod || 'cash',
+            subtotalAmount: subtotal,
+            finalDiscountAmount: finalDiscountAmount,
+            finalDiscountNote: finalDiscountNote,
+            totalAmount: grandTotal,
+            cashReceived: 0,
+            changeAmount: 0,
+            notes: notes,
+            cashierName: activeCashier,
+            status: 'unpaid',
+            pickupDate: poDetails.pickupDate,
+            pickupTime: poDetails.pickupTime,
+            pickupMethod: poDetails.pickupMethod,
+            pickupAddress: poDetails.pickupAddress,
+            createdAt: new Date().toISOString()
+        };
+
+        const items = cartManager.cart.map(item => ({ ...item }));
+
+        try {
+            await db.saveOrder(orderData, items);
+            sounds.playSuccess();
+            alert(`✅ Tagihan Sementara Tersimpan!\nNo. Tagihan: ${invoiceNo}\nPelanggan: ${customerName}\n\nAnda dapat melanjutkan pembayaran atau mengeditnya kapan saja melalui tombol 'Transaksi Diproses' di navbar atas.`);
+
+            this.closeBillModal();
+            cartManager.clearCart(true);
+
+            if (typeof activeOrdersManager !== 'undefined') {
+                await activeOrdersManager.refreshBadge();
+            }
+        } catch (err) {
+            console.error('Gagal menyimpan tagihan sementara:', err);
+            alert('Gagal menyimpan tagihan sementara: ' + err.message);
         }
     }
 
@@ -275,6 +347,22 @@ class PaymentManager {
                     <span>Layanan:</span>
                     <span>${orderTypeLabel}</span>
                 </div>
+                ${order.orderType === 'take_away' ? `
+                    <div class="receipt-info-row" style="color: #B45309; font-weight: 700;">
+                        <span>Jadwal Ambil:</span>
+                        <span>${order.pickupDate || '-'} ${order.pickupTime ? `(${order.pickupTime})` : ''}</span>
+                    </div>
+                    <div class="receipt-info-row">
+                        <span>Metode Ambil:</span>
+                        <span>${order.pickupMethod === 'ojol' ? '🛵 Ojol / Kurir' : (order.pickupMethod === 'delivery' ? '🚚 Diantar Toko' : '🏪 Ambil di Toko')}</span>
+                    </div>
+                    ${order.pickupAddress ? `
+                        <div class="receipt-info-row">
+                            <span>Info/Alamat:</span>
+                            <span>${order.pickupAddress}</span>
+                        </div>
+                    ` : ''}
+                ` : ''}
                 ${order.notes ? `
                     <div class="receipt-info-row">
                         <span>Catatan:</span>
@@ -545,7 +633,8 @@ class PaymentManager {
         const finalDiscount = cartManager.getFinalDiscountAmount();
         const finalDiscountNote = cartManager.finalDiscount.note ? ` (${cartManager.finalDiscount.note})` : '';
         const grandTotal = cartManager.getGrandTotal();
-        const billNo = 'BILL-' + Date.now().toString().slice(-6);
+        const poDetails = cartManager.getPoDetails();
+        const billNo = cartManager.editingPendingInvoiceNo || ('BILL-' + Date.now().toString().slice(-6));
 
         // Data Pembayaran Toko: Bank & QRIS
         const rawBankName = (settings.bankName || CONFIG.DEFAULT_SETTINGS?.bankName || '').trim();
@@ -592,6 +681,22 @@ class PaymentManager {
                     <span>Layanan:</span>
                     <span>${orderTypeLabel}</span>
                 </div>
+                ${cartManager.orderType === 'take_away' ? `
+                    <div class="receipt-info-row" style="color: #B45309; font-weight: 700;">
+                        <span>Jadwal Ambil:</span>
+                        <span>${poDetails.pickupDate || '-'} ${poDetails.pickupTime ? `(${poDetails.pickupTime})` : ''}</span>
+                    </div>
+                    <div class="receipt-info-row">
+                        <span>Metode Ambil:</span>
+                        <span>${poDetails.pickupMethod === 'ojol' ? '🛵 Ojol / Kurir' : (poDetails.pickupMethod === 'delivery' ? '🚚 Diantar Toko' : '🏪 Ambil di Toko')}</span>
+                    </div>
+                    ${poDetails.pickupAddress ? `
+                        <div class="receipt-info-row">
+                            <span>Info/Alamat:</span>
+                            <span>${poDetails.pickupAddress}</span>
+                        </div>
+                    ` : ''}
+                ` : ''}
                 ${notes ? `
                     <div class="receipt-info-row">
                         <span>Catatan:</span>

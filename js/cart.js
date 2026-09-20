@@ -10,6 +10,11 @@ class CartManager {
         this.customerName = '';
         this.orderType = 'dine_in'; // 'dine_in' atau 'take_away'
         this.notes = '';
+        this.poPickupDate = '';
+        this.poPickupTime = '';
+        this.poPickupMethod = 'self_pickup'; // 'self_pickup', 'ojol', 'delivery'
+        this.poPickupAddress = '';
+        this.editingPendingInvoiceNo = null;
         this.finalDiscount = {
             type: 'nominal', // 'nominal' | 'percent'
             value: 0,
@@ -189,6 +194,7 @@ class CartManager {
         this.cart = [];
         this.customerName = '';
         this.notes = '';
+        this.editingPendingInvoiceNo = null;
         this.resetFinalDiscount();
         
         const custInput = document.getElementById('customerNameInput');
@@ -196,6 +202,16 @@ class CartManager {
         
         const noteInput = document.getElementById('orderNotesInput');
         if (noteInput) noteInput.value = '';
+
+        // Reset input PO
+        const dateInput = document.getElementById('poPickupDate');
+        if (dateInput) dateInput.value = '';
+        const timeInput = document.getElementById('poPickupTime');
+        if (timeInput) timeInput.value = '';
+        const addrInput = document.getElementById('poPickupAddress');
+        if (addrInput) addrInput.value = '';
+        this.setPoPickupMethod('self_pickup');
+        this.renderEditBanner();
 
         this.render();
         paymentManager.calculate();
@@ -211,6 +227,154 @@ class CartManager {
                 btn.classList.remove('active');
             }
         });
+
+        // Tampilkan/sembunyikan form jadwal PO jika Take Away
+        const poBox = document.getElementById('poPickupDetailsBox');
+        if (poBox) {
+            poBox.style.display = (type === 'take_away') ? 'block' : 'none';
+        }
+
+        if (type === 'take_away') {
+            const dateInput = document.getElementById('poPickupDate');
+            const timeInput = document.getElementById('poPickupTime');
+            if (dateInput && !dateInput.value) {
+                const today = new Date().toISOString().split('T')[0];
+                dateInput.value = today;
+                this.poPickupDate = today;
+            }
+            if (timeInput && !timeInput.value) {
+                const now = new Date();
+                now.setHours(now.getHours() + 1);
+                const timeStr = `${String(now.getHours()).padStart(2, '0')}:00`;
+                timeInput.value = timeStr;
+                this.poPickupTime = timeStr;
+            }
+        }
+    }
+
+    // Set metode pickup PO (Ambil di Toko / Ojol / Antar ke Lokasi)
+    setPoPickupMethod(method) {
+        this.poPickupMethod = method;
+        document.querySelectorAll('.po-method-btn').forEach(btn => {
+            if (btn.dataset.method === method) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        const addressWrapper = document.getElementById('poAddressWrapper');
+        const addressInput = document.getElementById('poPickupAddress');
+        if (addressWrapper) {
+            if (method === 'self_pickup') {
+                addressWrapper.style.display = 'none';
+            } else if (method === 'ojol') {
+                addressWrapper.style.display = 'block';
+                if (addressInput) addressInput.placeholder = 'Info Ojol (misal: GoSend/GrabExpress, Nama Driver / Plat)';
+            } else if (method === 'delivery') {
+                addressWrapper.style.display = 'block';
+                if (addressInput) addressInput.placeholder = 'Alamat Pengantaran Lengkap & No. HP Penerima';
+            }
+        }
+    }
+
+    // Ambil data PO saat checkout / cetak bill
+    getPoDetails() {
+        if (this.orderType !== 'take_away') {
+            return {
+                pickupDate: '',
+                pickupTime: '',
+                pickupMethod: 'self_pickup',
+                pickupAddress: ''
+            };
+        }
+
+        const dateInput = document.getElementById('poPickupDate');
+        const timeInput = document.getElementById('poPickupTime');
+        const addrInput = document.getElementById('poPickupAddress');
+
+        return {
+            pickupDate: dateInput ? dateInput.value : this.poPickupDate,
+            pickupTime: timeInput ? timeInput.value : this.poPickupTime,
+            pickupMethod: this.poPickupMethod || 'self_pickup',
+            pickupAddress: addrInput ? addrInput.value.trim() : (this.poPickupAddress || '')
+        };
+    }
+
+    // Muat pesanan (misal tagihan sementara / open bill) kembali ke keranjang kasir
+    loadOrderToCart(order) {
+        if (!order) return;
+        this.editingPendingInvoiceNo = order.invoiceNo;
+        this.cart = (order.items || []).map(i => ({ ...i }));
+        this.setOrderType(order.orderType || 'dine_in');
+
+        const custInput = document.getElementById('customerNameInput');
+        if (custInput) custInput.value = order.customerName || '';
+
+        const noteInput = document.getElementById('orderNotesInput');
+        if (noteInput) noteInput.value = order.notes || '';
+
+        if (order.orderType === 'take_away') {
+            const dateInput = document.getElementById('poPickupDate');
+            if (dateInput && order.pickupDate) dateInput.value = order.pickupDate;
+
+            const timeInput = document.getElementById('poPickupTime');
+            if (timeInput && order.pickupTime) timeInput.value = order.pickupTime;
+
+            if (order.pickupMethod) {
+                this.setPoPickupMethod(order.pickupMethod);
+            }
+            const addrInput = document.getElementById('poPickupAddress');
+            if (addrInput && order.pickupAddress) addrInput.value = order.pickupAddress;
+        }
+
+        if (order.finalDiscountAmount > 0) {
+            this.setFinalDiscount('nominal', order.finalDiscountAmount, order.finalDiscountNote || '');
+        } else {
+            this.resetFinalDiscount();
+        }
+
+        this.renderEditBanner();
+        this.render();
+        paymentManager.calculate();
+
+        // Scroll ke keranjang
+        const cartEl = document.querySelector('.cart-container');
+        if (cartEl) cartEl.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Render banner penanda kasir sedang mengedit tagihan sementara
+    renderEditBanner() {
+        let banner = document.getElementById('cartEditingBanner');
+        if (!banner) {
+            const header = document.querySelector('.cart-header-row');
+            if (header) {
+                banner = document.createElement('div');
+                banner.id = 'cartEditingBanner';
+                banner.className = 'cart-editing-banner';
+                header.parentNode.insertBefore(banner, header.nextSibling);
+            }
+        }
+        if (banner) {
+            if (this.editingPendingInvoiceNo) {
+                banner.innerHTML = `
+                    <div class="edit-banner-content">
+                        <span>✏️ Mengedit Tagihan: <strong>${this.editingPendingInvoiceNo}</strong></span>
+                        <button type="button" class="btn-cancel-edit-banner" onclick="cartManager.cancelEditingPendingOrder()" title="Batal edit, kembali ke transaksi baru">✕ Batal</button>
+                    </div>
+                `;
+                banner.style.display = 'block';
+            } else {
+                banner.style.display = 'none';
+            }
+        }
+    }
+
+    // Batal edit tagihan sementara
+    cancelEditingPendingOrder() {
+        if (confirm('Batalkan mode edit tagihan ini? (Tagihan tetap tersimpan aman di sistem)')) {
+            this.clearCart(true);
+        }
     }
 
     // ================= DISKON FINAL TRANSAKSI =================

@@ -24,6 +24,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         await settingsManager.init();
     }
 
+    // Inisialisasi Transaksi Aktif / Diproses (Badge & Antrean)
+    if (typeof activeOrdersManager !== 'undefined') {
+        await activeOrdersManager.init();
+    }
+
     // 1. Setup Status Koneksi Database
     const dbStatusBadge = document.getElementById('dbStatusBadge');
     const dbStatusText = document.getElementById('dbStatusText');
@@ -150,6 +155,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (e.key === 'F4') {
             e.preventDefault();
             cartManager.clearCart();
+        }
+        // F7: Buka Transaksi Diproses / Pending
+        if (e.key === 'F7') {
+            e.preventDefault();
+            if (typeof activeOrdersManager !== 'undefined') {
+                activeOrdersManager.openModal();
+            }
         }
         // F8: Buka Rekap Riwayat
         if (e.key === 'F8') {
@@ -299,6 +311,9 @@ async function renderHistoryData() {
             voidOrdersCount++;
             return; // Transaksi void tidak dihitung ke omset
         }
+        if (o.status === 'unpaid') {
+            return; // Tagihan sementara belum lunas tidak dihitung ke omset
+        }
         activeOrdersCount++;
         const val = Number(o.totalAmount) || 0;
         totalRevenue += val;
@@ -327,7 +342,7 @@ async function renderHistoryData() {
     if (cashTotalEl) cashTotalEl.textContent = formatRupiah(cashRevenue);
     if (qrisTotalEl) qrisTotalEl.textContent = formatRupiah(qrisRevenue);
 
-    // Render Grafik Sederhana Penjualan
+    // Render Grafik Sederhana Penjualan (Hanya transaksi lunas/selesai)
     renderHistoryChart(orders);
 
     if (!tableBody) return;
@@ -339,6 +354,8 @@ async function renderHistoryData() {
 
     tableBody.innerHTML = orders.map((o, idx) => {
         const isVoid = Boolean(o.isVoid);
+        const isUnpaid = o.status === 'unpaid';
+        const isPendingPo = o.orderType === 'take_away' && o.status === 'paid';
         const orderCogs = calculateOrderCogs(o);
         const orderRevenue = Number(o.totalAmount) || 0;
         const orderProfit = orderRevenue - orderCogs;
@@ -351,22 +368,31 @@ async function renderHistoryData() {
             : '-';
 
         return `
-            <tr class="${isVoid ? 'row-voided' : ''}">
+            <tr class="${isVoid ? 'row-voided' : (isUnpaid ? 'row-unpaid' : '')}">
                 <td style="text-align: center; color: #64748B;">${idx + 1}</td>
                 <td class="col-invoice-cell">
                     <div class="invoice-num-text"><strong>${o.invoiceNo}</strong></div>
-                    ${isVoid ? '<div class="tag-void-mini">VOID</div>' : ''}
+                    ${isVoid ? '<div class="tag-void-mini">VOID</div>' : (isUnpaid ? '<div class="tag-unpaid-mini">TAGIHAN SEMENTARA</div>' : (isPendingPo ? '<div class="tag-po-mini">PO SIAP AMBIL</div>' : ''))}
                     <div class="invoice-cashier-text">Kasir: <strong>${cashierName}</strong></div>
                 </td>
                 <td style="white-space: nowrap;">${formatDateTime(o.createdAt)}</td>
                 <td class="col-customer-cell">
                     <div class="customer-name-text"><strong>${o.customerName || 'Pelanggan'}</strong></div>
                     <div class="customer-type-row">
-                        <span class="order-badge ${o.orderType === 'dine_in' ? 'badge-dine-in' : 'badge-take-away'}">${o.orderType === 'dine_in' ? 'Dine In' : 'Take Away'}</span>
+                        <span class="order-badge ${o.orderType === 'dine_in' ? 'badge-dine-in' : 'badge-take-away'}">${o.orderType === 'dine_in' ? 'Dine In' : 'Take Away (PO)'}</span>
                     </div>
+                    ${o.orderType === 'take_away' && o.pickupDate ? `
+                        <div class="invoice-po-schedule-text">
+                            ⏰ ${o.pickupDate} ${o.pickupTime || ''} (${o.pickupMethod === 'ojol' ? 'Ojol' : (o.pickupMethod === 'delivery' ? 'Antar' : 'Toko')})
+                        </div>
+                    ` : ''}
                 </td>
                 <td class="col-items-cell" title="${itemsSummary}">${itemsSummary}</td>
-                <td style="text-align: center;"><span class="badge-method badge-${o.paymentMethod}">${(o.paymentMethod || 'cash').toUpperCase()}</span></td>
+                <td style="text-align: center;">
+                    ${isUnpaid 
+                        ? '<span class="badge-status-unpaid">BELUM BAYAR</span>' 
+                        : `<span class="badge-method badge-${o.paymentMethod}">${(o.paymentMethod || 'cash').toUpperCase()}</span>`}
+                </td>
                 <td class="col-cogs-cell">
                     <span class="badge-cogs ${isVoid ? 'text-strikethrough' : ''}">${formatRupiah(orderCogs)}</span>
                 </td>
@@ -377,6 +403,8 @@ async function renderHistoryData() {
                 <td class="col-profit-cell">
                     ${isVoid ? `
                         <span class="profit-void-text">Dibatalkan</span>
+                    ` : (isUnpaid ? `
+                        <span style="color: #D97706; font-size: 11px; font-weight: 700;">Menunggu Bayar</span>
                     ` : `
                         <div class="profit-nominal-text">
                             <span class="badge-profit ${orderProfit >= 0 ? 'profit-positive' : 'profit-negative'}">
@@ -388,7 +416,7 @@ async function renderHistoryData() {
                                 ${orderMargin}%
                             </span>
                         </div>
-                    `}
+                    `)}
                 </td>
                 <td style="text-align: center;">
                     <div class="table-action-btns-row">
@@ -399,11 +427,19 @@ async function renderHistoryData() {
                             <div class="void-status-cell">
                                 <span class="badge-void">VOID</span>
                             </div>
+                        ` : (isUnpaid ? `
+                            <button type="button" class="btn-table-pay" onclick="activeOrdersManager.proceedPayment('${o.invoiceNo}')" title="Bayar & Selesaikan Sekarang">
+                                💳 Bayar
+                            </button>
+                        ` : (isPendingPo ? `
+                            <button type="button" class="btn-table-pickup" onclick="activeOrdersManager.markPickedUp('${o.invoiceNo}')" title="Tandai Sudah Diambil">
+                                ✅ Diambil
+                            </button>
                         ` : `
                             <button type="button" class="btn-table-void" onclick="openVoidModal('${o.invoiceNo}')" title="Batalkan Transaksi (Void)">
                                 ⚠️ Void
                             </button>
-                        `}
+                        `))}
                     </div>
                 </td>
             </tr>
@@ -417,7 +453,7 @@ function renderHistoryChart(orders) {
     const chartContainer = document.getElementById('historyChartContainer');
     if (!chartContainer) return;
 
-    const activeOrders = orders.filter(o => !o.isVoid);
+    const activeOrders = orders.filter(o => !o.isVoid && o.status !== 'unpaid');
 
     if (activeOrders.length === 0) {
         chartContainer.innerHTML = `
@@ -904,3 +940,255 @@ async function handleSaveNewProduct(event) {
         if (saveBtn) saveBtn.textContent = 'Simpan Menu';
     }
 }
+
+// ================= MANAJEMEN TRANSAKSI AKTIF / DIPROSES =================
+
+class ActiveOrdersManager {
+    constructor() {
+        this.currentTab = 'unpaid'; // 'unpaid' | 'po'
+    }
+
+    async init() {
+        await this.refreshBadge();
+    }
+
+    async refreshBadge() {
+        const badge = document.getElementById('activeOrdersCountBadge');
+        if (!badge) return;
+
+        try {
+            const activeOrders = await db.getActiveOrders();
+            const count = activeOrders.length;
+            if (count > 0) {
+                badge.textContent = count;
+                badge.style.display = 'inline-flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        } catch (e) {
+            console.warn('Gagal memuat badge active orders:', e);
+        }
+    }
+
+    async openModal() {
+        const modal = document.getElementById('activeOrdersModal');
+        if (!modal) return;
+        modal.classList.add('active');
+        await this.render();
+    }
+
+    closeModal() {
+        const modal = document.getElementById('activeOrdersModal');
+        if (modal) modal.classList.remove('active');
+    }
+
+    setTab(tab) {
+        this.currentTab = tab;
+        document.querySelectorAll('.active-tab-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.tab === tab);
+        });
+        this.render();
+    }
+
+    async render() {
+        const container = document.getElementById('activeOrdersContainer');
+        const countUnpaidEl = document.getElementById('countPendingBills');
+        const countPoEl = document.getElementById('countPendingPickups');
+
+        if (!container) return;
+        container.innerHTML = `<div style="text-align: center; padding: 24px; color: #64748B;">Memuat transaksi diproses...</div>`;
+
+        const activeOrders = await db.getActiveOrders();
+        const unpaidList = activeOrders.filter(o => o.status === 'unpaid');
+        const poList = activeOrders.filter(o => o.orderType === 'take_away' && o.status === 'paid');
+
+        if (countUnpaidEl) countUnpaidEl.textContent = unpaidList.length;
+        if (countPoEl) countPoEl.textContent = poList.length;
+
+        if (this.currentTab === 'unpaid') {
+            if (unpaidList.length === 0) {
+                container.innerHTML = `
+                    <div class="active-orders-empty">
+                        <div style="font-size: 40px; margin-bottom: 8px; opacity: 0.6;">🧾</div>
+                        <h4>Tidak ada tagihan sementara yang menggantung</h4>
+                        <p>Saat Anda membuat tagihan / pesanan belum bayar, tagihan tersebut akan muncul di sini untuk dilunasi.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="active-cards-grid">
+                    ${unpaidList.map(o => {
+                        const itemsSummary = o.items && o.items.length > 0 
+                            ? o.items.map(i => `${i.name} (x${i.qty})`).join(', ')
+                            : '-';
+                        return `
+                            <div class="active-order-card card-unpaid">
+                                <div class="active-card-head">
+                                    <div>
+                                        <span class="active-inv-pill">${o.invoiceNo}</span>
+                                        <span class="active-badge-status status-unpaid">🕒 Belum Bayar</span>
+                                    </div>
+                                    <div class="active-card-time">${formatDateTime(o.createdAt)}</div>
+                                </div>
+                                <div class="active-card-body">
+                                    <div class="active-customer-line">
+                                        <strong>👤 ${o.customerName || 'Pelanggan'}</strong>
+                                        <span class="order-badge ${o.orderType === 'dine_in' ? 'badge-dine-in' : 'badge-take-away'}">${o.orderType === 'dine_in' ? 'Dine In' : 'Take Away (PO)'}</span>
+                                    </div>
+                                    ${o.notes ? `<div class="active-notes-line">📝 <em>${o.notes}</em></div>` : ''}
+                                    ${o.orderType === 'take_away' && o.pickupDate ? `
+                                        <div class="active-po-info-box">
+                                            <div>📅 <strong>Jadwal:</strong> ${o.pickupDate} ${o.pickupTime ? `(${o.pickupTime})` : ''}</div>
+                                            <div>🚚 <strong>Pickup:</strong> ${o.pickupMethod === 'ojol' ? '🛵 Ojol / Kurir' : (o.pickupMethod === 'delivery' ? '🚚 Diantar Toko' : '🏪 Ambil di Toko')}</div>
+                                            ${o.pickupAddress ? `<div>📍 <em>${o.pickupAddress}</em></div>` : ''}
+                                        </div>
+                                    ` : ''}
+                                    <div class="active-items-preview" title="${itemsSummary}">
+                                        🍽️ ${itemsSummary}
+                                    </div>
+                                    <div class="active-total-line">
+                                        <span>Total Tagihan:</span>
+                                        <strong class="text-primary">${formatRupiah(o.totalAmount)}</strong>
+                                    </div>
+                                </div>
+                                <div class="active-card-footer">
+                                    <button type="button" class="btn-active-action btn-active-pay" onclick="activeOrdersManager.proceedPayment('${o.invoiceNo}')">
+                                        💳 Bayar / Lunasi
+                                    </button>
+                                    <button type="button" class="btn-active-action btn-active-edit" onclick="activeOrdersManager.editOrder('${o.invoiceNo}')">
+                                        ✏️ Edit
+                                    </button>
+                                    <button type="button" class="btn-active-action btn-active-bill" onclick="activeOrdersManager.printBillForOrder('${o.invoiceNo}')">
+                                        🧾 Cetak Bill
+                                    </button>
+                                    <button type="button" class="btn-active-action btn-active-del" onclick="activeOrdersManager.cancelOrder('${o.invoiceNo}')" title="Hapus tagihan ini">
+                                        🗑️
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        } else {
+            // PO Tab
+            if (poList.length === 0) {
+                container.innerHTML = `
+                    <div class="active-orders-empty">
+                        <div style="font-size: 40px; margin-bottom: 8px; opacity: 0.6;">📦</div>
+                        <h4>Tidak ada antrean PO yang menunggu diambil</h4>
+                        <p>Pesanan Take Away (PO) yang sudah dibayar lunas akan tampil di sini hingga barang diserahkan ke pelanggan / kurir.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="active-cards-grid">
+                    ${poList.map(o => {
+                        const itemsSummary = o.items && o.items.length > 0 
+                            ? o.items.map(i => `${i.name} (x${i.qty})`).join(', ')
+                            : '-';
+                        return `
+                            <div class="active-order-card card-po">
+                                <div class="active-card-head">
+                                    <div>
+                                        <span class="active-inv-pill">${o.invoiceNo}</span>
+                                        <span class="active-badge-status status-po">📦 Menunggu Pickup</span>
+                                    </div>
+                                    <div class="active-card-time">${formatDateTime(o.createdAt)}</div>
+                                </div>
+                                <div class="active-card-body">
+                                    <div class="active-customer-line">
+                                        <strong>👤 ${o.customerName || 'Pelanggan'}</strong>
+                                        <span class="badge-method badge-${o.paymentMethod}">LUNAS (${(o.paymentMethod || 'cash').toUpperCase()})</span>
+                                    </div>
+                                    <div class="active-po-schedule-box">
+                                        <div class="po-schedule-badge">
+                                            ⏰ <strong>${o.pickupDate || '-'} ${o.pickupTime ? `(${o.pickupTime})` : ''}</strong>
+                                        </div>
+                                        <div class="po-method-name">
+                                            ${o.pickupMethod === 'ojol' ? '🛵 Ojol / Kurir' : (o.pickupMethod === 'delivery' ? '🚚 Diantar Toko' : '🏪 Ambil di Toko')}
+                                        </div>
+                                        ${o.pickupAddress ? `<div class="po-address-detail">📍 ${o.pickupAddress}</div>` : ''}
+                                    </div>
+                                    ${o.notes ? `<div class="active-notes-line">📝 <em>${o.notes}</em></div>` : ''}
+                                    <div class="active-items-preview" title="${itemsSummary}">
+                                        🍽️ ${itemsSummary}
+                                    </div>
+                                    <div class="active-total-line">
+                                        <span>Sudah Dibayar:</span>
+                                        <strong style="color: #15803D;">${formatRupiah(o.totalAmount)}</strong>
+                                    </div>
+                                </div>
+                                <div class="active-card-footer">
+                                    <button type="button" class="btn-active-action btn-active-complete" onclick="activeOrdersManager.markPickedUp('${o.invoiceNo}')">
+                                        ✅ Tandai Sudah Diambil (Selesai)
+                                    </button>
+                                    <button type="button" class="btn-active-action btn-active-reprint" onclick="reprintOrder('${o.invoiceNo}')">
+                                        🖨️ Struk
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+    }
+
+    async proceedPayment(invoiceNo) {
+        const orders = await db.getOrdersHistory(300);
+        const order = orders.find(o => o.invoiceNo === invoiceNo);
+        if (!order) return;
+        cartManager.loadOrderToCart(order);
+        this.closeModal();
+        paymentManager.proceedToPayment();
+    }
+
+    async editOrder(invoiceNo) {
+        const orders = await db.getOrdersHistory(300);
+        const order = orders.find(o => o.invoiceNo === invoiceNo);
+        if (!order) return;
+        cartManager.loadOrderToCart(order);
+        this.closeModal();
+    }
+
+    async printBillForOrder(invoiceNo) {
+        const orders = await db.getOrdersHistory(300);
+        const order = orders.find(o => o.invoiceNo === invoiceNo);
+        if (!order) return;
+        cartManager.loadOrderToCart(order);
+        paymentManager.showBillModal();
+    }
+
+    async cancelOrder(invoiceNo) {
+        if (confirm(`Yakin ingin membatalkan dan menghapus tagihan sementara ${invoiceNo}?`)) {
+            await db.deletePendingOrder(invoiceNo);
+            sounds.playSuccess();
+            await this.render();
+            await this.refreshBadge();
+            const historyModal = document.getElementById('historyModal');
+            if (historyModal && historyModal.classList.contains('active')) {
+                await renderHistoryData();
+            }
+        }
+    }
+
+    async markPickedUp(invoiceNo) {
+        if (confirm(`Tandai pesanan ${invoiceNo} sebagai SUDAH DIAMBIL / SELESAI?`)) {
+            await db.updateOrderStatus(invoiceNo, 'completed', { pickedUpAt: new Date().toISOString() });
+            sounds.playSuccess();
+            await this.render();
+            await this.refreshBadge();
+            const historyModal = document.getElementById('historyModal');
+            if (historyModal && historyModal.classList.contains('active')) {
+                await renderHistoryData();
+            }
+        }
+    }
+}
+
+const activeOrdersManager = new ActiveOrdersManager();

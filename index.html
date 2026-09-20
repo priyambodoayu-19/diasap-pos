@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
     <!-- Stylesheet POS -->
-    <link rel="stylesheet" href="css/style.css?v=5.7">
+    <link rel="stylesheet" href="css/style.css?v=5.8">
     <!-- Pustaka Eksternal: Excel XLSX Export, Canvas Struk, PDF Generator -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -50,6 +50,16 @@
                             <polyline points="9 22 9 12 15 12 15 22"></polyline>
                         </svg>
                         <span>Pengaturan Toko</span>
+                    </button>
+
+                    <!-- Tombol Transaksi Diproses / Pending -->
+                    <button type="button" class="btn-nav-action btn-active-orders-nav" onclick="activeOrdersManager.openModal()" title="Lihat Transaksi Belum Lunas & Antrean PO (F7)">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 11l3 3L22 4"></path>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                        </svg>
+                        <span>Transaksi Diproses</span>
+                        <span class="active-orders-badge" id="activeOrdersCountBadge" style="display: none;">0</span>
                     </button>
 
                     <!-- Tombol Rekap Penjualan -->
@@ -205,6 +215,28 @@
                     <input type="text" id="customerNameInput" class="customer-input" placeholder="Nama Pelanggan / No. Meja">
                     <input type="text" id="orderNotesInput" class="customer-input" placeholder="Catatan (misal: pedas, es dipisah)">
                 </div>
+                <!-- Form Detail PO (Pre-Order / Take Away) -->
+                <div class="po-pickup-box" id="poPickupDetailsBox" style="display: none;">
+                    <div class="po-box-title">📦 Jadwal & Pengambilan Pre-Order (PO):</div>
+                    <div class="po-datetime-row">
+                        <div class="po-field-group">
+                            <label for="poPickupDate">Tgl Ambil:</label>
+                            <input type="date" id="poPickupDate" class="form-control po-input">
+                        </div>
+                        <div class="po-field-group">
+                            <label for="poPickupTime">Jam Ambil:</label>
+                            <input type="time" id="poPickupTime" class="form-control po-input">
+                        </div>
+                    </div>
+                    <div class="po-method-pills">
+                        <button type="button" class="po-method-btn active" data-method="self_pickup" onclick="cartManager.setPoPickupMethod('self_pickup')">🏪 Ambil di Toko</button>
+                        <button type="button" class="po-method-btn" data-method="ojol" onclick="cartManager.setPoPickupMethod('ojol')">🛵 Ojol / Kurir</button>
+                        <button type="button" class="po-method-btn" data-method="delivery" onclick="cartManager.setPoPickupMethod('delivery')">🚚 Diantar Toko</button>
+                    </div>
+                    <div class="po-address-row" id="poAddressWrapper" style="display: none;">
+                        <input type="text" id="poPickupAddress" class="form-control po-address-input" placeholder="Info Ojol (misal: GoSend / GrabExpress, Nama Driver / Plat)">
+                    </div>
+                </div>
             </div>
 
             <!-- Daftar Item Keranjang -->
@@ -257,17 +289,25 @@
                     <span id="grandTotal">Rp 0</span>
                 </div>
 
-                <!-- Tombol Cetak Bill Sementara (Langkah 1: Tagihan Meja / Customer) -->
+                <!-- Tombol Cetak Bill Sementara & Simpan Tagihan (Belum Lunas) -->
                 <div class="bill-action-row">
                     <button type="button" class="btn-print-bill" id="btnPrintBill" onclick="paymentManager.showBillModal()" title="Cetak atau tampilkan bill sementara untuk dicek pelanggan sebelum bayar">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                             <polyline points="14 2 14 8 20 8"></polyline>
                             <line x1="16" y1="13" x2="8" y2="13"></line>
                             <line x1="16" y1="17" x2="8" y2="17"></line>
                             <polyline points="10 9 9 9 8 9"></polyline>
                         </svg>
-                        <span>🧾 Cetak Bill / Tagihan Sementara</span>
+                        <span>🧾 Cetak Bill</span>
+                    </button>
+                    <button type="button" class="btn-save-pending-bill" id="btnSavePendingBill" onclick="paymentManager.savePendingOrder()" title="Simpan sebagai tagihan belum lunas (kasir siap layani antrean lain)">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                        <span>💾 Simpan Tagihan</span>
                     </button>
                 </div>
 
@@ -386,6 +426,9 @@
                 <button type="button" class="btn-nav-action btn-receipt-print" onclick="paymentManager.printBill()" title="Cetak bill sementara ke printer kasir">
                     🖨️ Cetak Bill
                 </button>
+                <button type="button" class="btn-nav-action btn-save-bill-pending" onclick="paymentManager.savePendingOrder()" title="Simpan sebagai Tagihan Sementara untuk dilunasi nanti">
+                    💾 Simpan Tagihan
+                </button>
                 <button type="button" class="btn-nav-action btn-primary-submit" onclick="paymentManager.proceedToPayment()" style="margin-left: auto;" title="Lanjut ke proses pembayaran kasir">
                     ➡️ Lanjut Pembayaran
                 </button>
@@ -485,6 +528,41 @@
                     📊 Ekspor ke Excel (.xlsx)
                 </button>
                 <button type="button" class="btn-nav-action" onclick="closeHistoryModal()">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODAL: TRANSAKSI DIPROSES / AKTIF ================= -->
+    <div class="modal-backdrop" id="activeOrdersModal">
+        <div class="modal-content modal-wide modal-active-orders">
+            <div class="modal-header">
+                <div class="active-header-title">
+                    <span class="active-title-badge">⚡ AKTIF</span>
+                    <div>
+                        <h3>Transaksi Diproses & Antrean PO</h3>
+                        <p class="active-subtitle">Kelola tagihan sementara yang belum lunas dan pesanan Pre-Order (PO) yang menunggu diambil</p>
+                    </div>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="activeOrdersManager.closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="active-tabs-nav">
+                    <button type="button" class="active-tab-btn active" data-tab="unpaid" onclick="activeOrdersManager.setTab('unpaid')">
+                        <span>🧾 Tagihan Sementara (Belum Bayar)</span>
+                        <span class="active-tab-count" id="countPendingBills">0</span>
+                    </button>
+                    <button type="button" class="active-tab-btn" data-tab="po" onclick="activeOrdersManager.setTab('po')">
+                        <span>📦 Menunggu Diambil (PO Lunas)</span>
+                        <span class="active-tab-count" id="countPendingPickups">0</span>
+                    </button>
+                </div>
+
+                <div class="active-orders-container" id="activeOrdersContainer">
+                    <!-- Cards digenerate oleh activeOrdersManager.render() -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-nav-action" onclick="activeOrdersManager.closeModal()">Tutup</button>
             </div>
         </div>
     </div>
@@ -1311,16 +1389,16 @@
     </div>
 
     <!-- ================= JAVASCRIPT MODULES ================= -->
-    <script src="js/config.js?v=5.5"></script>
-    <script src="js/sound.js?v=5.5"></script>
-    <script src="js/db.js?v=5.5"></script>
-    <script src="js/settings.js?v=5.5"></script>
-    <script src="js/inventory.js?v=5.5"></script>
-    <script src="js/products.js?v=5.5"></script>
-    <script src="js/cart.js?v=5.5"></script>
-    <script src="js/payment.js?v=5.5"></script>
-    <script src="js/auth.js?v=5.5"></script>
-    <script src="js/admin.js?v=5.5"></script>
-    <script src="js/app.js?v=5.7"></script>
+    <script src="js/config.js?v=5.8"></script>
+    <script src="js/sound.js?v=5.8"></script>
+    <script src="js/db.js?v=5.8"></script>
+    <script src="js/settings.js?v=5.8"></script>
+    <script src="js/inventory.js?v=5.8"></script>
+    <script src="js/products.js?v=5.8"></script>
+    <script src="js/cart.js?v=5.8"></script>
+    <script src="js/payment.js?v=5.8"></script>
+    <script src="js/auth.js?v=5.8"></script>
+    <script src="js/admin.js?v=5.8"></script>
+    <script src="js/app.js?v=5.8"></script>
 </body>
 </html>
