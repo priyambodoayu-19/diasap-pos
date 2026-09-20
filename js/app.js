@@ -367,10 +367,88 @@ async function renderHistoryData() {
     // Render Grafik Sederhana Penjualan (Hanya transaksi lunas/selesai)
     renderHistoryChart(orders);
 
+    // Simpan data periode saat ini agar dapat difilter secara reaktif
+    window.rawPeriodOrders = orders;
+
+    // Terapkan filter tabel (status pesanan, metode bayar, exclude void, pencarian)
+    applyHistoryTableFilters();
+}
+
+// Filter tabel riwayat transaksi secara dinamis
+function applyHistoryTableFilters() {
+    const allOrders = window.rawPeriodOrders || [];
+    const searchVal = (document.getElementById('historySearchInput')?.value || '').toLowerCase().trim();
+    const statusVal = document.getElementById('filterHistoryStatus')?.value || 'all';
+    const payVal = document.getElementById('filterHistoryPayment')?.value || 'all';
+    const excludeVoid = document.getElementById('filterExcludeVoid')?.checked ?? true;
+
+    const filtered = allOrders.filter(o => {
+        const isVoid = Boolean(o.isVoid);
+        const isUnpaid = o.status === 'unpaid';
+        const isPendingPo = o.orderType === 'take_away' && !isVoid && !isUnpaid && (!o.pickedUpAt || o.status === 'paid');
+        const isSent = !isVoid && !isUnpaid && !isPendingPo && o.orderType === 'take_away' && (o.pickupMethod === 'ojol' || o.pickupMethod === 'delivery');
+        const isPicked = !isVoid && !isUnpaid && !isPendingPo && o.orderType === 'take_away' && (o.pickupMethod !== 'ojol' && o.pickupMethod !== 'delivery');
+        const isCompleted = !isVoid && !isUnpaid && !isPendingPo;
+
+        // Exclude void
+        if (excludeVoid && isVoid && statusVal !== 'void') {
+            return false;
+        }
+
+        // Status filter
+        if (statusVal === 'completed' && !isCompleted) return false;
+        if (statusVal === 'sent' && !isSent) return false;
+        if (statusVal === 'picked' && !isPicked) return false;
+        if (statusVal === 'pending_po' && !isPendingPo) return false;
+        if (statusVal === 'unpaid' && !isUnpaid) return false;
+        if (statusVal === 'void' && !isVoid) return false;
+
+        // Payment method filter
+        if (payVal !== 'all') {
+            if (payVal === 'unpaid') {
+                if (!isUnpaid) return false;
+            } else {
+                if (isUnpaid || (o.paymentMethod || 'cash').toLowerCase() !== payVal) {
+                    return false;
+                }
+            }
+        }
+
+        // Search text filter
+        if (searchVal) {
+            const inv = (o.invoiceNo || '').toLowerCase();
+            const cust = (o.customerName || '').toLowerCase();
+            const notes = (o.notes || '').toLowerCase();
+            const itemsStr = (o.items || []).map(i => i.name || '').join(' ').toLowerCase();
+            if (!inv.includes(searchVal) && !cust.includes(searchVal) && !notes.includes(searchVal) && !itemsStr.includes(searchVal)) {
+                return false;
+            }
+        }
+
+        return true;
+    });
+
+    window.currentlyRenderedOrders = filtered;
+
+    const countBadge = document.getElementById('historyFilterCountBadge');
+    if (countBadge) {
+        if (filtered.length === allOrders.length) {
+            countBadge.textContent = `${filtered.length} transaksi`;
+        } else {
+            countBadge.textContent = `Menampilkan ${filtered.length} dari ${allOrders.length} transaksi`;
+        }
+    }
+
+    renderHistoryTableRows(filtered);
+}
+
+// Render baris tabel riwayat transaksi
+function renderHistoryTableRows(orders) {
+    const tableBody = document.getElementById('historyTableBody');
     if (!tableBody) return;
 
-    if (orders.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="12" style="text-align: center; padding: 36px 20px; color: #95a5a6;">Tidak ada transaksi pada periode yang dipilih.</td></tr>`;
+    if (!orders || orders.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="12" style="text-align: center; padding: 36px 20px; color: #95a5a6;">Tidak ada transaksi yang cocok dengan filter.</td></tr>`;
         return;
     }
 
@@ -386,6 +464,29 @@ async function renderHistoryData() {
         const orderMargin = orderFoodRevenue > 0 ? Math.round((orderProfit / orderFoodRevenue) * 100) : 0;
         const cashierName = o.cashierName || 'Kasir';
         const finalDiscount = Number(o.finalDiscountAmount) || 0;
+
+        let statusTagHtml = '';
+        if (isVoid) {
+            statusTagHtml = '<div class="tag-void-mini">⚠️ VOID</div>';
+        } else if (isUnpaid) {
+            statusTagHtml = '<div class="tag-unpaid-mini">🕒 BELUM BAYAR</div>';
+        } else if (isPendingPo) {
+            statusTagHtml = '<div class="tag-po-mini">📦 MENUNGGU PICKUP</div>';
+        } else {
+            // Selesai / Lunas
+            if (o.orderType === 'take_away') {
+                const isDelivery = o.pickupMethod === 'ojol' || o.pickupMethod === 'delivery';
+                if (isDelivery) {
+                    const timeInfo = o.pickedUpAt ? ` (${formatDateTime(o.pickedUpAt)})` : '';
+                    statusTagHtml = `<div class="tag-completed-mini" title="Pesanan telah selesai dan dikirim via ${o.pickupMethod === 'ojol' ? 'Ojol / Kurir' : 'Kurir Toko'}${timeInfo}">🛵 SUDAH KIRIM</div>`;
+                } else {
+                    const timeInfo = o.pickedUpAt ? ` (${formatDateTime(o.pickedUpAt)})` : '';
+                    statusTagHtml = `<div class="tag-completed-mini" title="Pesanan telah selesai diambil di toko${timeInfo}">🏪 SUDAH DIAMBIL</div>`;
+                }
+            } else {
+                statusTagHtml = '<div class="tag-completed-mini">✅ SELESAI</div>';
+            }
+        }
 
         const itemsHtml = (o.items && o.items.length > 0)
             ? `<div class="history-items-list">
@@ -403,7 +504,7 @@ async function renderHistoryData() {
                 <td class="col-num-cell" style="text-align: center; color: #64748B;">${idx + 1}</td>
                 <td class="col-invoice-cell">
                     <div class="invoice-num-text"><strong>${o.invoiceNo}</strong></div>
-                    ${isVoid ? '<div class="tag-void-mini">VOID</div>' : (isUnpaid ? '<div class="tag-unpaid-mini">TAGIHAN SEMENTARA</div>' : (isPendingPo ? '<div class="tag-po-mini">PO SIAP AMBIL</div>' : ''))}
+                    ${statusTagHtml}
                     ${o.resiPrintedAt ? `<div class="badge-resi-printed-tag" title="Resi dicetak: ${formatDateTime(o.resiPrintedAt)}">🖨️ Resi Dicetak</div>` : ''}
                     <div class="invoice-cashier-text">Kasir: <strong>${cashierName}</strong></div>
                 </td>
@@ -653,7 +754,9 @@ async function reprintOrder(invoiceNo) {
 // ================= EKSPOR LAPORAN KE EXCEL (.XLSX) =================
 
 async function exportHistoryToExcel() {
-    const orders = await db.getOrdersHistory(500);
+    const orders = (window.currentlyRenderedOrders && window.currentlyRenderedOrders.length > 0)
+        ? window.currentlyRenderedOrders
+        : (await db.getOrdersHistory(500));
     if (orders.length === 0) {
         alert('Tidak ada data transaksi untuk diekspor.');
         return;
@@ -699,15 +802,25 @@ async function exportHistoryToExcel() {
     let sumFinalDiscount = 0;
     let sumOmset = 0;
 
-    orders.forEach((o) => {
+    orders.forEach(o => {
         const isVoid = Boolean(o.isVoid);
-        const totalPaid = isVoid ? 0 : (Number(o.totalAmount) || 0);
-        const ongkir = isVoid ? 0 : (Number(o.deliveryFee) || 0);
+        const ongkir = Number(o.deliveryFee) || 0;
         const finalDiscount = Number(o.finalDiscountAmount) || 0;
+        const totalPaid = Number(o.totalAmount) || 0;
         const notes = [
-            o.notes,
-            (o.orderType === 'take_away' && o.pickupDate) ? `PO: ${o.pickupDate} ${o.pickupTime || ''} (${o.pickupMethod || 'Ambil Toko'}) ${o.pickupAddress ? ' - ' + o.pickupAddress : ''}` : ''
+            o.notes || '',
+            o.pickupDate ? `Tgl: ${o.pickupDate}` : '',
+            o.pickupTime ? `Jam: ${o.pickupTime}` : '',
+            o.pickupMethod ? `Metode: ${o.pickupMethod}` : '',
+            o.pickupAddress ? `Alamat: ${o.pickupAddress}` : ''
         ].filter(Boolean).join(' | ');
+
+        let statusExcel = 'SELESAI';
+        if (isVoid) statusExcel = 'VOID / DIBATALKAN';
+        else if (o.status === 'unpaid') statusExcel = 'BELUM BAYAR';
+        else if (o.orderType === 'take_away' && (!o.pickedUpAt || o.status === 'paid')) statusExcel = 'PO MENUNGGU PICKUP';
+        else if (o.orderType === 'take_away' && (o.pickupMethod === 'ojol' || o.pickupMethod === 'delivery')) statusExcel = 'SELESAI (SUDAH KIRIM)';
+        else if (o.orderType === 'take_away') statusExcel = 'SELESAI (SUDAH DIAMBIL)';
 
         if (!isVoid) {
             sumOngkir += ongkir;
@@ -774,7 +887,7 @@ async function exportHistoryToExcel() {
                 o.customerName || 'Pelanggan',
                 o.orderType === 'dine_in' ? 'Dine In' : 'Take Away (PO)',
                 (o.paymentMethod || 'cash').toUpperCase(),
-                isVoid ? 'VOID / DIBATALKAN' : 'SUKSES',
+                statusExcel,
                 itemName,
                 variantName,
                 qty,

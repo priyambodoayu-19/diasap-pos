@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
     <!-- Stylesheet POS -->
-    <link rel="stylesheet" href="css/style.css?v=7.8">
+    <link rel="stylesheet" href="css/style.css?v=7.9">
     <!-- Pustaka Eksternal: Excel XLSX Export, Canvas Struk, PDF Generator -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -529,6 +529,44 @@
                     <div class="rekap-card">
                         <div class="rekap-label">Pendapatan Transfer</div>
                         <div class="rekap-val" id="rekapTransferTotal" style="color: #7C3AED;">Rp 0</div>
+                    </div>
+                </div>
+
+                <!-- Toolbar Filter Tabel Riwayat Transaksi -->
+                <div class="history-table-toolbar">
+                    <div class="hist-tool-left">
+                        <div class="hist-search-wrap">
+                            <input type="text" id="historySearchInput" class="hist-search-input" placeholder="🔍 Cari Invoice / Nama Pelanggan / Menu..." oninput="applyHistoryTableFilters()">
+                        </div>
+                        <div class="hist-select-wrap">
+                            <select id="filterHistoryStatus" class="hist-filter-select" onchange="applyHistoryTableFilters()">
+                                <option value="all">Semua Status</option>
+                                <option value="completed">✅ Selesai (Semua)</option>
+                                <option value="sent">🛵 Sudah Kirim (Delivery/Ojol)</option>
+                                <option value="picked">🏪 Sudah Diambil (Pickup)</option>
+                                <option value="pending_po">📦 Menunggu Pickup (PO)</option>
+                                <option value="unpaid">🕒 Belum Bayar (Gantung)</option>
+                                <option value="void">⚠️ Void (Dibatalkan)</option>
+                            </select>
+                        </div>
+                        <div class="hist-select-wrap">
+                            <select id="filterHistoryPayment" class="hist-filter-select" onchange="applyHistoryTableFilters()">
+                                <option value="all">Semua Metode Bayar</option>
+                                <option value="transfer">🏦 Transfer Bank</option>
+                                <option value="qris">📱 QRIS</option>
+                                <option value="cash">💵 Tunai (Cash)</option>
+                                <option value="unpaid">🕒 Belum Bayar</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="hist-tool-right">
+                        <label class="hist-checkbox-label" title="Centang untuk menyembunyikan transaksi yang dibatalkan / void">
+                            <input type="checkbox" id="filterExcludeVoid" onchange="applyHistoryTableFilters()" checked>
+                            <span>🚫 Exclude Void</span>
+                        </label>
+                        <span class="hist-filter-count-badge" id="historyFilterCountBadge">
+                            0 transaksi
+                        </span>
                     </div>
                 </div>
 
@@ -1531,16 +1569,16 @@
     <div id="bulkPrintArea" class="bulk-print-only-container"></div>
 
     <!-- ================= JAVASCRIPT MODULES ================= -->
-    <script src="js/config.js?v=7.8"></script>
-    <script src="js/sound.js?v=7.8"></script>
-    <script src="js/db.js?v=7.8"></script>
-    <script src="js/settings.js?v=7.8"></script>
-    <script src="js/inventory.js?v=7.8"></script>
-    <script src="js/products.js?v=7.8"></script>
-    <script src="js/cart.js?v=7.8"></script>
-    <script src="js/payment.js?v=7.8"></script>
-    <script src="js/auth.js?v=7.8"></script>
-    <script src="js/admin.js?v=7.8"></script>
-    <script src="js/app.js?v=7.8"></script>
+    <script src="js/config.js?v=7.9"></script>
+    <script src="js/sound.js?v=7.9"></script>
+    <script src="js/db.js?v=7.9"></script>
+    <script src="js/settings.js?v=7.9"></script>
+    <script src="js/inventory.js?v=7.9"></script>
+    <script src="js/products.js?v=7.9"></script>
+    <script src="js/cart.js?v=7.9"></script>
+    <script src="js/payment.js?v=7.9"></script>
+    <script src="js/auth.js?v=7.9"></script>
+    <script src="js/admin.js?v=7.9"></script>
+    <script src="js/app.js?v=7.9"></script>
 </body>
 </html>
