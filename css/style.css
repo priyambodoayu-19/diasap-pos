@@ -6114,10 +6114,10 @@ input[type="password"]::-ms-clear {
     border-color: #EF4444;
 }
 
-/* Modal Transaksi Diproses & Grid Card */
+/* Modal Transaksi Diproses & Tabel Horizontal (Mendatar Seperti Rekap) */
 .modal-active-orders {
-    max-width: 960px !important;
-    width: 95% !important;
+    max-width: 1260px !important;
+    width: 96% !important;
 }
 
 .active-header-title {
@@ -6214,6 +6214,256 @@ input[type="password"]::-ms-clear {
     color: #94A3B8;
     max-width: 440px;
     margin: 0 auto;
+}
+
+/* Horizontal Table Display (Mendatar Seperti Rekap Penjualan) */
+.active-table-container {
+    overflow-x: auto;
+    max-height: 58vh;
+    overflow-y: auto;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    background: #FFFFFF;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.active-orders-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    text-align: left;
+}
+
+.active-orders-table th {
+    background: #F8FAFC !important;
+    padding: 11px 12px;
+    font-weight: 800;
+    color: #1E293B;
+    border-bottom: 2px solid #CBD5E1;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.05);
+    white-space: nowrap;
+}
+
+.active-orders-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #E2E8F0;
+    color: #1E293B;
+    vertical-align: middle;
+}
+
+.active-orders-table tbody tr {
+    transition: background-color 0.15s;
+}
+
+.active-orders-table tbody tr:hover {
+    background-color: #F8FAFC;
+}
+
+.active-orders-table tbody tr.is-selected-bulk {
+    background-color: #EFF6FF !important;
+}
+
+.active-orders-table tbody tr.row-unpaid {
+    border-left: 4px solid #F59E0B;
+}
+
+.active-orders-table tbody tr.row-po {
+    border-left: 4px solid #10B981;
+}
+
+.active-inv-num {
+    font-family: monospace;
+    font-weight: 800;
+    font-size: 13px;
+    color: #0F172A;
+    line-height: 1.2;
+}
+
+.active-time-text {
+    font-size: 11px;
+    color: #64748B;
+    margin-top: 3px;
+    white-space: nowrap;
+}
+
+.active-cust-name {
+    font-size: 13px;
+    font-weight: 800;
+    color: #0F172A;
+    line-height: 1.3;
+}
+
+.active-cust-meta {
+    margin-top: 3px;
+}
+
+.active-notes-tag {
+    font-size: 11px;
+    color: #B45309;
+    background: #FEF3C7;
+    border: 1px solid #FDE68A;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 4px;
+    display: inline-block;
+    max-width: 220px;
+    word-break: break-word;
+    line-height: 1.3;
+}
+
+.active-sched-date {
+    font-size: 12px;
+    color: #1E293B;
+    white-space: nowrap;
+}
+
+.po-date-highlight {
+    color: #C2410C;
+    font-weight: 700;
+}
+
+.active-sched-method {
+    font-size: 11px;
+    font-weight: 600;
+    color: #475569;
+    margin-top: 2px;
+    white-space: nowrap;
+}
+
+.active-sched-addr {
+    font-size: 11px;
+    color: #64748B;
+    font-style: italic;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-top: 2px;
+}
+
+.active-items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    max-width: 260px;
+}
+
+.active-item-chip {
+    font-size: 12px;
+    color: #334155;
+    background: #F1F5F9;
+    padding: 3px 6px;
+    border-radius: 4px;
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.active-total-num {
+    font-size: 14px;
+    font-weight: 800;
+    color: #0F172A;
+    white-space: nowrap;
+}
+
+.active-table-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+}
+
+.btn-act-table {
+    padding: 6px 9px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    transition: all 0.15s;
+}
+
+.btn-act-table:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-act-table.btn-active-pay {
+    background: #10B981;
+    color: #FFFFFF;
+}
+.btn-act-table.btn-active-pay:hover {
+    background: #059669;
+}
+
+.btn-act-table.btn-active-edit {
+    background: #EFF6FF;
+    color: #1D4ED8;
+    border: 1px solid #BFDBFE;
+}
+.btn-act-table.btn-active-edit:hover {
+    background: #DBEAFE;
+}
+
+.btn-act-table.btn-active-resi {
+    background: #0284C7;
+    color: #FFFFFF;
+}
+.btn-act-table.btn-active-resi:hover {
+    background: #0369A1;
+}
+
+.btn-act-table.btn-active-bill {
+    background: #F8FAFC;
+    color: #475569;
+    border: 1px solid #CBD5E1;
+}
+.btn-act-table.btn-active-bill:hover {
+    background: #F1F5F9;
+    color: #1E293B;
+}
+
+.btn-act-table.btn-active-del {
+    background: #FEE2E2;
+    color: #DC2626;
+    padding: 6px 8px;
+}
+.btn-act-table.btn-active-del:hover {
+    background: #FCA5A5;
+}
+
+.btn-act-table.btn-active-complete {
+    background: #10B981;
+    color: #FFFFFF;
+}
+.btn-act-table.btn-active-complete:hover {
+    background: #059669;
+}
+
+.btn-act-table.btn-active-reprint {
+    background: #F1F5F9;
+    color: #334155;
+    border: 1px solid #CBD5E1;
+}
+.btn-act-table.btn-active-reprint:hover {
+    background: #E2E8F0;
+}
+
+.order-row-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--primary);
+    vertical-align: middle;
 }
 
 .active-cards-grid {
