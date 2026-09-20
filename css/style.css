@@ -6694,118 +6694,114 @@ input[type="password"]::-ms-clear {
 }
 
 /* ==========================================================================
-   58mm THERMAL LABEL RESI STYLING
+   58mm THERMAL LABEL RESI STYLING (MONOCHROME / PRINTER LABEL COMPLIANT)
+   Only 2 font sizes: 11px (Normal/Standard) & 15px (Large/Bold). NO EMOJI.
    ========================================================================== */
 .resi-label-58mm {
     width: 220px;
     margin: 0 auto;
-    background: #FFFFFF;
-    color: #000000;
-    font-family: 'Courier New', Courier, monospace;
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    font-family: 'Courier New', Courier, monospace !important;
     font-size: 11px;
     line-height: 1.35;
-    padding: 10px 8px;
+    padding: 8px 6px;
     box-sizing: border-box;
+}
+
+.resi-f-normal {
+    font-size: 11px;
+}
+
+.resi-f-large {
+    font-size: 15px;
+    font-weight: bold;
 }
 
 .resi-header {
     text-align: center;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 .resi-title {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 900;
     letter-spacing: 1px;
 }
 
 .resi-subtitle {
-    font-size: 10px;
-    font-weight: 700;
-    color: #333333;
+    font-size: 11px;
+    font-weight: bold;
 }
 
 .resi-tag {
     display: inline-block;
-    font-size: 10px;
-    font-weight: 800;
-    border: 1px solid #000000;
-    padding: 1px 4px;
-    margin-top: 4px;
-    border-radius: 3px;
+    font-size: 11px;
+    font-weight: bold;
+    border: 1.5px solid #000000;
+    padding: 1px 6px;
+    margin-top: 3px;
 }
 
 .resi-divider {
     text-align: center;
     letter-spacing: 1px;
-    margin: 4px 0;
-    font-size: 10px;
-    color: #444444;
+    margin: 3px 0;
+    font-size: 11px;
+    font-weight: bold;
+    color: #000000;
 }
 
 .resi-recipient-box {
     margin: 4px 0;
 }
 
-.resi-recipient-label {
-    font-size: 10px;
-    font-weight: 700;
-    color: #444444;
-}
-
 .resi-recipient-name {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 900;
     text-transform: uppercase;
     line-height: 1.2;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
     word-break: break-word;
 }
 
 .resi-schedule-box {
-    background: #F3F4F6;
-    border: 1px solid #9CA3AF;
-    padding: 4px 6px;
-    border-radius: 4px;
+    border: 1.5px solid #000000;
+    padding: 3px 5px;
     margin: 4px 0;
-}
-
-.resi-schedule-time {
-    font-size: 12px;
-    font-weight: 800;
-}
-
-.resi-schedule-method {
     font-size: 11px;
-    font-weight: 700;
-    margin-top: 2px;
+    background: #FFFFFF;
 }
 
-.resi-address-line {
+.resi-notes-box {
+    border: 2px solid #000000;
+    padding: 5px 6px;
+    margin: 6px 0;
+    background: #FFFFFF;
+    text-align: left;
+}
+
+.resi-notes-header {
     font-size: 11px;
-    margin: 4px 0;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #000000;
+    padding-bottom: 2px;
+    margin-bottom: 3px;
+}
+
+.resi-notes-body {
+    font-size: 15px;
+    font-weight: 900;
+    line-height: 1.25;
     word-break: break-word;
-    border-left: 2px solid #000000;
-    padding-left: 5px;
-}
-
-.resi-notes-line {
-    font-size: 11px;
-    font-weight: 800;
-    background: #FEF3C7;
-    border: 1px dashed #D97706;
-    padding: 4px 6px;
-    border-radius: 4px;
-    margin: 4px 0;
-    color: #92400E;
-    word-break: break-word;
+    text-transform: uppercase;
 }
 
 .resi-section-title {
     font-size: 11px;
     font-weight: 900;
-    margin-bottom: 4px;
-    text-decoration: underline;
+    margin-bottom: 3px;
 }
 
 .resi-item-row {
@@ -6813,7 +6809,7 @@ input[type="password"]::-ms-clear {
     justify-content: space-between;
     align-items: flex-start;
     font-size: 11px;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
 }
 
 .resi-item-qty {
@@ -6834,11 +6830,18 @@ input[type="password"]::-ms-clear {
     margin-bottom: 2px;
 }
 
+.resi-meta-row.total-row {
+    font-size: 15px;
+    font-weight: 900;
+    border-top: 1.5px solid #000000;
+    padding-top: 3px;
+    margin-top: 3px;
+}
+
 .resi-footer {
     text-align: center;
-    font-size: 9px;
-    color: #444444;
-    margin-top: 6px;
+    font-size: 11px;
+    margin-top: 5px;
     line-height: 1.3;
 }
 

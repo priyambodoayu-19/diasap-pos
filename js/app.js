@@ -1388,7 +1388,7 @@ class ActiveOrdersManager {
         await this.downloadBulkPdf();
     }
 
-    // Format HTML Resi Struk Ukuran Label 58mm
+    // Format HTML Resi Struk Ukuran Label 58mm (Printer Label Compliant: No Emoji, 2 Font Sizes, Prominent Notes)
     generateResi58mmHtml(order) {
         const storeName = (typeof CONFIG !== 'undefined' && CONFIG.STORE_NAME) ? CONFIG.STORE_NAME : 'DIASAP';
         const storeAddress = (typeof CONFIG !== 'undefined' && CONFIG.STORE_ADDRESS) ? CONFIG.STORE_ADDRESS : '';
@@ -1406,88 +1406,88 @@ class ActiveOrdersManager {
 
         const items = order.items || [];
         const itemsRows = items.map(i => {
-            const variantNote = i.variantName ? ` (${i.variantName})` : '';
+            // Cegah duplikasi nama varian (misal AYAM KILOAN (Paha) (Paha))
+            let displayName = i.name || i.baseName || 'Item';
+            if (i.baseName && i.variantName && !displayName.includes(i.variantName)) {
+                displayName = `${i.baseName} (${i.variantName})`;
+            }
             return `
-                <div class="resi-item-row">
+                <div class="resi-item-row resi-f-normal">
                     <span class="resi-item-qty"><strong>[ ${i.qty}x ]</strong></span>
-                    <span class="resi-item-name">${i.baseName || i.name}${variantNote}</span>
+                    <span class="resi-item-name">${displayName}</span>
                 </div>
             `;
         }).join('');
 
+        const notesHtml = order.notes ? `
+            <div class="resi-notes-box">
+                <div class="resi-notes-header">*** CATATAN KHUSUS ***</div>
+                <div class="resi-notes-body">${order.notes}</div>
+            </div>
+        ` : '';
+
         return `
             <div class="resi-label-58mm">
                 <div class="resi-header">
-                    <div class="resi-title">🔥 ${storeName} 🔥</div>
+                    <div class="resi-title">${storeName}</div>
                     <div class="resi-subtitle">SMOKED MEAT & KITCHEN</div>
-                    ${storeAddress ? `<div style="font-size: 9px; color: #444; margin-top: 1px;">${storeAddress}</div>` : ''}
-                    ${storePhone ? `<div style="font-size: 9px; color: #444;">WA: ${storePhone}</div>` : ''}
-                    <div class="resi-tag">RESI PESANAN / LABEL PACKING</div>
+                    ${storeAddress ? `<div class="resi-f-normal">${storeAddress}</div>` : ''}
+                    ${storePhone ? `<div class="resi-f-normal">WA: ${storePhone}</div>` : ''}
+                    <div class="resi-tag">RESI / LABEL PACKING</div>
                 </div>
 
                 <div class="resi-divider">================================</div>
 
                 <div class="resi-recipient-box">
-                    <div class="resi-recipient-label">PENERIMA:</div>
-                    <div class="resi-recipient-name">👤 ${order.customerName || 'Pelanggan'}</div>
+                    <div class="resi-f-normal" style="font-weight: bold;">PENERIMA:</div>
+                    <div class="resi-recipient-name">${order.customerName || 'Pelanggan'}</div>
 
                     <div class="resi-schedule-box">
-                        <div class="resi-schedule-time">⏰ <strong>${order.pickupDate || '-'} ${order.pickupTime ? `(${order.pickupTime})` : ''}</strong></div>
-                        <div class="resi-schedule-method">🚚 <strong>${pickupMethodText}</strong></div>
+                        <div class="resi-f-normal"><strong>JADWAL :</strong> ${order.pickupDate || '-'} ${order.pickupTime ? `(${order.pickupTime})` : ''}</div>
+                        <div class="resi-f-normal"><strong>METODE :</strong> ${pickupMethodText}</div>
+                        ${order.pickupAddress ? `<div class="resi-f-normal" style="margin-top: 2px;"><strong>ALAMAT :</strong> ${order.pickupAddress}</div>` : ''}
                     </div>
 
-                    ${order.pickupAddress ? `
-                        <div class="resi-address-line">
-                            <strong>📍 Info / Alamat:</strong>
-                            <div>${order.pickupAddress}</div>
-                        </div>
-                    ` : ''}
-
-                    ${order.notes ? `
-                        <div class="resi-notes-line">
-                            <strong>📝 CATATAN:</strong>
-                            <div>${order.notes}</div>
-                        </div>
-                    ` : ''}
+                    ${notesHtml}
                 </div>
 
                 <div class="resi-divider">--------------------------------</div>
 
                 <div class="resi-items-section">
-                    <div class="resi-section-title">📦 DAFTAR PESANAN:</div>
-                    ${itemsRows || '<div style="font-size: 11px;">- Tidak ada item -</div>'}
+                    <div class="resi-section-title">DAFTAR PESANAN:</div>
+                    ${itemsRows || '<div class="resi-f-normal">- Tidak ada item -</div>'}
                 </div>
 
                 <div class="resi-divider">--------------------------------</div>
 
-                <div class="resi-meta-row">
+                <div class="resi-meta-row resi-f-normal">
                     <span>No. Invoice:</span>
                     <strong>${order.invoiceNo}</strong>
                 </div>
-                <div class="resi-meta-row">
+                <div class="resi-meta-row resi-f-normal">
                     <span>Status Bayar:</span>
                     <strong>${isPaid ? `LUNAS (${paymentMethod})` : 'BELUM BAYAR'}</strong>
                 </div>
                 ${order.deliveryFee > 0 ? `
-                    <div class="resi-meta-row">
+                    <div class="resi-meta-row resi-f-normal">
                         <span>Biaya Ongkir:</span>
                         <span>${formatRupiah(order.deliveryFee)}</span>
                     </div>
                 ` : ''}
-                <div class="resi-meta-row" style="font-size: 12px; font-weight: 900; margin-top: 3px; border-top: 1px dashed #666; padding-top: 3px;">
+                <div class="resi-meta-row total-row">
                     <span>TOTAL:</span>
                     <span>${formatRupiah(order.totalAmount)}</span>
                 </div>
-                <div class="resi-meta-row" style="font-size: 9px; color: #555; margin-top: 4px;">
+                <div class="resi-meta-row resi-f-normal" style="margin-top: 3px;">
                     <span>Waktu Order:</span>
                     <span>${formatDateTime(order.createdAt)}</span>
                 </div>
 
                 <div class="resi-divider">================================</div>
 
-                <div class="resi-footer">
-                    <div>❄️ Simpan di chiller jika belum dikonsumsi.</div>
-                    <div style="margin-top: 3px; font-weight: bold;">Terima Kasih! - diasap.resto</div>
+                <div class="resi-footer resi-f-normal">
+                    <div>Simpan di chiller jika belum dikonsumsi.</div>
+                    <div style="font-weight: bold; margin-top: 2px;">Terima Kasih! - diasap.resto</div>
                 </div>
             </div>
         `;
