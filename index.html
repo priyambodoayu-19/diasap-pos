@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
     <!-- Stylesheet POS -->
-    <link rel="stylesheet" href="css/style.css?v=5.8">
+    <link rel="stylesheet" href="css/style.css?v=5.9">
     <!-- Pustaka Eksternal: Excel XLSX Export, Canvas Struk, PDF Generator -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -234,7 +234,13 @@
                         <button type="button" class="po-method-btn" data-method="delivery" onclick="cartManager.setPoPickupMethod('delivery')">🚚 Diantar Toko</button>
                     </div>
                     <div class="po-address-row" id="poAddressWrapper" style="display: none;">
-                        <input type="text" id="poPickupAddress" class="form-control po-address-input" placeholder="Info Ojol (misal: GoSend / GrabExpress, Nama Driver / Plat)">
+                        <input type="text" id="poPickupAddress" class="form-control po-address-input" placeholder="Info Ojol / Alamat (misal: Paxel / GoSend, Plat / Alamat)">
+                    </div>
+                    <div class="po-fee-row" id="poDeliveryFeeWrapper" style="display: none;">
+                        <div class="po-fee-field">
+                            <label for="poDeliveryFee">🛵 Biaya Kirim / Kurir (Rp):</label>
+                            <input type="number" id="poDeliveryFee" class="form-control po-fee-input" placeholder="0 (Misal: 15000)" min="0" step="1000" oninput="cartManager.setDeliveryFee(this.value)">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -281,6 +287,12 @@
                 <div class="discount-deduct-row" id="cartDiscountRow" style="display: none;">
                     <span>Potongan Diskon:</span>
                     <span class="disc-amount-text" id="cartDiscountAmountDisplay">- Rp 0</span>
+                </div>
+
+                <!-- Biaya Kurir / Ongkir -->
+                <div class="delivery-fee-row" id="cartDeliveryFeeRow" style="display: none;">
+                    <span>🛵 Ongkir / Kurir:</span>
+                    <span class="delivery-fee-amount-text" id="cartDeliveryFeeDisplay">+ Rp 0</span>
                 </div>
 
                 <!-- Baris Grand Total -->
@@ -495,6 +507,11 @@
                     <div class="rekap-card">
                         <div class="rekap-label">Pendapatan QRIS</div>
                         <div class="rekap-val" id="rekapQrisTotal">Rp 0</div>
+                    </div>
+                    <div class="rekap-card rekap-card-delivery">
+                        <div class="rekap-label">🛵 Titipan Ongkir Kurir</div>
+                        <div class="rekap-val" id="rekapDeliveryFeeTotal" style="color: #0284C7;">Rp 0</div>
+                        <div class="rekap-subtext" style="font-size: 11px; color: #64748B; margin-top: 2px;">(Bukan laba toko)</div>
                     </div>
                 </div>
 
@@ -1389,16 +1406,16 @@
     </div>
 
     <!-- ================= JAVASCRIPT MODULES ================= -->
-    <script src="js/config.js?v=5.8"></script>
-    <script src="js/sound.js?v=5.8"></script>
-    <script src="js/db.js?v=5.8"></script>
-    <script src="js/settings.js?v=5.8"></script>
-    <script src="js/inventory.js?v=5.8"></script>
-    <script src="js/products.js?v=5.8"></script>
-    <script src="js/cart.js?v=5.8"></script>
-    <script src="js/payment.js?v=5.8"></script>
-    <script src="js/auth.js?v=5.8"></script>
-    <script src="js/admin.js?v=5.8"></script>
-    <script src="js/app.js?v=5.8"></script>
+    <script src="js/config.js?v=5.9"></script>
+    <script src="js/sound.js?v=5.9"></script>
+    <script src="js/db.js?v=5.9"></script>
+    <script src="js/settings.js?v=5.9"></script>
+    <script src="js/inventory.js?v=5.9"></script>
+    <script src="js/products.js?v=5.9"></script>
+    <script src="js/cart.js?v=5.9"></script>
+    <script src="js/payment.js?v=5.9"></script>
+    <script src="js/auth.js?v=5.9"></script>
+    <script src="js/admin.js?v=5.9"></script>
+    <script src="js/app.js?v=5.9"></script>
 </body>
 </html>

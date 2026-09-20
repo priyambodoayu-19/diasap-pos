@@ -81,6 +81,7 @@ class DatabaseService {
                 ALTER TABLE orders ADD COLUMN IF NOT EXISTS pickup_method VARCHAR(30) DEFAULT 'self_pickup';
                 ALTER TABLE orders ADD COLUMN IF NOT EXISTS pickup_address TEXT;
                 ALTER TABLE orders ADD COLUMN IF NOT EXISTS picked_up_at TIMESTAMP;
+                ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_fee NUMERIC DEFAULT 0;
             `);
         } catch (e) {
             console.warn('ensureSchema check (aman jika offline / kolom sudah ada):', e);
@@ -343,6 +344,7 @@ class DatabaseService {
             pickupTime: orderData.pickupTime || (existingIdx >= 0 ? orders[existingIdx].pickupTime : '') || '',
             pickupMethod: orderData.pickupMethod || (existingIdx >= 0 ? orders[existingIdx].pickupMethod : '') || 'self_pickup',
             pickupAddress: orderData.pickupAddress || (existingIdx >= 0 ? orders[existingIdx].pickupAddress : '') || '',
+            deliveryFee: Number(orderData.deliveryFee !== undefined ? orderData.deliveryFee : (existingIdx >= 0 ? orders[existingIdx].deliveryFee : 0)) || 0,
             pickedUpAt: orderData.pickedUpAt || (existingIdx >= 0 ? orders[existingIdx].pickedUpAt : null) || null,
             items: items,
             synced: false
@@ -369,8 +371,9 @@ class DatabaseService {
                         notes = $7, cashier_name = $8, subtotal_amount = $9,
                         final_discount_amount = $10, final_discount_note = $11,
                         status = $12, pickup_date = $13, pickup_time = $14,
-                        pickup_method = $15, pickup_address = $16, picked_up_at = $17
-                    WHERE id = $18;
+                        pickup_method = $15, pickup_address = $16, picked_up_at = $17,
+                        delivery_fee = $18
+                    WHERE id = $19;
                 `, [
                     orderData.customerName || 'Pelanggan',
                     orderData.orderType || 'dine_in',
@@ -389,6 +392,7 @@ class DatabaseService {
                     localOrderRecord.pickupMethod || 'self_pickup',
                     localOrderRecord.pickupAddress || '',
                     localOrderRecord.pickedUpAt || null,
+                    localOrderRecord.deliveryFee || 0,
                     targetOrderId
                 ]);
             } else {
@@ -397,9 +401,10 @@ class DatabaseService {
                         invoice_no, customer_name, order_type, payment_method, 
                         total_amount, cash_received, change_amount, notes, 
                         cashier_name, subtotal_amount, final_discount_amount, final_discount_note,
-                        status, pickup_date, pickup_time, pickup_method, pickup_address, picked_up_at
+                        status, pickup_date, pickup_time, pickup_method, pickup_address, picked_up_at,
+                        delivery_fee
                     )
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
                     RETURNING id;
                 `, [
                     orderData.invoiceNo,
@@ -419,7 +424,8 @@ class DatabaseService {
                     localOrderRecord.pickupTime || null,
                     localOrderRecord.pickupMethod || 'self_pickup',
                     localOrderRecord.pickupAddress || '',
-                    localOrderRecord.pickedUpAt || null
+                    localOrderRecord.pickedUpAt || null,
+                    localOrderRecord.deliveryFee || 0
                 ]);
                 targetOrderId = orderRes[0]?.id;
             }
@@ -532,6 +538,7 @@ class DatabaseService {
                 pickupTime: o.pickupTime || '',
                 pickupMethod: o.pickupMethod || 'self_pickup',
                 pickupAddress: o.pickupAddress || '',
+                deliveryFee: Number(o.deliveryFee || 0),
                 pickedUpAt: o.pickedUpAt || null
             }));
         } catch {
@@ -562,6 +569,7 @@ class DatabaseService {
                        COALESCE(o.pickup_time, '') as "pickupTime",
                        COALESCE(o.pickup_method, 'self_pickup') as "pickupMethod",
                        COALESCE(o.pickup_address, '') as "pickupAddress",
+                       COALESCE(o.delivery_fee, 0)::numeric as "deliveryFee",
                        o.picked_up_at as "pickedUpAt",
                        COALESCE(
                            json_agg(
@@ -605,6 +613,7 @@ class DatabaseService {
                     pickupTime: r.pickupTime || '',
                     pickupMethod: r.pickupMethod || 'self_pickup',
                     pickupAddress: r.pickupAddress || '',
+                    deliveryFee: Number(r.deliveryFee) || 0,
                     pickedUpAt: r.pickedUpAt || null,
                     items: Array.isArray(r.items) ? r.items : (typeof r.items === 'string' ? JSON.parse(r.items) : [])
                 }));

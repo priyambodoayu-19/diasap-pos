@@ -172,6 +172,7 @@ class PaymentManager {
             pickupTime: poDetails.pickupTime,
             pickupMethod: poDetails.pickupMethod,
             pickupAddress: poDetails.pickupAddress,
+            deliveryFee: poDetails.deliveryFee || 0,
             pickedUpAt: (targetStatus === 'completed') ? new Date().toISOString() : null,
             createdAt: new Date().toISOString()
         };
@@ -263,6 +264,7 @@ class PaymentManager {
             pickupTime: poDetails.pickupTime,
             pickupMethod: poDetails.pickupMethod,
             pickupAddress: poDetails.pickupAddress,
+            deliveryFee: poDetails.deliveryFee || 0,
             createdAt: new Date().toISOString()
         };
 
@@ -412,14 +414,22 @@ class PaymentManager {
                     ` : '';
                 })()}
 
-                ${finalDiscount > 0 ? `
+                ${(finalDiscount > 0 || (order.deliveryFee > 0)) ? `
                     <div class="receipt-info-row" style="font-size: 12px; margin-bottom: 3px;">
-                        <span>Subtotal:</span>
+                        <span>Subtotal Pesanan:</span>
                         <span>${formatRupiah(subtotal)}</span>
                     </div>
+                ` : ''}
+                ${finalDiscount > 0 ? `
                     <div class="receipt-info-row" style="font-size: 12px; color: #C0392B; margin-bottom: 3px;">
                         <span>Diskon Tambahan${finalDiscountNote}:</span>
                         <span>-${formatRupiah(finalDiscount)}</span>
+                    </div>
+                ` : ''}
+                ${(order.deliveryFee > 0) ? `
+                    <div class="receipt-info-row" style="font-size: 12px; color: #0284C7; font-weight: bold; margin-bottom: 3px;">
+                        <span>🛵 Biaya Kurir / Ongkir:</span>
+                        <span>+${formatRupiah(order.deliveryFee)}</span>
                     </div>
                 ` : ''}
 
@@ -748,14 +758,22 @@ class PaymentManager {
                     ` : '';
                 })()}
 
-                ${finalDiscount > 0 ? `
+                ${(finalDiscount > 0 || (cartManager.deliveryFee > 0)) ? `
                     <div class="receipt-info-row" style="margin-bottom: 3px;">
-                        <span>Subtotal:</span>
+                        <span>Subtotal Pesanan:</span>
                         <span>${formatRupiah(subtotal)}</span>
                     </div>
+                ` : ''}
+                ${finalDiscount > 0 ? `
                     <div class="receipt-info-row" style="margin-bottom: 3px;">
                         <span>Diskon Tambahan${finalDiscountNote}:</span>
                         <span>-${formatRupiah(finalDiscount)}</span>
+                    </div>
+                ` : ''}
+                ${(cartManager.deliveryFee > 0) ? `
+                    <div class="receipt-info-row" style="margin-bottom: 3px; color: #0284C7; font-weight: bold;">
+                        <span>🛵 Biaya Kurir / Ongkir:</span>
+                        <span>+${formatRupiah(cartManager.deliveryFee)}</span>
                     </div>
                 ` : ''}
 

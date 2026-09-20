@@ -305,6 +305,8 @@ async function renderHistoryData() {
 
     let activeOrdersCount = 0;
     let voidOrdersCount = 0;
+    let totalDeliveryFee = 0;
+    let totalFoodRevenue = 0;
 
     orders.forEach(o => {
         if (o.isVoid) {
@@ -316,14 +318,20 @@ async function renderHistoryData() {
         }
         activeOrdersCount++;
         const val = Number(o.totalAmount) || 0;
+        const dFee = Number(o.deliveryFee) || 0;
+        const foodVal = Math.max(0, val - dFee);
+
         totalRevenue += val;
+        totalDeliveryFee += dFee;
+        totalFoodRevenue += foodVal;
         totalCogs += calculateOrderCogs(o);
         if (o.paymentMethod === 'cash') cashRevenue += val;
         else if (o.paymentMethod === 'qris') qrisRevenue += val;
     });
 
-    const totalProfit = totalRevenue - totalCogs;
-    const overallMargin = totalRevenue > 0 ? Math.round((totalProfit / totalRevenue) * 100) : 0;
+    // Keuntungan bersih resto HANYA dari omzet produk makanan/minuman dikurangi HPP (ongkir kurir dipisahkan 100%)
+    const totalProfit = totalFoodRevenue - totalCogs;
+    const overallMargin = totalFoodRevenue > 0 ? Math.round((totalProfit / totalFoodRevenue) * 100) : 0;
     const avgOrder = activeOrdersCount > 0 ? Math.round(totalRevenue / activeOrdersCount) : 0;
 
     if (totalRevenueEl) totalRevenueEl.textContent = formatRupiah(totalRevenue);
@@ -333,6 +341,9 @@ async function renderHistoryData() {
         profitMarginEl.textContent = `${overallMargin}% Margin`;
         profitMarginEl.className = `margin-pill ${overallMargin >= 30 ? 'positive' : (overallMargin >= 0 ? 'warning' : 'danger')}`;
     }
+    const deliveryFeeTotalEl = document.getElementById('rekapDeliveryFeeTotal');
+    if (deliveryFeeTotalEl) deliveryFeeTotalEl.textContent = formatRupiah(totalDeliveryFee);
+
     if (totalOrdersEl) {
         totalOrdersEl.textContent = voidOrdersCount > 0
             ? `${activeOrdersCount} Sukses (${voidOrdersCount} Void)`
@@ -358,8 +369,10 @@ async function renderHistoryData() {
         const isPendingPo = o.orderType === 'take_away' && o.status === 'paid';
         const orderCogs = calculateOrderCogs(o);
         const orderRevenue = Number(o.totalAmount) || 0;
-        const orderProfit = orderRevenue - orderCogs;
-        const orderMargin = orderRevenue > 0 ? Math.round((orderProfit / orderRevenue) * 100) : 0;
+        const orderDeliveryFee = Number(o.deliveryFee) || 0;
+        const orderFoodRevenue = Math.max(0, orderRevenue - orderDeliveryFee);
+        const orderProfit = orderFoodRevenue - orderCogs; // Ongkir bukan laba toko
+        const orderMargin = orderFoodRevenue > 0 ? Math.round((orderProfit / orderFoodRevenue) * 100) : 0;
         const cashierName = o.cashierName || 'Kasir';
         const finalDiscount = Number(o.finalDiscountAmount) || 0;
 
@@ -399,6 +412,7 @@ async function renderHistoryData() {
                 <td class="col-revenue-cell">
                     <div class="revenue-nominal-text ${isVoid ? 'text-strikethrough' : ''}">${formatRupiah(orderRevenue)}</div>
                     ${finalDiscount > 0 ? `<div class="discount-subtext">(Disc: -${formatRupiah(finalDiscount)})</div>` : ''}
+                    ${orderDeliveryFee > 0 ? `<div class="delivery-subtext" style="font-size: 11px; color: #0284C7; font-weight: 600;">(Inc. Kurir: ${formatRupiah(orderDeliveryFee)})</div>` : ''}
                 </td>
                 <td class="col-profit-cell">
                     ${isVoid ? `
@@ -488,8 +502,10 @@ function renderHistoryChart(orders) {
         }
 
         const rev = Number(o.totalAmount) || 0;
+        const dFee = Number(o.deliveryFee) || 0;
+        const foodRev = Math.max(0, rev - dFee);
         dayMap[dateKey].omset += rev;
-        dayMap[dateKey].profit += (rev - orderCogs);
+        dayMap[dateKey].profit += (foodRev - orderCogs);
         dayMap[dateKey].count++;
     });
 
@@ -610,27 +626,31 @@ async function exportHistoryToExcel() {
     const header = [
         'No', 'No Invoice', 'Waktu', 'Kasir', 'Pelanggan',
         'Layanan', 'Metode Bayar', 'Status Transaksi', 'Dibatalkan Oleh', 'Alasan Void',
-        'Subtotal (Rp)', 'Diskon Final (Rp)', 'Total Omset (Rp)', 'Total Modal (HPP)', 'Untung Bersih (Rp)',
+        'Subtotal (Rp)', 'Diskon Final (Rp)', 'Ongkir Kurir (Rp)', 'Total Bayar (Rp)', 'Total Modal (HPP)', 'Untung Bersih (Rp)',
         'Margin %', 'Bayar Diterima (Rp)', 'Kembalian (Rp)', 'Catatan'
     ];
 
     const dataRows = [header];
 
     let sumOmset = 0;
+    let sumOngkir = 0;
     let sumCogs = 0;
     let sumProfit = 0;
 
     orders.forEach((o, idx) => {
         const isVoid = Boolean(o.isVoid);
-        const rev = isVoid ? 0 : (Number(o.totalAmount) || 0);
+        const totalPaid = isVoid ? 0 : (Number(o.totalAmount) || 0);
+        const ongkir = isVoid ? 0 : (Number(o.deliveryFee) || 0);
+        const foodRev = Math.max(0, totalPaid - ongkir);
         const cogs = isVoid ? 0 : calculateOrderCogs(o);
-        const profit = rev - cogs;
-        const marginPct = rev > 0 ? Number(((profit / rev) * 100).toFixed(1)) : 0;
-        const subtotal = Number(o.subtotalAmount) || rev;
+        const profit = foodRev - cogs;
+        const marginPct = foodRev > 0 ? Number(((profit / foodRev) * 100).toFixed(1)) : 0;
+        const subtotal = Number(o.subtotalAmount) || totalPaid;
         const finalDiscount = Number(o.finalDiscountAmount) || 0;
 
         if (!isVoid) {
-            sumOmset += rev;
+            sumOmset += totalPaid;
+            sumOngkir += ongkir;
             sumCogs += cogs;
             sumProfit += profit;
         }
@@ -648,7 +668,8 @@ async function exportHistoryToExcel() {
             o.voidReason || '',
             subtotal,
             finalDiscount,
-            rev,
+            ongkir,
+            totalPaid,
             cogs,
             profit,
             `${marginPct}%`,
@@ -662,8 +683,8 @@ async function exportHistoryToExcel() {
     dataRows.push([]);
     dataRows.push([
         '', '', '', '', '', '', '', 'TOTAL AKUMULASI:', '', '',
-        '', '', sumOmset, sumCogs, sumProfit,
-        sumOmset > 0 ? `${((sumProfit / sumOmset) * 100).toFixed(1)}%` : '0%',
+        '', '', sumOngkir, sumOmset, sumCogs, sumProfit,
+        sumOmset > 0 ? `${((sumProfit / (sumOmset - sumOngkir || sumOmset)) * 100).toFixed(1)}%` : '0%',
         '', '', ''
     ]);
 

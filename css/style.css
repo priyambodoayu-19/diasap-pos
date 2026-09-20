@@ -6034,5 +6034,67 @@ input[type="password"]::-ms-clear {
     background: #FFFBEB !important;
 }
 
+/* Input Biaya Kurir / Ongkir di PO Box */
+.po-fee-row {
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px dashed #FED7AA;
+}
+
+.po-fee-field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.po-fee-field label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #C2410C;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.po-fee-input {
+    width: 100%;
+    padding: 6px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid #FED7AA;
+    border-radius: 6px;
+    background: #FFFFFF;
+    color: #0369A1;
+    outline: none;
+}
+
+.po-fee-input:focus {
+    border-color: #0284C7;
+    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15);
+}
+
+/* Row Ongkir di Keranjang Kasir */
+.delivery-fee-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #0369A1;
+    border-top: 1px dashed #E2E8F0;
+}
+
+.delivery-fee-amount-text {
+    font-weight: 700;
+    color: #0284C7;
+}
+
+/* Kartu Titipan Ongkir di Rekap Penjualan */
+.rekap-card-delivery {
+    border-left: 4px solid #0284C7 !important;
+}
+
+
 
 

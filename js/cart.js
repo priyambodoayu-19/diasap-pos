@@ -14,6 +14,7 @@ class CartManager {
         this.poPickupTime = '';
         this.poPickupMethod = 'self_pickup'; // 'self_pickup', 'ojol', 'delivery'
         this.poPickupAddress = '';
+        this.deliveryFee = 0;
         this.editingPendingInvoiceNo = null;
         this.finalDiscount = {
             type: 'nominal', // 'nominal' | 'percent'
@@ -203,13 +204,16 @@ class CartManager {
         const noteInput = document.getElementById('orderNotesInput');
         if (noteInput) noteInput.value = '';
 
-        // Reset input PO
+        // Reset input PO & Ongkir
         const dateInput = document.getElementById('poPickupDate');
         if (dateInput) dateInput.value = '';
         const timeInput = document.getElementById('poPickupTime');
         if (timeInput) timeInput.value = '';
         const addrInput = document.getElementById('poPickupAddress');
         if (addrInput) addrInput.value = '';
+        const feeInput = document.getElementById('poDeliveryFee');
+        if (feeInput) feeInput.value = '';
+        this.deliveryFee = 0;
         this.setPoPickupMethod('self_pickup');
         this.renderEditBanner();
 
@@ -249,6 +253,18 @@ class CartManager {
                 timeInput.value = timeStr;
                 this.poPickupTime = timeStr;
             }
+        } else {
+            // Dine In: reset ongkir
+            this.deliveryFee = 0;
+            const feeInput = document.getElementById('poDeliveryFee');
+            if (feeInput) feeInput.value = '';
+            const feeWrapper = document.getElementById('poDeliveryFeeWrapper');
+            if (feeWrapper) feeWrapper.style.display = 'none';
+        }
+
+        this.renderDiscountUI();
+        if (typeof paymentManager !== 'undefined') {
+            paymentManager.calculate();
         }
     }
 
@@ -265,16 +281,38 @@ class CartManager {
 
         const addressWrapper = document.getElementById('poAddressWrapper');
         const addressInput = document.getElementById('poPickupAddress');
+        const feeWrapper = document.getElementById('poDeliveryFeeWrapper');
+        const feeInput = document.getElementById('poDeliveryFee');
+
         if (addressWrapper) {
             if (method === 'self_pickup') {
                 addressWrapper.style.display = 'none';
+                if (feeWrapper) feeWrapper.style.display = 'none';
+                this.deliveryFee = 0;
+                if (feeInput) feeInput.value = '';
             } else if (method === 'ojol') {
                 addressWrapper.style.display = 'block';
-                if (addressInput) addressInput.placeholder = 'Info Ojol (misal: GoSend/GrabExpress, Nama Driver / Plat)';
+                if (addressInput) addressInput.placeholder = 'Info Ojol / Kurir (misal: Paxel / GoSend, Plat / Driver)';
+                if (feeWrapper) feeWrapper.style.display = 'block';
             } else if (method === 'delivery') {
                 addressWrapper.style.display = 'block';
                 if (addressInput) addressInput.placeholder = 'Alamat Pengantaran Lengkap & No. HP Penerima';
+                if (feeWrapper) feeWrapper.style.display = 'block';
             }
+        }
+
+        this.renderDiscountUI();
+        if (typeof paymentManager !== 'undefined') {
+            paymentManager.calculate();
+        }
+    }
+
+    // Set Biaya Kurir / Antar (Rp)
+    setDeliveryFee(fee) {
+        this.deliveryFee = Math.max(0, parseInt(fee, 10) || 0);
+        this.renderDiscountUI();
+        if (typeof paymentManager !== 'undefined') {
+            paymentManager.calculate();
         }
     }
 
@@ -285,7 +323,8 @@ class CartManager {
                 pickupDate: '',
                 pickupTime: '',
                 pickupMethod: 'self_pickup',
-                pickupAddress: ''
+                pickupAddress: '',
+                deliveryFee: 0
             };
         }
 
@@ -297,7 +336,8 @@ class CartManager {
             pickupDate: dateInput ? dateInput.value : this.poPickupDate,
             pickupTime: timeInput ? timeInput.value : this.poPickupTime,
             pickupMethod: this.poPickupMethod || 'self_pickup',
-            pickupAddress: addrInput ? addrInput.value.trim() : (this.poPickupAddress || '')
+            pickupAddress: addrInput ? addrInput.value.trim() : (this.poPickupAddress || ''),
+            deliveryFee: this.deliveryFee || 0
         };
     }
 
@@ -326,6 +366,18 @@ class CartManager {
             }
             const addrInput = document.getElementById('poPickupAddress');
             if (addrInput && order.pickupAddress) addrInput.value = order.pickupAddress;
+
+            this.deliveryFee = Number(order.deliveryFee || 0);
+            const feeInput = document.getElementById('poDeliveryFee');
+            if (feeInput) feeInput.value = this.deliveryFee > 0 ? this.deliveryFee : '';
+            const feeWrapper = document.getElementById('poDeliveryFeeWrapper');
+            if (feeWrapper) {
+                feeWrapper.style.display = (order.pickupMethod !== 'self_pickup') ? 'block' : 'none';
+            }
+        } else {
+            this.deliveryFee = 0;
+            const feeInput = document.getElementById('poDeliveryFee');
+            if (feeInput) feeInput.value = '';
         }
 
         if (order.finalDiscountAmount > 0) {
@@ -422,11 +474,12 @@ class CartManager {
         return this.cart.reduce((sum, item) => sum + (item.priceLocked * item.qty), 0);
     }
 
-    // Hitung Grand Total (setelah diskon final)
+    // Hitung Grand Total (setelah diskon final + ongkir jika ada)
     getGrandTotal() {
         const subtotal = this.getSubtotal();
         const disc = this.getFinalDiscountAmount();
-        return Math.max(0, subtotal - disc);
+        const base = Math.max(0, subtotal - disc);
+        return base + (Number(this.deliveryFee) || 0);
     }
 
     // Hitung Total Item
@@ -556,6 +609,17 @@ class CartManager {
                 discAmountEl.textContent = `- ${formatRupiah(discAmount)}`;
             } else {
                 discRow.style.display = 'none';
+            }
+        }
+
+        const deliveryRow = document.getElementById('cartDeliveryFeeRow');
+        const deliveryDisplay = document.getElementById('cartDeliveryFeeDisplay');
+        if (deliveryRow && deliveryDisplay) {
+            if (this.deliveryFee > 0) {
+                deliveryRow.style.display = 'flex';
+                deliveryDisplay.textContent = `+ ${formatRupiah(this.deliveryFee)}`;
+            } else {
+                deliveryRow.style.display = 'none';
             }
         }
     }
