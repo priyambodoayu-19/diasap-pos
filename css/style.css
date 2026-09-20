@@ -3208,6 +3208,10 @@ input[type="password"]::-ms-clear {
     color: #B45309;
 }
 
+.prod-banner-tag.tag-raw {
+    color: #0369A1;
+}
+
 .prod-pills-list {
     display: flex;
     gap: 6px;
@@ -3231,6 +3235,12 @@ input[type="password"]::-ms-clear {
     background: #FFFBEB;
     border: 1px solid #FDE68A;
     color: #92400E;
+}
+
+.prod-pill.pill-raw {
+    background: #F0F9FF;
+    border: 1px solid #BAE6FD;
+    color: #0369A1;
 }
 
 .raw-mat-top {

@@ -81,12 +81,21 @@ class InventoryManager {
             '==========================================='
         ];
 
+        const SHRINKAGE_RATE = 0.30; // Susut 30% dari mentah ke matang (faktor 0.70)
         const needs = this.rawMaterials.filter(m => (Number(m.stock) || 0) < 0);
         if (needs.length > 0) {
-            lines.push('🔥 DAGING HARUS DIASAP (DEFISIT PO LUNAS):');
+            lines.push('🛒 ESTIMASI DAGING MENTAH HARUS DIBELI (SUSUT 30%):');
             needs.forEach(m => {
                 const deficit = Math.abs(Number(m.stock));
-                lines.push(`• ${m.name}: ${deficit.toLocaleString('id-ID')} ${m.unit} (${(deficit / 1000).toFixed(2)} kg)`);
+                const rawGrams = Math.ceil(deficit / (1 - SHRINKAGE_RATE));
+                const rawKg = (rawGrams / 1000).toFixed(2);
+                lines.push(`• ${m.name} Mentah: ~${rawKg} kg (${rawGrams.toLocaleString('id-ID')} gr) -> target matang: ${deficit.toLocaleString('id-ID')} gr`);
+            });
+            lines.push('');
+            lines.push('🔥 TARGET HASIL ASAP (DEFISIT PO LUNAS):');
+            needs.forEach(m => {
+                const deficit = Math.abs(Number(m.stock));
+                lines.push(`• ${m.name}: ${deficit.toLocaleString('id-ID')} ${m.unit} (${(deficit / 1000).toFixed(2)} kg matang)`);
             });
         } else {
             lines.push('🔥 DAGING HARUS DIASAP: (Nihil / 0 gr - Stok Ready Cukup)');
@@ -98,7 +107,9 @@ class InventoryManager {
             lines.push('🕒 STOK TRANSIT (TAGIHAN SEMENTARA BELUM BAYAR):');
             transitItems.forEach(m => {
                 const tr = this.transitDemand[m.id];
-                lines.push(`• ${m.name}: ${tr.toLocaleString('id-ID')} ${m.unit} (${(tr / 1000).toFixed(2)} kg)`);
+                const rawTrGrams = Math.ceil(tr / (1 - SHRINKAGE_RATE));
+                const rawTrKg = (rawTrGrams / 1000).toFixed(2);
+                lines.push(`• ${m.name}: ${tr.toLocaleString('id-ID')} ${m.unit} (${(tr / 1000).toFixed(2)} kg matang | Beli mentah jika lunas: ~${rawTrKg} kg)`);
             });
         }
 
@@ -293,13 +304,28 @@ class InventoryManager {
                     <div class="prod-banner-body">
                         ${itemsNeedSmoking.length > 0 ? `
                             <div class="prod-banner-row">
-                                <span class="prod-banner-tag tag-deficit">🔥 HARUS SEGERA DIASAP:</span>
+                                <span class="prod-banner-tag tag-deficit">🔥 HASIL ASAP DIBUTUHKAN:</span>
                                 <div class="prod-pills-list">
                                     ${itemsNeedSmoking.map(m => `
                                         <span class="prod-pill pill-deficit">
-                                            <strong>${m.name}:</strong> ${Math.abs(Number(m.stock)).toLocaleString('id-ID')} ${m.unit} (${(Math.abs(Number(m.stock)) / 1000).toFixed(2)} kg)
+                                            <strong>${m.name}:</strong> ${Math.abs(Number(m.stock)).toLocaleString('id-ID')} ${m.unit} (${(Math.abs(Number(m.stock)) / 1000).toFixed(2)} kg matang)
                                         </span>
                                     `).join('')}
+                                </div>
+                            </div>
+                            <div class="prod-banner-row" style="margin-top: 6px;">
+                                <span class="prod-banner-tag tag-raw">🛒 ESTIMASI BELANJA MENTAH (SUSUT ~30%):</span>
+                                <div class="prod-pills-list">
+                                    ${itemsNeedSmoking.map(m => {
+                                        const deficitGrams = Math.abs(Number(m.stock));
+                                        const rawGrams = Math.ceil(deficitGrams / 0.70);
+                                        const rawKg = (rawGrams / 1000).toFixed(2);
+                                        return `
+                                            <span class="prod-pill pill-raw">
+                                                <strong>${m.name} Mentah:</strong> ~${rawKg} kg <span style="font-size: 11px; opacity: 0.85;">(${rawGrams.toLocaleString('id-ID')} gr)</span>
+                                            </span>
+                                        `;
+                                    }).join('')}
                                 </div>
                             </div>
                         ` : `
@@ -312,11 +338,16 @@ class InventoryManager {
                             <div class="prod-banner-row" style="margin-top: 6px;">
                                 <span class="prod-banner-tag tag-transit">🕒 STOK TRANSIT (BELUM BAYAR):</span>
                                 <div class="prod-pills-list">
-                                    ${itemsInTransit.map(m => `
-                                        <span class="prod-pill pill-transit">
-                                            <strong>${m.name}:</strong> ${(this.transitDemand[m.id] || 0).toLocaleString('id-ID')} ${m.unit}
-                                        </span>
-                                    `).join('')}
+                                    ${itemsInTransit.map(m => {
+                                        const tr = (this.transitDemand[m.id] || 0);
+                                        const rawTrGrams = Math.ceil(tr / 0.70);
+                                        const rawTrKg = (rawTrGrams / 1000).toFixed(2);
+                                        return `
+                                            <span class="prod-pill pill-transit">
+                                                <strong>${m.name}:</strong> ${tr.toLocaleString('id-ID')} ${m.unit} <span style="font-size: 11px; opacity: 0.85;">(Beli mentah jika lunas: ~${rawTrKg} kg)</span>
+                                            </span>
+                                        `;
+                                    }).join('')}
                                 </div>
                             </div>
                         ` : ''}
@@ -407,7 +438,7 @@ class InventoryManager {
                                         <span class="stock-val-num">${harusDiasap.toLocaleString('id-ID')}</span>
                                         <span class="stock-val-unit">${mat.unit}</span>
                                     </div>
-                                    <span class="stock-metric-sub">${harusDiasap > 0 ? 'Perlu Dibelanjakan' : 'Aman (0 gr)'}</span>
+                                    <span class="stock-metric-sub">${harusDiasap > 0 ? `🛒 Beli: ~${(Math.ceil(harusDiasap / 0.70) / 1000).toFixed(2)} kg mentah` : 'Aman (0 gr)'}</span>
                                 </div>
                             </div>
 
