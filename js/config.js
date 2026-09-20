@@ -38,8 +38,10 @@ const CONFIG = {
 
     // Data Bahan Baku Master Default (jika offline)
     DEFAULT_RAW_MATERIALS: [
-        { id: 'RAW-AYAM', name: 'Ayam Asap', stock: 3000, unit: 'gr', minStock: 500 },
-        { id: 'RAW-SAPI', name: 'Daging Sapi Asap', stock: 2000, unit: 'gr', minStock: 300 }
+        { id: 'DSPR02', name: 'Ayam Asap Dada', stock: 0, unit: 'gr', minStock: 500 },
+        { id: 'DSPR01', name: 'Ayam Asap Paha', stock: 0, unit: 'gr', minStock: 500 },
+        { id: 'RAW-DADA', name: 'Ayam Dada Mentah', stock: 0, unit: 'gr', minStock: 1000 },
+        { id: 'RAW-PAHA', name: 'Ayam Paha Mentah', stock: 0, unit: 'gr', minStock: 1000 }
     ],
 
     // Nilai default jika database offline / pertama kali load

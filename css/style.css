@@ -3243,6 +3243,54 @@ input[type="password"]::-ms-clear {
     color: #0369A1;
 }
 
+.prod-pill.pill-safe {
+    background: #DCFCE7;
+    border: 1px solid #BBF7D0;
+    color: #15803D;
+}
+
+.prod-pill.pill-warning {
+    background: #FEF3C7;
+    border: 1px solid #FDE68A;
+    color: #B45309;
+}
+
+.stock-section-title-wrap {
+    margin: 18px 0 10px 0;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #E2E8F0;
+}
+
+.stock-section-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--secondary);
+    margin: 0 0 2px 0;
+}
+
+.stock-section-desc {
+    font-size: 11px;
+    color: #64748B;
+}
+
+.card-raw-meat {
+    border-color: #BAE6FD !important;
+    background: linear-gradient(180deg, #FFFFFF 0%, #F0F9FF 100%) !important;
+}
+
+.stock-metric-card.metric-safe {
+    background: #F0FDF4;
+    border-color: #BBF7D0;
+}
+
+.stock-metric-card.metric-safe .stock-metric-label {
+    color: #15803D;
+}
+
+.stock-metric-card.metric-safe .stock-metric-val {
+    color: #166534;
+}
+
 .raw-mat-top {
     display: flex;
     justify-content: space-between;
