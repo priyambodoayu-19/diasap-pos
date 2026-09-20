@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
     <!-- Stylesheet POS -->
-    <link rel="stylesheet" href="css/style.css?v=6.6">
+    <link rel="stylesheet" href="css/style.css?v=6.7">
     <!-- Pustaka Eksternal: Excel XLSX Export, Canvas Struk, PDF Generator -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -590,6 +590,30 @@
                         <span>📦 Menunggu Diambil (PO Lunas)</span>
                         <span class="active-tab-count" id="countPendingPickups">0</span>
                     </button>
+                </div>
+
+                <!-- Toolbar Bulk Resi 58mm -->
+                <div class="active-bulk-toolbar" id="activeBulkToolbar">
+                    <div class="bulk-left-group">
+                        <label class="bulk-select-all-label">
+                            <input type="checkbox" id="bulkSelectAllCheckbox" onchange="activeOrdersManager.toggleSelectAll(this.checked)">
+                            <span>Pilih Semua (<span id="bulkTotalVisibleCount">0</span>)</span>
+                        </label>
+                        <span class="bulk-badge-selected" id="bulkBadgeSelected" style="display: none;">
+                            <span id="bulkCountSelected">0</span> dipilih
+                        </span>
+                    </div>
+                    <div class="bulk-right-group">
+                        <button type="button" class="btn-bulk-toolbar btn-bulk-pdf" id="btnBulkPdf" onclick="activeOrdersManager.downloadBulkPdf()" disabled>
+                            📄 Download PDF Resi (58mm)
+                        </button>
+                        <button type="button" class="btn-bulk-toolbar btn-bulk-print" id="btnBulkPrint" onclick="activeOrdersManager.printBulkLabels()" disabled>
+                            🖨️ Cetak Bulk (58mm)
+                        </button>
+                        <button type="button" class="btn-bulk-toolbar btn-bulk-cancel" id="btnBulkCancel" onclick="activeOrdersManager.clearSelection()" style="display: none;">
+                            Batal Pilih
+                        </button>
+                    </div>
                 </div>
 
                 <div class="active-orders-container" id="activeOrdersContainer">
@@ -1434,17 +1458,24 @@
         </div>
     </div>
 
+    <!-- ================= BULK PRINT / PDF CONTAINERS ================= -->
+    <!-- Hidden container for offscreen 58mm label rendering -->
+    <div id="bulkRenderContainer" style="position: fixed; left: -9999px; top: 0; width: 220px; background: white; z-index: -1;"></div>
+
+    <!-- Print-only container for 58mm bulk printing -->
+    <div id="bulkPrintArea" class="bulk-print-only-container"></div>
+
     <!-- ================= JAVASCRIPT MODULES ================= -->
-    <script src="js/config.js?v=6.6"></script>
-    <script src="js/sound.js?v=6.6"></script>
-    <script src="js/db.js?v=6.6"></script>
-    <script src="js/settings.js?v=6.6"></script>
-    <script src="js/inventory.js?v=6.6"></script>
-    <script src="js/products.js?v=6.6"></script>
-    <script src="js/cart.js?v=6.6"></script>
-    <script src="js/payment.js?v=6.6"></script>
-    <script src="js/auth.js?v=6.6"></script>
-    <script src="js/admin.js?v=6.6"></script>
-    <script src="js/app.js?v=6.6"></script>
+    <script src="js/config.js?v=6.7"></script>
+    <script src="js/sound.js?v=6.7"></script>
+    <script src="js/db.js?v=6.7"></script>
+    <script src="js/settings.js?v=6.7"></script>
+    <script src="js/inventory.js?v=6.7"></script>
+    <script src="js/products.js?v=6.7"></script>
+    <script src="js/cart.js?v=6.7"></script>
+    <script src="js/payment.js?v=6.7"></script>
+    <script src="js/auth.js?v=6.7"></script>
+    <script src="js/admin.js?v=6.7"></script>
+    <script src="js/app.js?v=6.7"></script>
 </body>
 </html>

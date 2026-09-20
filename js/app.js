@@ -1085,6 +1085,8 @@ async function handleSaveNewProduct(event) {
 class ActiveOrdersManager {
     constructor() {
         this.currentTab = 'unpaid'; // 'unpaid' | 'po'
+        this.selectedInvoices = new Set();
+        this.visibleOrders = [];
     }
 
     async init() {
@@ -1124,6 +1126,7 @@ class ActiveOrdersManager {
 
     setTab(tab) {
         this.currentTab = tab;
+        this.selectedInvoices.clear();
         document.querySelectorAll('.active-tab-btn').forEach(b => {
             b.classList.toggle('active', b.dataset.tab === tab);
         });
@@ -1153,6 +1156,9 @@ class ActiveOrdersManager {
             });
         }
 
+        this.visibleOrders = (this.currentTab === 'unpaid') ? unpaidList : poList;
+        this.updateBulkToolbar();
+
         if (this.currentTab === 'unpaid') {
             if (unpaidList.length === 0) {
                 container.innerHTML = `
@@ -1171,10 +1177,16 @@ class ActiveOrdersManager {
                         const itemsSummary = o.items && o.items.length > 0 
                             ? o.items.map(i => `${i.name} (x${i.qty})`).join(', ')
                             : '-';
+                        const isSelected = this.selectedInvoices.has(o.invoiceNo);
                         return `
-                            <div class="active-order-card card-unpaid">
+                            <div class="active-order-card card-unpaid ${isSelected ? 'is-selected-bulk' : ''}" id="orderCard_${o.invoiceNo}">
                                 <div class="active-card-head">
-                                    <div>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <label class="order-card-select-wrap" onclick="event.stopPropagation()">
+                                            <input type="checkbox" class="order-card-checkbox" value="${o.invoiceNo}" 
+                                                   ${isSelected ? 'checked' : ''} 
+                                                   onchange="activeOrdersManager.toggleOrder('${o.invoiceNo}', this.checked)">
+                                        </label>
                                         <span class="active-inv-pill">${o.invoiceNo}</span>
                                         <span class="active-badge-status status-unpaid">🕒 Belum Bayar</span>
                                     </div>
@@ -1208,8 +1220,11 @@ class ActiveOrdersManager {
                                     <button type="button" class="btn-active-action btn-active-edit" onclick="activeOrdersManager.editOrder('${o.invoiceNo}')">
                                         ✏️ Edit
                                     </button>
+                                    <button type="button" class="btn-active-action btn-active-resi" onclick="activeOrdersManager.printSingleResi('${o.invoiceNo}')" title="Cetak / Unduh Resi Label 58mm">
+                                        🏷️ Resi 58mm
+                                    </button>
                                     <button type="button" class="btn-active-action btn-active-bill" onclick="activeOrdersManager.printBillForOrder('${o.invoiceNo}')">
-                                        🧾 Cetak Bill
+                                        🧾 Bill
                                     </button>
                                     <button type="button" class="btn-active-action btn-active-del" onclick="activeOrdersManager.cancelOrder('${o.invoiceNo}')" title="Hapus tagihan ini">
                                         🗑️
@@ -1239,10 +1254,16 @@ class ActiveOrdersManager {
                         const itemsSummary = o.items && o.items.length > 0 
                             ? o.items.map(i => `${i.name} (x${i.qty})`).join(', ')
                             : '-';
+                        const isSelected = this.selectedInvoices.has(o.invoiceNo);
                         return `
-                            <div class="active-order-card card-po">
+                            <div class="active-order-card card-po ${isSelected ? 'is-selected-bulk' : ''}" id="orderCard_${o.invoiceNo}">
                                 <div class="active-card-head">
-                                    <div>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <label class="order-card-select-wrap" onclick="event.stopPropagation()">
+                                            <input type="checkbox" class="order-card-checkbox" value="${o.invoiceNo}" 
+                                                   ${isSelected ? 'checked' : ''} 
+                                                   onchange="activeOrdersManager.toggleOrder('${o.invoiceNo}', this.checked)">
+                                        </label>
                                         <span class="active-inv-pill">${o.invoiceNo}</span>
                                         <span class="active-badge-status status-po">📦 Menunggu Pickup</span>
                                     </div>
@@ -1275,6 +1296,9 @@ class ActiveOrdersManager {
                                     <button type="button" class="btn-active-action btn-active-complete" onclick="activeOrdersManager.markPickedUp('${o.invoiceNo}')">
                                         ✅ Tandai Sudah Diambil (Selesai)
                                     </button>
+                                    <button type="button" class="btn-active-action btn-active-resi" onclick="activeOrdersManager.printSingleResi('${o.invoiceNo}')" title="Cetak / Unduh Resi Label 58mm">
+                                        🏷️ Resi 58mm
+                                    </button>
                                     <button type="button" class="btn-active-action btn-active-reprint" onclick="reprintOrder('${o.invoiceNo}')">
                                         🖨️ Struk
                                     </button>
@@ -1285,6 +1309,321 @@ class ActiveOrdersManager {
                 </div>
             `;
         }
+    }
+
+    // Toggle pemilihan kartu order
+    toggleOrder(invoiceNo, isChecked) {
+        if (isChecked) {
+            this.selectedInvoices.add(invoiceNo);
+        } else {
+            this.selectedInvoices.delete(invoiceNo);
+        }
+        const card = document.getElementById(`orderCard_${invoiceNo}`);
+        if (card) {
+            card.classList.toggle('is-selected-bulk', isChecked);
+        }
+        this.updateBulkToolbar();
+    }
+
+    // Toggle pilih semua order yang tampil
+    toggleSelectAll(isChecked) {
+        if (isChecked) {
+            this.visibleOrders.forEach(o => this.selectedInvoices.add(o.invoiceNo));
+        } else {
+            this.visibleOrders.forEach(o => this.selectedInvoices.delete(o.invoiceNo));
+        }
+        document.querySelectorAll('.order-card-checkbox').forEach(cb => {
+            cb.checked = isChecked;
+            const card = document.getElementById(`orderCard_${cb.value}`);
+            if (card) card.classList.toggle('is-selected-bulk', isChecked);
+        });
+        this.updateBulkToolbar();
+    }
+
+    // Bersihkan seluruh pilihan
+    clearSelection() {
+        this.selectedInvoices.clear();
+        document.querySelectorAll('.order-card-checkbox').forEach(cb => {
+            cb.checked = false;
+            const card = document.getElementById(`orderCard_${cb.value}`);
+            if (card) card.classList.remove('is-selected-bulk');
+        });
+        const allCb = document.getElementById('bulkSelectAllCheckbox');
+        if (allCb) allCb.checked = false;
+        this.updateBulkToolbar();
+    }
+
+    // Perbarui status toolbar bulk
+    updateBulkToolbar() {
+        const count = this.selectedInvoices.size;
+        const total = this.visibleOrders.length;
+        
+        const badge = document.getElementById('bulkBadgeSelected');
+        const countEl = document.getElementById('bulkCountSelected');
+        const totalEl = document.getElementById('bulkTotalVisibleCount');
+        const btnPdf = document.getElementById('btnBulkPdf');
+        const btnPrint = document.getElementById('btnBulkPrint');
+        const btnCancel = document.getElementById('btnBulkCancel');
+        const allCb = document.getElementById('bulkSelectAllCheckbox');
+
+        if (totalEl) totalEl.textContent = total;
+        if (countEl) countEl.textContent = count;
+        
+        if (badge) badge.style.display = count > 0 ? 'inline-block' : 'none';
+        if (btnCancel) btnCancel.style.display = count > 0 ? 'inline-flex' : 'none';
+        if (btnPdf) btnPdf.disabled = count === 0;
+        if (btnPrint) btnPrint.disabled = count === 0;
+
+        if (allCb) {
+            allCb.checked = (total > 0 && count >= total);
+            allCb.indeterminate = (count > 0 && count < total);
+        }
+    }
+
+    // Unduh resi 58mm untuk satu pesanan spesifik
+    async printSingleResi(invoiceNo) {
+        this.selectedInvoices.clear();
+        this.selectedInvoices.add(invoiceNo);
+        this.updateBulkToolbar();
+        await this.downloadBulkPdf();
+    }
+
+    // Format HTML Resi Struk Ukuran Label 58mm
+    generateResi58mmHtml(order) {
+        const storeName = (typeof CONFIG !== 'undefined' && CONFIG.STORE_NAME) ? CONFIG.STORE_NAME : 'DIASAP';
+        const storeAddress = (typeof CONFIG !== 'undefined' && CONFIG.STORE_ADDRESS) ? CONFIG.STORE_ADDRESS : '';
+        const storePhone = (typeof CONFIG !== 'undefined' && CONFIG.STORE_PHONE) ? CONFIG.STORE_PHONE : '';
+        
+        let pickupMethodText = 'Ambil di Toko';
+        if (order.pickupMethod === 'ojol') {
+            pickupMethodText = 'Ojol / Kurir' + (order.pickupAddress && !order.pickupAddress.includes('\n') ? ` (${order.pickupAddress})` : '');
+        } else if (order.pickupMethod === 'delivery') {
+            pickupMethodText = 'Diantar Toko';
+        }
+
+        const paymentMethod = (order.paymentMethod || 'cash').toUpperCase();
+        const isPaid = order.status !== 'unpaid';
+
+        const items = order.items || [];
+        const itemsRows = items.map(i => {
+            const variantNote = i.variantName ? ` (${i.variantName})` : '';
+            return `
+                <div class="resi-item-row">
+                    <span class="resi-item-qty"><strong>[ ${i.qty}x ]</strong></span>
+                    <span class="resi-item-name">${i.baseName || i.name}${variantNote}</span>
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="resi-label-58mm">
+                <div class="resi-header">
+                    <div class="resi-title">🔥 ${storeName} 🔥</div>
+                    <div class="resi-subtitle">SMOKED MEAT & KITCHEN</div>
+                    ${storeAddress ? `<div style="font-size: 9px; color: #444; margin-top: 1px;">${storeAddress}</div>` : ''}
+                    ${storePhone ? `<div style="font-size: 9px; color: #444;">WA: ${storePhone}</div>` : ''}
+                    <div class="resi-tag">RESI PESANAN / LABEL PACKING</div>
+                </div>
+
+                <div class="resi-divider">================================</div>
+
+                <div class="resi-recipient-box">
+                    <div class="resi-recipient-label">PENERIMA:</div>
+                    <div class="resi-recipient-name">👤 ${order.customerName || 'Pelanggan'}</div>
+
+                    <div class="resi-schedule-box">
+                        <div class="resi-schedule-time">⏰ <strong>${order.pickupDate || '-'} ${order.pickupTime ? `(${order.pickupTime})` : ''}</strong></div>
+                        <div class="resi-schedule-method">🚚 <strong>${pickupMethodText}</strong></div>
+                    </div>
+
+                    ${order.pickupAddress ? `
+                        <div class="resi-address-line">
+                            <strong>📍 Info / Alamat:</strong>
+                            <div>${order.pickupAddress}</div>
+                        </div>
+                    ` : ''}
+
+                    ${order.notes ? `
+                        <div class="resi-notes-line">
+                            <strong>📝 CATATAN:</strong>
+                            <div>${order.notes}</div>
+                        </div>
+                    ` : ''}
+                </div>
+
+                <div class="resi-divider">--------------------------------</div>
+
+                <div class="resi-items-section">
+                    <div class="resi-section-title">📦 DAFTAR PESANAN:</div>
+                    ${itemsRows || '<div style="font-size: 11px;">- Tidak ada item -</div>'}
+                </div>
+
+                <div class="resi-divider">--------------------------------</div>
+
+                <div class="resi-meta-row">
+                    <span>No. Invoice:</span>
+                    <strong>${order.invoiceNo}</strong>
+                </div>
+                <div class="resi-meta-row">
+                    <span>Status Bayar:</span>
+                    <strong>${isPaid ? `LUNAS (${paymentMethod})` : 'BELUM BAYAR'}</strong>
+                </div>
+                ${order.deliveryFee > 0 ? `
+                    <div class="resi-meta-row">
+                        <span>Biaya Ongkir:</span>
+                        <span>${formatRupiah(order.deliveryFee)}</span>
+                    </div>
+                ` : ''}
+                <div class="resi-meta-row" style="font-size: 12px; font-weight: 900; margin-top: 3px; border-top: 1px dashed #666; padding-top: 3px;">
+                    <span>TOTAL:</span>
+                    <span>${formatRupiah(order.totalAmount)}</span>
+                </div>
+                <div class="resi-meta-row" style="font-size: 9px; color: #555; margin-top: 4px;">
+                    <span>Waktu Order:</span>
+                    <span>${formatDateTime(order.createdAt)}</span>
+                </div>
+
+                <div class="resi-divider">================================</div>
+
+                <div class="resi-footer">
+                    <div>❄️ Simpan di chiller jika belum dikonsumsi.</div>
+                    <div style="margin-top: 3px; font-weight: bold;">Terima Kasih! - diasap.resto</div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Unduh file PDF berisi kumpulan resi 58mm terpilih
+    async downloadBulkPdf() {
+        if (this.selectedInvoices.size === 0) {
+            alert('Pilih minimal 1 pesanan terlebih dahulu.');
+            return;
+        }
+
+        if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
+            alert('Pustaka renderer PDF sedang dimuat, silakan coba sesaat lagi.');
+            return;
+        }
+
+        const activeOrders = await db.getActiveOrders();
+        const historyOrders = (this.selectedInvoices.size > activeOrders.length) 
+            ? await db.getOrdersHistory(300) 
+            : [];
+        const allOrders = [...activeOrders, ...historyOrders];
+        
+        const selectedOrders = [];
+        for (const inv of this.selectedInvoices) {
+            const o = allOrders.find(item => item.invoiceNo === inv);
+            if (o && !selectedOrders.some(x => x.invoiceNo === inv)) {
+                selectedOrders.push(o);
+            }
+        }
+
+        if (selectedOrders.length === 0) {
+            alert('Tidak ada data pesanan yang valid untuk dicetak.');
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const renderBox = document.getElementById('bulkRenderContainer');
+        if (!renderBox) return;
+
+        if (typeof showPosToast === 'function') {
+            showPosToast(`⏳ Sedang membuat PDF Resi 58mm (${selectedOrders.length} pesanan)...`, 4000);
+        }
+
+        try {
+            let pdf = null;
+            for (let i = 0; i < selectedOrders.length; i++) {
+                const order = selectedOrders[i];
+                renderBox.innerHTML = this.generateResi58mmHtml(order);
+
+                // Tunggu sebentar agar font dirender
+                await new Promise(resolve => setTimeout(resolve, 60));
+
+                const canvas = await html2canvas(renderBox.firstElementChild, {
+                    scale: 2,
+                    backgroundColor: '#ffffff',
+                    useCORS: true,
+                    logging: false
+                });
+
+                const imgData = canvas.toDataURL('image/png');
+                const imgWidthMm = 54;
+                const imgHeightMm = (canvas.height * imgWidthMm) / canvas.width;
+                const pageHeightMm = Math.max(65, imgHeightMm + 4);
+
+                if (i === 0) {
+                    pdf = new jsPDF({
+                        orientation: 'portrait',
+                        unit: 'mm',
+                        format: [58, pageHeightMm]
+                    });
+                } else {
+                    pdf.addPage([58, pageHeightMm], 'portrait');
+                }
+
+                pdf.addImage(imgData, 'PNG', 2, 2, imgWidthMm, imgHeightMm);
+            }
+
+            renderBox.innerHTML = '';
+            const dateStr = new Date().toISOString().slice(0, 10);
+            const timeStr = Date.now().toString().slice(-4);
+            const filename = `Resi_DIASAP_58mm_${dateStr}_${timeStr}.pdf`;
+            pdf.save(filename);
+
+            if (typeof showPosToast === 'function') {
+                showPosToast(`✅ Berhasil mengunduh PDF resi bulk (${selectedOrders.length} label 58mm)!`, 3500);
+            }
+            if (typeof sounds !== 'undefined') sounds.playSuccess();
+        } catch (err) {
+            console.error('Gagal generate bulk PDF:', err);
+            alert('Terjadi kesalahan saat membuat PDF: ' + err.message);
+        }
+    }
+
+    // Cetak langsung seluruh label 58mm terpilih ke printer thermal
+    async printBulkLabels() {
+        if (this.selectedInvoices.size === 0) {
+            alert('Pilih minimal 1 pesanan terlebih dahulu.');
+            return;
+        }
+
+        const activeOrders = await db.getActiveOrders();
+        const historyOrders = (this.selectedInvoices.size > activeOrders.length) 
+            ? await db.getOrdersHistory(300) 
+            : [];
+        const allOrders = [...activeOrders, ...historyOrders];
+        
+        const selectedOrders = [];
+        for (const inv of this.selectedInvoices) {
+            const o = allOrders.find(item => item.invoiceNo === inv);
+            if (o && !selectedOrders.some(x => x.invoiceNo === inv)) {
+                selectedOrders.push(o);
+            }
+        }
+
+        if (selectedOrders.length === 0) return;
+
+        const printArea = document.getElementById('bulkPrintArea');
+        if (!printArea) return;
+
+        printArea.innerHTML = selectedOrders.map(order => `
+            <div class="resi-58mm-print-page">
+                ${this.generateResi58mmHtml(order)}
+            </div>
+        `).join('');
+
+        document.body.classList.add('printing-58mm-bulk');
+        if (typeof sounds !== 'undefined') sounds.playBeep();
+
+        setTimeout(() => {
+            window.print();
+            setTimeout(() => {
+                document.body.classList.remove('printing-58mm-bulk');
+                printArea.innerHTML = '';
+            }, 1000);
+        }, 200);
     }
 
     async proceedPayment(invoiceNo) {
@@ -1315,7 +1654,7 @@ class ActiveOrdersManager {
     async cancelOrder(invoiceNo) {
         if (confirm(`Yakin ingin membatalkan dan menghapus tagihan sementara ${invoiceNo}?`)) {
             await db.deletePendingOrder(invoiceNo);
-            sounds.playSuccess();
+            if (typeof sounds !== 'undefined') sounds.playSuccess();
             await this.render();
             await this.refreshBadge();
             const historyModal = document.getElementById('historyModal');
@@ -1328,7 +1667,7 @@ class ActiveOrdersManager {
     async markPickedUp(invoiceNo) {
         if (confirm(`Tandai pesanan ${invoiceNo} sebagai SUDAH DIAMBIL / SELESAI?`)) {
             await db.updateOrderStatus(invoiceNo, 'completed', { pickedUpAt: new Date().toISOString() });
-            sounds.playSuccess();
+            if (typeof sounds !== 'undefined') sounds.playSuccess();
             await this.render();
             await this.refreshBadge();
             const historyModal = document.getElementById('historyModal');
