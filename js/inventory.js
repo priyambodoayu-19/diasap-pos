@@ -118,6 +118,20 @@ class InventoryManager {
         }
     }
 
+    async quickAdjustStockWithConfirm(rawMaterialId, deltaGrams) {
+        const mat = this.getRawMaterialById(rawMaterialId);
+        if (!mat) return;
+        const unit = mat.unit || 'gr';
+        const absVal = Math.abs(deltaGrams);
+        const displayVal = (unit === 'gr' && absVal >= 1000) 
+            ? `${(absVal / 1000).toFixed(1)} kg (${absVal.toLocaleString('id-ID')} gr)`
+            : `${absVal.toLocaleString('id-ID')} ${unit}`;
+        
+        if (confirm(`Yakin ingin MENGURANGI stok ${mat.name} sebesar ${displayVal}?`)) {
+            await this.quickAdjustStock(rawMaterialId, deltaGrams);
+        }
+    }
+
     copyShoppingList() {
         const SHRINKAGE_RATE = 0.30; // Susut 30% dari mentah ke matang (faktor 0.70)
         const cookedItems = this.rawMaterials.filter(m => !(m.name || '').toLowerCase().includes('mentah'));
@@ -573,14 +587,20 @@ class InventoryManager {
 
                             <div class="raw-mat-actions">
                                 <div class="quick-restock-group">
-                                    <span style="font-size: 11px; color: #64748B; font-weight: 700; width: 100%; margin-bottom: 2px;">+ Tambah Daging Matang:</span>
-                                    <button type="button" class="btn-restock-pill" onclick="inventoryManager.quickAdjustStock('${mat.id}', 500)">+500 ${mat.unit}</button>
-                                    <button type="button" class="btn-restock-pill" onclick="inventoryManager.quickAdjustStock('${mat.id}', 1000)">+1.000 ${mat.unit}</button>
-                                    <button type="button" class="btn-restock-pill" onclick="inventoryManager.quickAdjustStock('${mat.id}', 2000)">+2.000 ${mat.unit}</button>
+                                    <span style="font-size: 11px; color: #166534; font-weight: 800; width: 100%; margin-bottom: 2px;">➕ Tambah Daging Matang (Asap):</span>
+                                    <button type="button" class="btn-restock-pill btn-pill-add" onclick="inventoryManager.quickAdjustStock('${mat.id}', 500)">+500 ${mat.unit}</button>
+                                    <button type="button" class="btn-restock-pill btn-pill-add" onclick="inventoryManager.quickAdjustStock('${mat.id}', 1000)">+1.000 ${mat.unit}</button>
+                                    <button type="button" class="btn-restock-pill btn-pill-add" onclick="inventoryManager.quickAdjustStock('${mat.id}', 2000)">+2.000 ${mat.unit}</button>
                                 </div>
-                                <div class="raw-mat-btn-row">
+                                <div class="quick-restock-group" style="margin-top: 4px;">
+                                    <span style="font-size: 11px; color: #991B1B; font-weight: 800; width: 100%; margin-bottom: 2px;">➖ Kurangi Daging Matang:</span>
+                                    <button type="button" class="btn-restock-pill btn-pill-reduce" onclick="inventoryManager.quickAdjustStockWithConfirm('${mat.id}', -250)">-250 ${mat.unit}</button>
+                                    <button type="button" class="btn-restock-pill btn-pill-reduce" onclick="inventoryManager.quickAdjustStockWithConfirm('${mat.id}', -500)">-500 ${mat.unit}</button>
+                                    <button type="button" class="btn-restock-pill btn-pill-reduce" onclick="inventoryManager.quickAdjustStockWithConfirm('${mat.id}', -1000)">-1.000 ${mat.unit}</button>
+                                </div>
+                                <div class="raw-mat-btn-row" style="margin-top: 6px;">
                                     <button type="button" class="btn-stock-custom-adjust" onclick="inventoryManager.openCustomAdjustModal('${mat.id}')">
-                                        ✏️ Atur / Masuk Stok
+                                        ✏️ Atur / Masuk Stok (+ / -)
                                     </button>
                                     <button type="button" class="btn-stock-delete" onclick="inventoryManager.handleDeleteRawMaterial('${mat.id}')" title="Hapus bahan baku">
                                         🗑️
@@ -666,15 +686,21 @@ class InventoryManager {
 
                             <div class="raw-mat-actions" style="margin-top: 14px;">
                                 <div class="quick-restock-group">
-                                    <span style="font-size: 11px; color: #0369A1; font-weight: 700; width: 100%; margin-bottom: 2px;">+ Tambah Belanja Mentah:</span>
-                                    <button type="button" class="btn-restock-pill" onclick="inventoryManager.quickAdjustStock('${mat.id}', 1000)">+1 kg</button>
-                                    <button type="button" class="btn-restock-pill" onclick="inventoryManager.quickAdjustStock('${mat.id}', 2000)">+2 kg</button>
-                                    <button type="button" class="btn-restock-pill" onclick="inventoryManager.quickAdjustStock('${mat.id}', 5000)">+5 kg</button>
-                                    <button type="button" class="btn-restock-pill" onclick="inventoryManager.quickAdjustStock('${mat.id}', 10000)">+10 kg</button>
+                                    <span style="font-size: 11px; color: #0369A1; font-weight: 800; width: 100%; margin-bottom: 2px;">➕ Tambah Belanja Mentah:</span>
+                                    <button type="button" class="btn-restock-pill btn-pill-add" onclick="inventoryManager.quickAdjustStock('${mat.id}', 1000)">+1 kg</button>
+                                    <button type="button" class="btn-restock-pill btn-pill-add" onclick="inventoryManager.quickAdjustStock('${mat.id}', 2000)">+2 kg</button>
+                                    <button type="button" class="btn-restock-pill btn-pill-add" onclick="inventoryManager.quickAdjustStock('${mat.id}', 5000)">+5 kg</button>
+                                    <button type="button" class="btn-restock-pill btn-pill-add" onclick="inventoryManager.quickAdjustStock('${mat.id}', 10000)">+10 kg</button>
                                 </div>
-                                <div class="raw-mat-btn-row">
+                                <div class="quick-restock-group" style="margin-top: 4px;">
+                                    <span style="font-size: 11px; color: #991B1B; font-weight: 800; width: 100%; margin-bottom: 2px;">➖ Kurangi Mentah (Ambil / Susut):</span>
+                                    <button type="button" class="btn-restock-pill btn-pill-reduce" onclick="inventoryManager.quickAdjustStockWithConfirm('${mat.id}', -1000)">-1 kg</button>
+                                    <button type="button" class="btn-restock-pill btn-pill-reduce" onclick="inventoryManager.quickAdjustStockWithConfirm('${mat.id}', -2000)">-2 kg</button>
+                                    <button type="button" class="btn-restock-pill btn-pill-reduce" onclick="inventoryManager.quickAdjustStockWithConfirm('${mat.id}', -5000)">-5 kg</button>
+                                </div>
+                                <div class="raw-mat-btn-row" style="margin-top: 6px;">
                                     <button type="button" class="btn-stock-custom-adjust" onclick="inventoryManager.openCustomAdjustModal('${mat.id}')">
-                                        ✏️ Atur / Opname Stok Mentah
+                                        ✏️ Atur / Opname Mentah (+ / -)
                                     </button>
                                     <button type="button" class="btn-stock-delete" onclick="inventoryManager.handleDeleteRawMaterial('${mat.id}')" title="Hapus bahan mentah">
                                         🗑️
@@ -956,7 +982,7 @@ class InventoryManager {
         }
     }
 
-    openCustomAdjustModal(rawMaterialId) {
+    openCustomAdjustModal(rawMaterialId, defaultMode = 'add') {
         const mat = this.getRawMaterialById(rawMaterialId);
         if (!mat) return;
 
@@ -964,48 +990,77 @@ class InventoryManager {
         const title = document.getElementById('rawAdjustTitle');
         const idInput = document.getElementById('rawAdjustId');
         const nameInput = document.getElementById('rawAdjustName');
-        const stockInput = document.getElementById('rawAdjustStock');
-        const unitDisplay = document.getElementById('rawAdjustUnit');
         const minStockInput = document.getElementById('rawAdjustMinStock');
+        const amountInput = document.getElementById('rawAdjustAmountInput');
 
         const netStock = Number(mat.stock) || 0;
         const readyStock = Math.max(0, netStock);
         const harusDiasap = Math.abs(Math.min(0, netStock));
         const transit = (this.transitDemand && this.transitDemand[mat.id]) || 0;
+        const unit = mat.unit || 'gr';
+
+        this.adjustModalState = {
+            materialId: mat.id,
+            mode: defaultMode,
+            currentStock: netStock,
+            unit: unit
+        };
 
         if (title) title.textContent = `Atur Stok: ${mat.name}`;
         if (idInput) idInput.value = mat.id;
         if (nameInput) nameInput.value = mat.name;
-        if (stockInput) stockInput.value = netStock;
-        if (unitDisplay) unitDisplay.textContent = mat.unit;
         if (minStockInput) minStockInput.value = mat.minStock || 0;
+        if (amountInput) amountInput.value = '';
 
-        let infoBox = document.getElementById('rawAdjustMetricsInfo');
-        if (!infoBox && stockInput && stockInput.parentElement) {
-            infoBox = document.createElement('div');
-            infoBox.id = 'rawAdjustMetricsInfo';
-            stockInput.parentElement.insertBefore(infoBox, stockInput);
-        }
+        document.querySelectorAll('.raw-unit-label').forEach(el => el.textContent = unit);
+        const badgeEl = document.getElementById('rawAdjustInputUnitBadge');
+        if (badgeEl) badgeEl.textContent = unit;
+
+        const infoBox = document.getElementById('rawAdjustMetricsInfo');
         if (infoBox) {
-            infoBox.innerHTML = `
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; font-size: 11px;">
-                    <div style="background: #F0FDF4; border: 1px solid #BBF7D0; padding: 6px 8px; border-radius: 6px; text-align: center;">
-                        <div style="color: #166534; font-weight: 700;">Ready</div>
-                        <div style="font-weight: 800; font-size: 13px; color: #15803D;">${readyStock.toLocaleString('id-ID')} ${mat.unit}</div>
+            const isMentah = (mat.name || '').toLowerCase().includes('mentah');
+            if (isMentah) {
+                const cookedMatch = this.findMatchingCooked(mat);
+                const matangDefisit = cookedMatch ? Math.abs(Math.min(0, Number(cookedMatch.stock) || 0)) : 0;
+                const butuhMentah = Math.ceil(matangDefisit / 0.70);
+                infoBox.innerHTML = `
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 12px; font-size: 11px;">
+                        <div style="background: #F0F9FF; border: 1px solid #BAE6FD; padding: 6px 8px; border-radius: 6px; text-align: center;">
+                            <div style="color: #0369A1; font-weight: 700;">🧊 Di Freezer</div>
+                            <div style="font-weight: 800; font-size: 13px; color: #0284C7;">${readyStock.toLocaleString('id-ID')} ${unit}</div>
+                        </div>
+                        <div style="background: #FFFBEB; border: 1px solid #FDE68A; padding: 6px 8px; border-radius: 6px; text-align: center;">
+                            <div style="color: #92400E; font-weight: 700;">Butuh Diasap</div>
+                            <div style="font-weight: 800; font-size: 13px; color: #B45309;">~${butuhMentah.toLocaleString('id-ID')} ${unit}</div>
+                        </div>
                     </div>
-                    <div style="background: #FFFBEB; border: 1px solid #FDE68A; padding: 6px 8px; border-radius: 6px; text-align: center;">
-                        <div style="color: #92400E; font-weight: 700;">Transit</div>
-                        <div style="font-weight: 800; font-size: 13px; color: #B45309;">${transit.toLocaleString('id-ID')} ${mat.unit}</div>
+                `;
+            } else {
+                infoBox.innerHTML = `
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; font-size: 11px;">
+                        <div style="background: #F0FDF4; border: 1px solid #BBF7D0; padding: 6px 8px; border-radius: 6px; text-align: center;">
+                            <div style="color: #166534; font-weight: 700;">Ready</div>
+                            <div style="font-weight: 800; font-size: 13px; color: #15803D;">${readyStock.toLocaleString('id-ID')} ${unit}</div>
+                        </div>
+                        <div style="background: #FFFBEB; border: 1px solid #FDE68A; padding: 6px 8px; border-radius: 6px; text-align: center;">
+                            <div style="color: #92400E; font-weight: 700;">Transit</div>
+                            <div style="font-weight: 800; font-size: 13px; color: #B45309;">${transit.toLocaleString('id-ID')} ${unit}</div>
+                        </div>
+                        <div style="background: ${harusDiasap > 0 ? '#FEF2F2' : '#F8FAFC'}; border: 1px solid ${harusDiasap > 0 ? '#FECACA' : '#E2E8F0'}; padding: 6px 8px; border-radius: 6px; text-align: center;">
+                            <div style="color: ${harusDiasap > 0 ? '#991B1B' : '#64748B'}; font-weight: 700;">🔥 Harus Diasap</div>
+                            <div style="font-weight: 800; font-size: 13px; color: ${harusDiasap > 0 ? '#DC2626' : '#64748B'};">${harusDiasap.toLocaleString('id-ID')} ${unit}</div>
+                        </div>
                     </div>
-                    <div style="background: ${harusDiasap > 0 ? '#FEF2F2' : '#F8FAFC'}; border: 1px solid ${harusDiasap > 0 ? '#FECACA' : '#E2E8F0'}; padding: 6px 8px; border-radius: 6px; text-align: center;">
-                        <div style="color: ${harusDiasap > 0 ? '#991B1B' : '#64748B'}; font-weight: 700;">🔥 Harus Diasap</div>
-                        <div style="font-weight: 800; font-size: 13px; color: ${harusDiasap > 0 ? '#DC2626' : '#64748B'};">${harusDiasap.toLocaleString('id-ID')} ${mat.unit}</div>
-                    </div>
-                </div>
-            `;
+                `;
+            }
         }
+
+        this.setAdjustMode(defaultMode);
 
         if (modal) modal.classList.add('active');
+        setTimeout(() => {
+            if (amountInput) amountInput.focus();
+        }, 150);
     }
 
     closeCustomAdjustModal() {
@@ -1013,18 +1068,195 @@ class InventoryManager {
         if (modal) modal.classList.remove('active');
     }
 
+    setAdjustMode(mode) {
+        if (!this.adjustModalState) return;
+        this.adjustModalState.mode = mode;
+        const unit = this.adjustModalState.unit || 'gr';
+
+        const btnAdd = document.getElementById('btnModeAdd');
+        const btnReduce = document.getElementById('btnModeReduce');
+        const btnSet = document.getElementById('btnModeSet');
+        if (btnAdd) btnAdd.classList.toggle('active', mode === 'add');
+        if (btnReduce) btnReduce.classList.toggle('active', mode === 'reduce');
+        if (btnSet) btnSet.classList.toggle('active', mode === 'set');
+
+        const inputLabel = document.getElementById('rawAdjustInputLabel');
+        const helpText = document.getElementById('rawAdjustHelpText');
+        const submitBtn = document.getElementById('btnSubmitAdjust');
+        const presetsLabel = document.getElementById('rawAdjustPresetsLabel');
+        const presetsContainer = document.getElementById('rawAdjustPresetsContainer');
+        const amountInput = document.getElementById('rawAdjustAmountInput');
+
+        let presets = [];
+        if (mode === 'add') {
+            if (inputLabel) inputLabel.innerHTML = `Jumlah Penambahan (<span class="raw-unit-label">${unit}</span>) <span class="text-danger">*</span>`;
+            if (helpText) helpText.textContent = 'Masukkan jumlah hasil smoke matang atau daging belanja masuk.';
+            if (submitBtn) submitBtn.textContent = '➕ Simpan Penambahan (+)';
+            if (presetsLabel) presetsLabel.textContent = 'Pilihan Cepat Tambah (+):';
+            
+            if (unit === 'gr') {
+                presets = [
+                    { label: '+250 gr', val: 250 },
+                    { label: '+500 gr', val: 500 },
+                    { label: '+1.000 gr', val: 1000 },
+                    { label: '+2.000 gr', val: 2000 },
+                    { label: '+5.000 gr', val: 5000 }
+                ];
+            } else if (unit === 'kg') {
+                presets = [
+                    { label: '+0.5 kg', val: 0.5 },
+                    { label: '+1 kg', val: 1 },
+                    { label: '+2 kg', val: 2 },
+                    { label: '+5 kg', val: 5 },
+                    { label: '+10 kg', val: 10 }
+                ];
+            } else {
+                presets = [
+                    { label: '+1', val: 1 },
+                    { label: '+5', val: 5 },
+                    { label: '+10', val: 10 },
+                    { label: '+20', val: 20 }
+                ];
+            }
+        } else if (mode === 'reduce') {
+            if (inputLabel) inputLabel.innerHTML = `Jumlah Pengurangan (<span class="raw-unit-label">${unit}</span>) <span class="text-danger">*</span>`;
+            if (helpText) helpText.textContent = 'Masukkan jumlah daging susut, rusak, sample, atau koreksi berkurang.';
+            if (submitBtn) submitBtn.textContent = '➖ Simpan Pengurangan (-)';
+            if (presetsLabel) presetsLabel.textContent = 'Pilihan Cepat Kurang (-):';
+            
+            if (unit === 'gr') {
+                presets = [
+                    { label: '-100 gr', val: 100 },
+                    { label: '-250 gr', val: 250 },
+                    { label: '-500 gr', val: 500 },
+                    { label: '-1.000 gr', val: 1000 }
+                ];
+            } else if (unit === 'kg') {
+                presets = [
+                    { label: '-0.5 kg', val: 0.5 },
+                    { label: '-1 kg', val: 1 },
+                    { label: '-2 kg', val: 2 },
+                    { label: '-5 kg', val: 5 }
+                ];
+            } else {
+                presets = [
+                    { label: '-1', val: 1 },
+                    { label: '-5', val: 5 },
+                    { label: '-10', val: 10 }
+                ];
+            }
+        } else {
+            // mode === 'set'
+            if (inputLabel) inputLabel.innerHTML = `Jumlah Total Stok Fisik Baru (<span class="raw-unit-label">${unit}</span>) <span class="text-danger">*</span>`;
+            if (helpText) helpText.textContent = 'Set nilai fisik langsung (hasil stok opname total di toko).';
+            if (submitBtn) submitBtn.textContent = '📝 Simpan Stok Total';
+            if (presetsLabel) presetsLabel.textContent = 'Pilihan Cepat:';
+            presets = [
+                { label: '0 (Kosongkan)', val: 0 },
+                { label: `Stok Saat Ini (${this.adjustModalState.currentStock.toLocaleString('id-ID')})`, val: this.adjustModalState.currentStock }
+            ];
+        }
+
+        if (presetsContainer) {
+            presetsContainer.innerHTML = presets.map(p => `
+                <button type="button" class="btn-modal-preset-pill ${mode === 'add' ? 'preset-add' : (mode === 'reduce' ? 'preset-reduce' : '')}" onclick="inventoryManager.applyAdjustPreset(${p.val})">
+                    ${p.label}
+                </button>
+            `).join('');
+        }
+
+        this.handleAdjustAmountChange();
+    }
+
+    applyAdjustPreset(amount) {
+        const input = document.getElementById('rawAdjustAmountInput');
+        if (input) {
+            input.value = amount;
+            this.handleAdjustAmountChange();
+            input.focus();
+        }
+    }
+
+    handleAdjustAmountChange() {
+        if (!this.adjustModalState) return;
+        const current = this.adjustModalState.currentStock;
+        const mode = this.adjustModalState.mode;
+        const unit = this.adjustModalState.unit;
+
+        const input = document.getElementById('rawAdjustAmountInput');
+        const rawVal = input ? parseFloat(input.value) : 0;
+        const val = isNaN(rawVal) ? 0 : rawVal;
+
+        const calcCurrent = document.getElementById('calcCurrentStock');
+        const calcDeltaLabel = document.getElementById('calcDeltaLabel');
+        const calcDeltaVal = document.getElementById('calcDeltaVal');
+        const calcNewStock = document.getElementById('calcNewStock');
+
+        if (calcCurrent) calcCurrent.textContent = `${current.toLocaleString('id-ID')} ${unit}`;
+
+        let newStock = current;
+        if (mode === 'add') {
+            newStock = current + Math.abs(val);
+            if (calcDeltaLabel) calcDeltaLabel.textContent = 'Penambahan:';
+            if (calcDeltaVal) {
+                calcDeltaVal.textContent = `+${Math.abs(val).toLocaleString('id-ID')} ${unit}`;
+                calcDeltaVal.style.color = '#16A34A';
+            }
+        } else if (mode === 'reduce') {
+            newStock = current - Math.abs(val);
+            if (calcDeltaLabel) calcDeltaLabel.textContent = 'Pengurangan:';
+            if (calcDeltaVal) {
+                calcDeltaVal.textContent = `-${Math.abs(val).toLocaleString('id-ID')} ${unit}`;
+                calcDeltaVal.style.color = '#DC2626';
+            }
+        } else {
+            newStock = val;
+            const diff = newStock - current;
+            if (calcDeltaLabel) calcDeltaLabel.textContent = 'Perubahan:';
+            if (calcDeltaVal) {
+                calcDeltaVal.textContent = `${diff >= 0 ? '+' : ''}${diff.toLocaleString('id-ID')} ${unit}`;
+                calcDeltaVal.style.color = diff >= 0 ? '#16A34A' : '#DC2626';
+            }
+        }
+
+        if (calcNewStock) {
+            if (newStock < 0) {
+                calcNewStock.innerHTML = `<span style="color: #DC2626;">${newStock.toLocaleString('id-ID')} ${unit} (🔥 Defisit / Butuh Diasap)</span>`;
+            } else {
+                calcNewStock.innerHTML = `<span style="color: #16A34A;">${newStock.toLocaleString('id-ID')} ${unit} (✅ Stok Ready Aman)</span>`;
+            }
+        }
+    }
+
     async handleSaveCustomAdjust(e) {
         e.preventDefault();
         const id = document.getElementById('rawAdjustId').value;
         const name = document.getElementById('rawAdjustName').value.trim();
-        const stock = parseFloat(document.getElementById('rawAdjustStock').value) || 0;
         const minStock = parseFloat(document.getElementById('rawAdjustMinStock').value) || 0;
+        const inputAmount = parseFloat(document.getElementById('rawAdjustAmountInput').value);
+
+        if (isNaN(inputAmount)) {
+            alert('Silakan masukkan jumlah stok yang valid!');
+            return;
+        }
 
         const mat = this.getRawMaterialById(id);
         if (!mat) return;
 
+        const current = Number(mat.stock) || 0;
+        const mode = (this.adjustModalState && this.adjustModalState.mode) || 'add';
+
+        let finalStock = current;
+        if (mode === 'add') {
+            finalStock = current + Math.abs(inputAmount);
+        } else if (mode === 'reduce') {
+            finalStock = current - Math.abs(inputAmount);
+        } else {
+            finalStock = inputAmount;
+        }
+
         mat.name = name;
-        mat.stock = stock;
+        mat.stock = finalStock;
         mat.minStock = minStock;
 
         try {
@@ -1035,6 +1267,11 @@ class InventoryManager {
             this.renderTabContent();
             if (typeof productManager !== 'undefined') {
                 productManager.render();
+            }
+            if (typeof showPosToast === 'function') {
+                const diff = finalStock - current;
+                const sign = diff >= 0 ? '+' : '';
+                showPosToast(`✅ Stok ${mat.name} berhasil diperbarui: ${finalStock.toLocaleString('id-ID')} ${mat.unit} (${sign}${diff.toLocaleString('id-ID')})`, 3000);
             }
         } catch (err) {
             alert('Gagal menyimpan: ' + err.message);

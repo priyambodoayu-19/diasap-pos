@@ -7395,3 +7395,157 @@ input[type="password"]::-ms-clear {
     background: #FEF3C7 !important;
     border-color: #F59E0B !important;
 }
+
+/* ==========================================================================
+   Stock Adjustment Mode Toggle, Preset Pills, and Calc Preview Card
+   ========================================================================== */
+.adjust-mode-toggle-group {
+    display: flex;
+    gap: 6px;
+    background: #F1F5F9;
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+}
+
+.btn-adj-mode {
+    flex: 1;
+    border: 1px solid transparent;
+    background: transparent;
+    padding: 8px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748B;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.btn-adj-mode:hover {
+    color: var(--secondary);
+    background: rgba(255, 255, 255, 0.7);
+}
+
+.btn-adj-mode.active#btnModeAdd {
+    color: #166534 !important;
+    background: #ECFDF5 !important;
+    border-color: #86EFAC !important;
+    font-weight: 800 !important;
+    box-shadow: 0 1px 3px rgba(22, 101, 52, 0.12);
+}
+
+.btn-adj-mode.active#btnModeReduce {
+    color: #991B1B !important;
+    background: #FEF2F2 !important;
+    border-color: #FECACA !important;
+    font-weight: 800 !important;
+    box-shadow: 0 1px 3px rgba(153, 27, 27, 0.12);
+}
+
+.btn-adj-mode.active#btnModeSet {
+    color: #1E40AF !important;
+    background: #EFF6FF !important;
+    border-color: #BFDBFE !important;
+    font-weight: 800 !important;
+    box-shadow: 0 1px 3px rgba(30, 64, 175, 0.12);
+}
+
+.adjust-presets-list {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.btn-modal-preset-pill {
+    border: 1px solid #CBD5E1;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    background: #F8FAFC;
+    color: #334155;
+}
+
+.btn-modal-preset-pill.preset-add {
+    color: #15803D;
+    background: #F0FDF4;
+    border-color: #BBF7D0;
+}
+
+.btn-modal-preset-pill.preset-add:hover {
+    background: #DCFCE7;
+    border-color: #86EFAC;
+    transform: translateY(-1px);
+}
+
+.btn-modal-preset-pill.preset-reduce {
+    color: #B91C1C;
+    background: #FEF2F2;
+    border-color: #FECACA;
+}
+
+.btn-modal-preset-pill.preset-reduce:hover {
+    background: #FEE2E2;
+    border-color: #FCA5A5;
+    transform: translateY(-1px);
+}
+
+.btn-pill-add {
+    color: #15803D !important;
+    background: #F0FDF4 !important;
+    border-color: #BBF7D0 !important;
+}
+
+.btn-pill-add:hover {
+    background: #DCFCE7 !important;
+    border-color: #86EFAC !important;
+    color: #166534 !important;
+}
+
+.btn-pill-reduce {
+    color: #B91C1C !important;
+    background: #FEF2F2 !important;
+    border-color: #FECACA !important;
+}
+
+.btn-pill-reduce:hover {
+    background: #FEE2E2 !important;
+    border-color: #FCA5A5 !important;
+    color: #991B1B !important;
+}
+
+.adjust-calc-preview-card {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-top: 10px;
+}
+
+.adjust-calc-preview-card .calc-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #64748B;
+    margin-bottom: 4px;
+}
+
+.adjust-calc-preview-card .calc-divider {
+    height: 1px;
+    background: #E2E8F0;
+    margin: 6px 0;
+}
+
+.adjust-calc-preview-card .calc-row.calc-result {
+    margin-bottom: 0;
+    font-weight: 700;
+    color: #1E293B;
+}
+

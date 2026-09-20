@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
     <!-- Stylesheet POS -->
-    <link rel="stylesheet" href="css/style.css?v=7.5">
+    <link rel="stylesheet" href="css/style.css?v=7.7">
     <!-- Pustaka Eksternal: Excel XLSX Export, Canvas Struk, PDF Generator -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -1098,7 +1098,7 @@
 
     <!-- ================= MODAL: ATUR / RESTOCK BAHAN BAKU ================= -->
     <div class="modal-backdrop" id="rawMaterialAdjustModal" style="z-index: 1060;">
-        <div class="modal-content" style="max-width: 460px;">
+        <div class="modal-content" style="max-width: 480px;">
             <div class="modal-header">
                 <h3 id="rawAdjustTitle">Atur Stok Bahan Baku</h3>
                 <button type="button" class="modal-close-btn" onclick="inventoryManager.closeCustomAdjustModal()">&times;</button>
@@ -1106,23 +1106,81 @@
             <form id="formAdjustRawMaterial" onsubmit="inventoryManager.handleSaveCustomAdjust(event)">
                 <input type="hidden" id="rawAdjustId">
                 <div class="modal-body">
-                    <div class="form-group">
-                        <label for="rawAdjustName">Nama Bahan Baku</label>
+                    <div class="form-group" style="margin-bottom: 10px;">
+                        <label for="rawAdjustName" style="font-weight: 700; font-size: 13px;">Nama Bahan Baku</label>
                         <input type="text" id="rawAdjustName" class="form-control" required>
                     </div>
-                    <div class="form-group">
-                        <label for="rawAdjustStock">Jumlah Total Stok Fisik Saat Ini (<span id="rawAdjustUnit">gr</span>) <span class="text-danger">*</span></label>
-                        <input type="number" id="rawAdjustStock" class="form-control price-input" step="1" required>
-                        <small class="form-help">Set nilai ini sesuai hasil opname atau stok matang baru (jika ada defisit, memasukkan nilai positif akan otomatis melunasi defisit)</small>
+
+                    <!-- Ringkasan Status Stok Saat Ini (Ready / Transit / Harus Diasap) -->
+                    <div id="rawAdjustMetricsInfo"></div>
+
+                    <!-- Pemilihan Mode Operasi: Tambah (+), Kurangi (-), atau Set Total -->
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label style="font-weight: 800; font-size: 13px; color: var(--secondary); display: block; margin-bottom: 6px;">
+                            Pilih Operasi Stok:
+                        </label>
+                        <div class="adjust-mode-toggle-group">
+                            <button type="button" class="btn-adj-mode active" id="btnModeAdd" onclick="inventoryManager.setAdjustMode('add')">
+                                ➕ Tambah (+)
+                            </button>
+                            <button type="button" class="btn-adj-mode" id="btnModeReduce" onclick="inventoryManager.setAdjustMode('reduce')">
+                                ➖ Kurangi (-)
+                            </button>
+                            <button type="button" class="btn-adj-mode" id="btnModeSet" onclick="inventoryManager.setAdjustMode('set')">
+                                📝 Set Total (Opname)
+                            </button>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="rawAdjustMinStock">Batas Minimum Peringatan (Min Stock)</label>
+
+                    <!-- Preset Quick Pills dalam Modal -->
+                    <div class="form-group" id="rawAdjustPresetsWrap" style="margin-bottom: 10px;">
+                        <span id="rawAdjustPresetsLabel" style="font-size: 11px; font-weight: 700; color: #64748B; display: block; margin-bottom: 4px;">
+                            Pilihan Cepat:
+                        </span>
+                        <div class="adjust-presets-list" id="rawAdjustPresetsContainer">
+                            <!-- Diisi dinamis sesuai mode dan satuan -->
+                        </div>
+                    </div>
+
+                    <!-- Input Nilai / Jumlah -->
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label for="rawAdjustAmountInput" id="rawAdjustInputLabel" style="font-weight: 700; font-size: 13px;">
+                            Jumlah Penambahan (<span class="raw-unit-label">gr</span>) <span class="text-danger">*</span>
+                        </label>
+                        <div style="position: relative;">
+                            <input type="number" id="rawAdjustAmountInput" class="form-control price-input" step="any" placeholder="0" required oninput="inventoryManager.handleAdjustAmountChange()">
+                            <span id="rawAdjustInputUnitBadge" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-weight: 800; color: #64748B; font-size: 13px;">gr</span>
+                        </div>
+                        <small class="form-help" id="rawAdjustHelpText">
+                            Masukkan jumlah hasil smoke matang atau belanja mentah masuk.
+                        </small>
+                    </div>
+
+                    <!-- Live Preview Kalkulasi Stok -->
+                    <div class="adjust-calc-preview-card" id="rawAdjustPreviewCard">
+                        <div class="calc-row">
+                            <span>Stok Fisik Saat Ini:</span>
+                            <strong id="calcCurrentStock">0 gr</strong>
+                        </div>
+                        <div class="calc-row" id="calcDeltaRow">
+                            <span id="calcDeltaLabel">Operasi:</span>
+                            <strong id="calcDeltaVal" style="color: #16A34A;">+0 gr</strong>
+                        </div>
+                        <div class="calc-divider"></div>
+                        <div class="calc-row calc-result">
+                            <span>Estimasi Stok Baru:</span>
+                            <strong id="calcNewStock" style="font-size: 15px; color: var(--secondary);">0 gr</strong>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 14px; margin-bottom: 0;">
+                        <label for="rawAdjustMinStock" style="font-size: 12px; font-weight: 600; color: #64748B;">Batas Minimum Peringatan (Min Stock)</label>
                         <input type="number" id="rawAdjustMinStock" class="form-control" min="0" step="1">
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn-nav-action" onclick="inventoryManager.closeCustomAdjustModal()">Batal</button>
-                    <button type="submit" class="btn-nav-action btn-primary-submit">Simpan Perubahan Stok</button>
+                    <button type="submit" class="btn-nav-action btn-primary-submit" id="btnSubmitAdjust">Simpan Perubahan Stok</button>
                 </div>
             </form>
         </div>
@@ -1470,16 +1528,16 @@
     <div id="bulkPrintArea" class="bulk-print-only-container"></div>
 
     <!-- ================= JAVASCRIPT MODULES ================= -->
-    <script src="js/config.js?v=7.6"></script>
-    <script src="js/sound.js?v=7.6"></script>
-    <script src="js/db.js?v=7.6"></script>
-    <script src="js/settings.js?v=7.6"></script>
-    <script src="js/inventory.js?v=7.6"></script>
-    <script src="js/products.js?v=7.6"></script>
-    <script src="js/cart.js?v=7.6"></script>
-    <script src="js/payment.js?v=7.6"></script>
-    <script src="js/auth.js?v=7.6"></script>
-    <script src="js/admin.js?v=7.6"></script>
-    <script src="js/app.js?v=7.6"></script>
+    <script src="js/config.js?v=7.7"></script>
+    <script src="js/sound.js?v=7.7"></script>
+    <script src="js/db.js?v=7.7"></script>
+    <script src="js/settings.js?v=7.7"></script>
+    <script src="js/inventory.js?v=7.7"></script>
+    <script src="js/products.js?v=7.7"></script>
+    <script src="js/cart.js?v=7.7"></script>
+    <script src="js/payment.js?v=7.7"></script>
+    <script src="js/auth.js?v=7.7"></script>
+    <script src="js/admin.js?v=7.7"></script>
+    <script src="js/app.js?v=7.7"></script>
 </body>
 </html>
