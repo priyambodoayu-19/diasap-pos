@@ -119,92 +119,101 @@ class InventoryManager {
     }
 
     copyShoppingList() {
-        const lines = [
-            '📋 DAFTAR BELANJA & KEBUTUHAN ASAP - DIASAP',
-            `Waktu Rekap: ${new Date().toLocaleString('id-ID')}`,
-            '==========================================='
-        ];
-
         const SHRINKAGE_RATE = 0.30; // Susut 30% dari mentah ke matang (faktor 0.70)
         const cookedItems = this.rawMaterials.filter(m => !(m.name || '').toLowerCase().includes('mentah'));
         const rawFreezerItems = this.rawMaterials.filter(m => (m.name || '').toLowerCase().includes('mentah'));
         const needs = cookedItems.filter(m => (Number(m.stock) || 0) < 0);
 
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':');
+
+        const lines = [
+            '📋 REKAP BELANJA & ASAP - DIASAP',
+            `⏰ ${dateStr}, ${timeStr}`,
+            ''
+        ];
+
+        // 1. BELI KE PASAR (Mentah)
+        lines.push('🛒 1. BELI KE PASAR (Mentah):');
         if (needs.length > 0) {
-            lines.push('🛒 STATUS KEBUTUHAN BELANJA & KESIAPAN FREEZER (SUSUT 30%):');
             needs.forEach(m => {
                 const deficit = Math.abs(Number(m.stock));
                 const rawGrams = Math.ceil(deficit / (1 - SHRINKAGE_RATE));
-                const rawKg = (rawGrams / 1000).toFixed(2);
-                
                 const rawMatch = this.findMatchingRaw(m);
                 const freezerStock = rawMatch ? Math.max(0, Number(rawMatch.stock) || 0) : 0;
-                const freezerKg = (freezerStock / 1000).toFixed(2);
                 const stillNeedGrams = Math.max(0, rawGrams - freezerStock);
-                const stillNeedKg = (stillNeedGrams / 1000).toFixed(2);
+                const stillNeedKg = (stillNeedGrams / 1000).toFixed(1);
+                const itemName = rawMatch ? rawMatch.name : (m.name + ' Mentah');
 
-                lines.push(`• ${rawMatch ? rawMatch.name : m.name + ' Mentah'}:`);
-                lines.push(`  - Butuh Diasap : ${rawGrams.toLocaleString('id-ID')} gr (~${rawKg} kg mentah) -> penuhi ${deficit.toLocaleString('id-ID')} gr matang`);
-                lines.push(`  - Ada di Freezer: ${freezerStock.toLocaleString('id-ID')} gr (${freezerKg} kg)`);
                 if (stillNeedGrams <= 0) {
-                    lines.push(`  - Rekomendasi   : ✅ CUKUP DI FREEZER (Tinggal ambil & asap, tidak perlu beli)`);
+                    lines.push(`• ${itemName}: ✅ CUKUP (Tidak perlu beli)`);
                 } else {
-                    lines.push(`  - Rekomendasi   : 🛒 HARUS BELI KE PASAR ~${stillNeedKg} kg (${stillNeedGrams.toLocaleString('id-ID')} gr)`);
+                    lines.push(`• ${itemName}: ~${stillNeedKg} kg (${stillNeedGrams.toLocaleString('id-ID')} gr)`);
                 }
             });
-            lines.push('');
-            lines.push('🔥 TARGET HASIL ASAP (DEFISIT PO LUNAS):');
+        } else {
+            lines.push('• ✅ Aman (Semua kebutuhan terpenuhi)');
+        }
+
+        // 2. KEBUTUHAN ASAP DAPUR
+        lines.push('');
+        lines.push('🔥 2. KEBUTUHAN ASAP DAPUR:');
+        if (needs.length > 0) {
             needs.forEach(m => {
                 const deficit = Math.abs(Number(m.stock));
-                lines.push(`• ${m.name}: ${deficit.toLocaleString('id-ID')} ${m.unit} (${(deficit / 1000).toFixed(2)} kg matang)`);
+                const rawGrams = Math.ceil(deficit / (1 - SHRINKAGE_RATE));
+                const rawKg = (rawGrams / 1000).toFixed(1);
+                const deficitKg = (deficit / 1000).toFixed(1);
+                
+                let shortName = m.name.replace(/ayam\s*asap\s*/i, '').replace(/daging\s*/i, '').trim();
+                shortName = shortName.charAt(0).toUpperCase() + shortName.slice(1);
+
+                lines.push(`• ${shortName} : ${rawKg} kg mentah ➔ target ${deficitKg} kg matang`);
             });
         } else {
-            lines.push('🔥 DAGING HARUS DIASAP: (Nihil / 0 gr - Stok Ready Cukup)');
+            lines.push('• Nihil (Stok matang ready cukup)');
         }
 
-        const transitItems = cookedItems.filter(m => ((this.transitDemand && this.transitDemand[m.id]) || 0) > 0);
-        if (transitItems.length > 0) {
-            lines.push('');
-            lines.push('🕒 STOK TRANSIT (TAGIHAN SEMENTARA BELUM BAYAR):');
-            transitItems.forEach(m => {
-                const tr = this.transitDemand[m.id];
-                const rawTrGrams = Math.ceil(tr / (1 - SHRINKAGE_RATE));
-                const rawTrKg = (rawTrGrams / 1000).toFixed(2);
-                lines.push(`• ${m.name}: ${tr.toLocaleString('id-ID')} ${m.unit} (${(tr / 1000).toFixed(2)} kg matang | Beli mentah jika lunas: ~${rawTrKg} kg)`);
-            });
-        }
-
+        // 3. SISA FREEZER SAAT INI
         lines.push('');
-        lines.push('🥩 STOK DAGING MENTAH DI FREEZER:');
+        lines.push('🧊 3. SISA FREEZER SAAT INI:');
         if (rawFreezerItems.length > 0) {
             rawFreezerItems.forEach(m => {
                 const stock = Math.max(0, Number(m.stock) || 0);
-                lines.push(`• ${m.name}: ${stock.toLocaleString('id-ID')} ${m.unit} (${(stock / 1000).toFixed(2)} kg)`);
+                const stockKg = (stock / 1000).toFixed(1);
+                let shortName = m.name.replace(/ayam\s*/i, '').replace(/\s*mentah/i, '').replace(/daging\s*/i, '').trim();
+                shortName = shortName.charAt(0).toUpperCase() + shortName.slice(1);
+                lines.push(`• ${shortName} : ${stockKg} kg`);
             });
         } else {
             lines.push('• (Belum ada catatan stok mentah)');
         }
 
-        lines.push('');
-        lines.push('🍖 STOK DAGING ASAP READY DI TOKO:');
-        cookedItems.forEach(m => {
-            const ready = Math.max(0, Number(m.stock) || 0);
-            lines.push(`• ${m.name}: ${ready.toLocaleString('id-ID')} ${m.unit} (${(ready / 1000).toFixed(2)} kg)`);
-        });
-
-        lines.push('===========================================');
-        lines.push('DIASAP Smokehouse POS System');
+        // Info jika ada tagihan sementara belum bayar (transit)
+        const transitItems = cookedItems.filter(m => ((this.transitDemand && this.transitDemand[m.id]) || 0) > 0);
+        if (transitItems.length > 0) {
+            lines.push('');
+            const transitTexts = transitItems.map(m => {
+                const tr = this.transitDemand[m.id];
+                const rawTrGrams = Math.ceil(tr / (1 - SHRINKAGE_RATE));
+                const rawTrKg = (rawTrGrams / 1000).toFixed(1);
+                let shortName = m.name.replace(/ayam\s*asap\s*/i, '').replace(/daging\s*/i, '').trim().toLowerCase();
+                return `${shortName} +${rawTrKg} kg`;
+            });
+            lines.push(`*(Info: Ada pending belum lunas ${transitTexts.join(', ')})*`);
+        }
 
         const text = lines.join('\n');
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(text).then(() => {
                 if (typeof sounds !== 'undefined') sounds.playSuccess();
-                alert('📋 Rincian kebutuhan daging berhasil disalin ke clipboard!\nSilakan paste ke WhatsApp tim belanja / dapur.');
+                alert('📋 Rekap belanja & asap ringkas berhasil disalin!\nSilakan paste ke WhatsApp.');
             }).catch(() => {
-                prompt('Salin teks kebutuhan belanja daging berikut:', text);
+                prompt('Salin teks rekap berikut:', text);
             });
         } else {
-            prompt('Salin teks kebutuhan belanja daging berikut:', text);
+            prompt('Salin teks rekap berikut:', text);
         }
     }
 
