@@ -540,6 +540,44 @@ class DatabaseService {
         return false;
     }
 
+    // Tandai resi pesanan sudah dicetak (siap diproses dapur)
+    async markResiPrinted(invoiceNo) {
+        const now = new Date().toISOString();
+        let orders = this.getLocalOrders();
+        const order = orders.find(o => o.invoiceNo === invoiceNo);
+        if (order) {
+            order.resiPrintedAt = now;
+            localStorage.setItem(this.storageKeyOrders, JSON.stringify(orders));
+        }
+        try {
+            await this.query(`UPDATE orders SET resi_printed_at = $1 WHERE invoice_no = $2;`, [now, invoiceNo]);
+        } catch (e) {
+            console.warn('Gagal update resi_printed_at di Neon:', e);
+        }
+        return true;
+    }
+
+    // Tandai banyak resi pesanan sekaligus (bulk print)
+    async markMultipleResiPrinted(invoiceNos) {
+        if (!invoiceNos || invoiceNos.length === 0) return true;
+        const now = new Date().toISOString();
+        let orders = this.getLocalOrders();
+        orders.forEach(o => {
+            if (invoiceNos.includes(o.invoiceNo)) {
+                o.resiPrintedAt = now;
+            }
+        });
+        localStorage.setItem(this.storageKeyOrders, JSON.stringify(orders));
+        try {
+            for (const inv of invoiceNos) {
+                await this.query(`UPDATE orders SET resi_printed_at = $1 WHERE invoice_no = $2;`, [now, inv]);
+            }
+        } catch (e) {
+            console.warn('Gagal update multiple resi_printed_at di Neon:', e);
+        }
+        return true;
+    }
+
     // Ambil daftar transaksi aktif (tagihan sementara & PO menunggu diambil)
     async getActiveOrders() {
         const allOrders = await this.getOrdersHistory(300);
@@ -567,7 +605,8 @@ class DatabaseService {
                     pickupMethod: o.pickupMethod || 'self_pickup',
                     pickupAddress: o.pickupAddress || '',
                     deliveryFee: Number(o.deliveryFee || 0),
-                    pickedUpAt: o.pickedUpAt || null
+                    pickedUpAt: o.pickedUpAt || null,
+                    resiPrintedAt: o.resiPrintedAt || null
                 };
             });
         } catch {
@@ -600,6 +639,7 @@ class DatabaseService {
                        COALESCE(o.pickup_address, '') as "pickupAddress",
                        COALESCE(o.delivery_fee, 0)::numeric as "deliveryFee",
                        o.picked_up_at as "pickedUpAt",
+                       o.resi_printed_at as "resiPrintedAt",
                        COALESCE(
                            json_agg(
                                 json_build_object(
@@ -648,6 +688,7 @@ class DatabaseService {
                         pickupAddress: r.pickupAddress || '',
                         deliveryFee: Number(r.deliveryFee) || 0,
                         pickedUpAt: r.pickedUpAt || null,
+                        resiPrintedAt: r.resiPrintedAt || null,
                         items: Array.isArray(r.items) ? r.items : (typeof r.items === 'string' ? JSON.parse(r.items) : [])
                     };
                 });

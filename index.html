@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
     <!-- Stylesheet POS -->
-    <link rel="stylesheet" href="css/style.css?v=7.4">
+    <link rel="stylesheet" href="css/style.css?v=7.5">
     <!-- Pustaka Eksternal: Excel XLSX Export, Canvas Struk, PDF Generator -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -600,6 +600,9 @@
                             <input type="checkbox" id="bulkSelectAllCheckbox" onchange="activeOrdersManager.toggleSelectAll(this.checked)">
                             <span>Pilih Semua (<span id="bulkTotalVisibleCount">0</span>)</span>
                         </label>
+                        <button type="button" class="btn-bulk-toolbar btn-bulk-unprinted" id="btnSelectUnprinted" onclick="activeOrdersManager.selectUnprintedOnly()" style="display: none; background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; font-weight: 700; border-radius: 6px; padding: 5px 10px; font-size: 12px; cursor: pointer;">
+                            ⚡ Pilih Belum Cetak (<span id="bulkUnprintedCount">0</span>)
+                        </button>
                         <span class="bulk-badge-selected" id="bulkBadgeSelected" style="display: none;">
                             <span id="bulkCountSelected">0</span> dipilih
                         </span>
@@ -1467,16 +1470,16 @@
     <div id="bulkPrintArea" class="bulk-print-only-container"></div>
 
     <!-- ================= JAVASCRIPT MODULES ================= -->
-    <script src="js/config.js?v=7.4"></script>
-    <script src="js/sound.js?v=7.4"></script>
-    <script src="js/db.js?v=7.4"></script>
-    <script src="js/settings.js?v=7.4"></script>
-    <script src="js/inventory.js?v=7.4"></script>
-    <script src="js/products.js?v=7.4"></script>
-    <script src="js/cart.js?v=7.4"></script>
-    <script src="js/payment.js?v=7.4"></script>
-    <script src="js/auth.js?v=7.4"></script>
-    <script src="js/admin.js?v=7.4"></script>
-    <script src="js/app.js?v=7.4"></script>
+    <script src="js/config.js?v=7.5"></script>
+    <script src="js/sound.js?v=7.5"></script>
+    <script src="js/db.js?v=7.5"></script>
+    <script src="js/settings.js?v=7.5"></script>
+    <script src="js/inventory.js?v=7.5"></script>
+    <script src="js/products.js?v=7.5"></script>
+    <script src="js/cart.js?v=7.5"></script>
+    <script src="js/payment.js?v=7.5"></script>
+    <script src="js/auth.js?v=7.5"></script>
+    <script src="js/admin.js?v=7.5"></script>
+    <script src="js/app.js?v=7.5"></script>
 </body>
 </html>

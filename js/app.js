@@ -404,6 +404,7 @@ async function renderHistoryData() {
                 <td class="col-invoice-cell">
                     <div class="invoice-num-text"><strong>${o.invoiceNo}</strong></div>
                     ${isVoid ? '<div class="tag-void-mini">VOID</div>' : (isUnpaid ? '<div class="tag-unpaid-mini">TAGIHAN SEMENTARA</div>' : (isPendingPo ? '<div class="tag-po-mini">PO SIAP AMBIL</div>' : ''))}
+                    ${o.resiPrintedAt ? `<div class="badge-resi-printed-tag" title="Resi dicetak: ${formatDateTime(o.resiPrintedAt)}">🖨️ Resi Dicetak</div>` : ''}
                     <div class="invoice-cashier-text">Kasir: <strong>${cashierName}</strong></div>
                 </td>
                 <td class="col-time-cell" style="white-space: nowrap;">${formatDateTime(o.createdAt)}</td>
@@ -469,8 +470,8 @@ async function renderHistoryData() {
                             <button type="button" class="btn-table-reprint" onclick="reprintOrder('${o.invoiceNo}')" title="Cetak Ulang Struk">
                                 🖨️ Struk
                             </button>
-                            <button type="button" class="btn-table-resi" onclick="activeOrdersManager.printSingleResi('${o.invoiceNo}')" title="Cetak Resi Label 58mm">
-                                🏷️ Resi
+                            <button type="button" class="btn-table-resi ${o.resiPrintedAt ? 'is-printed' : ''}" onclick="activeOrdersManager.printSingleResi('${o.invoiceNo}')" title="${o.resiPrintedAt ? 'Resi sudah dicetak (' + formatDateTime(o.resiPrintedAt) + '). Klik cetak ulang.' : 'Cetak Resi Label 58mm'}">
+                                ${o.resiPrintedAt ? '✅ Resi' : '🏷️ Resi'}
                             </button>
                             <span class="badge-void" style="width: 68px;">VOID</span>
                         ` : (isUnpaid ? `
@@ -497,8 +498,8 @@ async function renderHistoryData() {
                             <button type="button" class="btn-table-reprint" onclick="reprintOrder('${o.invoiceNo}')" title="Cetak Ulang Struk">
                                 🖨️ Struk
                             </button>
-                            <button type="button" class="btn-table-resi" onclick="activeOrdersManager.printSingleResi('${o.invoiceNo}')" title="Cetak Resi Label 58mm">
-                                🏷️ Resi
+                            <button type="button" class="btn-table-resi ${o.resiPrintedAt ? 'is-printed' : ''}" onclick="activeOrdersManager.printSingleResi('${o.invoiceNo}')" title="${o.resiPrintedAt ? 'Resi sudah dicetak (' + formatDateTime(o.resiPrintedAt) + '). Klik cetak ulang.' : 'Cetak Resi Label 58mm'}">
+                                ${o.resiPrintedAt ? '✅ Resi' : '🏷️ Resi'}
                             </button>
                             <button type="button" class="btn-table-void" onclick="openVoidModal('${o.invoiceNo}')" title="Batalkan Transaksi (Void)">
                                 ⚠️ Void
@@ -1231,6 +1232,15 @@ class ActiveOrdersManager {
                                         <td>
                                             <div class="active-inv-num">${o.invoiceNo}</div>
                                             <div class="active-badge-status status-unpaid">🕒 Belum Bayar</div>
+                                            ${o.resiPrintedAt ? `
+                                                <div class="badge-resi-printed-tag" title="Resi telah dicetak (${formatDateTime(o.resiPrintedAt)})">
+                                                    🖨️ Resi Sudah Dicetak
+                                                </div>
+                                            ` : `
+                                                <div class="badge-resi-unprinted-tag" title="Resi belum dicetak">
+                                                    ⏳ Belum Cetak Resi
+                                                </div>
+                                            `}
                                             <div class="active-time-text">${formatDateTime(o.createdAt)}</div>
                                         </td>
                                         <td>
@@ -1261,8 +1271,8 @@ class ActiveOrdersManager {
                                                 <button type="button" class="btn-act-table btn-active-edit" onclick="activeOrdersManager.editOrder('${o.invoiceNo}')" title="Edit Pesanan">
                                                     ✏️ Edit
                                                 </button>
-                                                <button type="button" class="btn-act-table btn-active-resi" onclick="activeOrdersManager.printSingleResi('${o.invoiceNo}')" title="Cetak / Unduh Resi Label 58mm">
-                                                    🏷️ Resi
+                                                <button type="button" class="btn-act-table btn-active-resi ${o.resiPrintedAt ? 'is-printed' : ''}" onclick="activeOrdersManager.printSingleResi('${o.invoiceNo}')" title="${o.resiPrintedAt ? 'Resi sudah dicetak (' + formatDateTime(o.resiPrintedAt) + '). Klik cetak ulang.' : 'Cetak / Unduh Resi Label 58mm'}">
+                                                    ${o.resiPrintedAt ? '✅ Resi' : '🏷️ Resi'}
                                                 </button>
                                                 <button type="button" class="btn-act-table btn-active-bill" onclick="activeOrdersManager.printBillForOrder('${o.invoiceNo}')" title="Cetak Bill Sementara">
                                                     🧾 Bill
@@ -1324,6 +1334,15 @@ class ActiveOrdersManager {
                                         <td>
                                             <div class="active-inv-num">${o.invoiceNo}</div>
                                             <div class="active-badge-status status-po">📦 Menunggu Pickup</div>
+                                            ${o.resiPrintedAt ? `
+                                                <div class="badge-resi-printed-tag" title="Resi telah dicetak (${formatDateTime(o.resiPrintedAt)}) - Siap diproses dapur!">
+                                                    🖨️ Resi Sudah Dicetak
+                                                </div>
+                                            ` : `
+                                                <div class="badge-resi-unprinted-tag" title="Resi belum dicetak">
+                                                    ⏳ Belum Cetak Resi
+                                                </div>
+                                            `}
                                             <div class="active-time-text">${formatDateTime(o.createdAt)}</div>
                                         </td>
                                         <td>
@@ -1349,8 +1368,8 @@ class ActiveOrdersManager {
                                                 <button type="button" class="btn-act-table btn-active-complete" onclick="activeOrdersManager.markPickedUp('${o.invoiceNo}')" title="Tandai Sudah Diambil (Selesai)">
                                                     ✅ Selesai Diambil
                                                 </button>
-                                                <button type="button" class="btn-act-table btn-active-resi" onclick="activeOrdersManager.printSingleResi('${o.invoiceNo}')" title="Cetak / Unduh Resi Label 58mm">
-                                                    🏷️ Resi
+                                                <button type="button" class="btn-act-table btn-active-resi ${o.resiPrintedAt ? 'is-printed' : ''}" onclick="activeOrdersManager.printSingleResi('${o.invoiceNo}')" title="${o.resiPrintedAt ? 'Resi sudah dicetak (' + formatDateTime(o.resiPrintedAt) + '). Klik cetak ulang.' : 'Cetak / Unduh Resi Label 58mm'}">
+                                                    ${o.resiPrintedAt ? '✅ Resi' : '🏷️ Resi'}
                                                 </button>
                                                 <button type="button" class="btn-act-table btn-active-reprint" onclick="reprintOrder('${o.invoiceNo}')" title="Cetak Struk Transaksi">
                                                     🖨️ Struk
@@ -1410,14 +1429,34 @@ class ActiveOrdersManager {
         this.updateBulkToolbar();
     }
 
+    // Pilih hanya order yang belum pernah dicetak resinya
+    selectUnprintedOnly() {
+        this.selectedInvoices.clear();
+        this.visibleOrders.forEach(o => {
+            if (!o.resiPrintedAt) {
+                this.selectedInvoices.add(o.invoiceNo);
+            }
+        });
+        document.querySelectorAll('.order-row-checkbox, .order-card-checkbox').forEach(cb => {
+            const shouldCheck = this.selectedInvoices.has(cb.value);
+            cb.checked = shouldCheck;
+            const el = document.getElementById(`orderRow_${cb.value}`) || document.getElementById(`orderCard_${cb.value}`);
+            if (el) el.classList.toggle('is-selected-bulk', shouldCheck);
+        });
+        this.updateBulkToolbar();
+    }
+
     // Perbarui status toolbar bulk
     updateBulkToolbar() {
         const count = this.selectedInvoices.size;
         const total = this.visibleOrders.length;
+        const unprintedCount = this.visibleOrders.filter(o => !o.resiPrintedAt).length;
         
         const badge = document.getElementById('bulkBadgeSelected');
         const countEl = document.getElementById('bulkCountSelected');
         const totalEl = document.getElementById('bulkTotalVisibleCount');
+        const unprintedEl = document.getElementById('bulkUnprintedCount');
+        const btnSelectUnprinted = document.getElementById('btnSelectUnprinted');
         const btnPdf = document.getElementById('btnBulkPdf');
         const btnPrint = document.getElementById('btnBulkPrint');
         const btnCancel = document.getElementById('btnBulkCancel');
@@ -1425,7 +1464,9 @@ class ActiveOrdersManager {
 
         if (totalEl) totalEl.textContent = total;
         if (countEl) countEl.textContent = count;
+        if (unprintedEl) unprintedEl.textContent = unprintedCount;
         
+        if (btnSelectUnprinted) btnSelectUnprinted.style.display = unprintedCount > 0 ? 'inline-flex' : 'none';
         if (badge) badge.style.display = count > 0 ? 'inline-block' : 'none';
         if (btnCancel) btnCancel.style.display = count > 0 ? 'inline-flex' : 'none';
         if (btnPdf) btnPdf.disabled = count === 0;
@@ -1649,6 +1690,11 @@ class ActiveOrdersManager {
             const filename = `Resi_DIASAP_58mm_${dateStr}_${timeStr}.pdf`;
             pdf.save(filename);
 
+            const invoiceList = Array.from(this.selectedInvoices);
+            await db.markMultipleResiPrinted(invoiceList);
+            await this.render();
+            if (typeof renderHistoryTable === 'function') renderHistoryTable();
+
             if (typeof showPosToast === 'function') {
                 showPosToast(`✅ Berhasil mengunduh PDF resi bulk (${selectedOrders.length} label 58mm)!`, 3500);
             }
@@ -1694,8 +1740,12 @@ class ActiveOrdersManager {
         document.body.classList.add('printing-58mm-bulk');
         if (typeof sounds !== 'undefined') sounds.playBeep();
 
-        setTimeout(() => {
+        const invoiceList = Array.from(this.selectedInvoices);
+        setTimeout(async () => {
             window.print();
+            await db.markMultipleResiPrinted(invoiceList);
+            await this.render();
+            if (typeof renderHistoryTable === 'function') renderHistoryTable();
             setTimeout(() => {
                 document.body.classList.remove('printing-58mm-bulk');
                 printArea.innerHTML = '';
