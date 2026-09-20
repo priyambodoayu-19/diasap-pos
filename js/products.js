@@ -87,14 +87,18 @@ class ProductManager {
             let isOutOfStock = false;
             let stockBadge = '';
 
+            const isPo = (typeof cartManager !== 'undefined') && cartManager.orderType === 'take_away';
+
             if (hasVariants) {
                 portions = (typeof inventoryManager !== 'undefined')
                     ? inventoryManager.getPortionsAvailable(product)
                     : Infinity;
-                isOutOfStock = portions === 0;
+                isOutOfStock = !isPo && portions === 0;
 
-                if (isOutOfStock) {
-                    stockBadge = `<span class="stock-pill stock-pill-out">❌ Habis</span>`;
+                if (portions === 0) {
+                    stockBadge = isPo
+                        ? `<span class="stock-pill stock-pill-po" style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE;">📦 Buka PO (${product.variants.length} Var)</span>`
+                        : `<span class="stock-pill stock-pill-out">❌ Habis</span>`;
                 } else if (portions <= 5 && portions > 0) {
                     stockBadge = `<span class="stock-pill stock-pill-low">Sisa ${portions} (${product.variants.length} Var)</span>`;
                 } else if (portions !== Infinity) {
@@ -106,10 +110,12 @@ class ProductManager {
                 portions = (typeof inventoryManager !== 'undefined')
                     ? inventoryManager.getPortionsAvailable(product)
                     : Infinity;
-                isOutOfStock = portions === 0;
+                isOutOfStock = !isPo && portions === 0;
 
-                if (isOutOfStock) {
-                    stockBadge = `<span class="stock-pill stock-pill-out">❌ Habis</span>`;
+                if (portions === 0) {
+                    stockBadge = isPo
+                        ? `<span class="stock-pill stock-pill-po" style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE;">📦 Buka PO</span>`
+                        : `<span class="stock-pill stock-pill-out">❌ Habis</span>`;
                 } else if (portions <= 5 && portions > 0) {
                     stockBadge = `<span class="stock-pill stock-pill-low">Sisa ${portions}</span>`;
                 } else if (portions !== Infinity) {
@@ -123,7 +129,7 @@ class ProductManager {
 
             return `
                 <div class="product-card ${this.isPromoMode ? 'is-promo-active' : ''} ${isOutOfStock ? 'is-out-of-stock' : ''}" 
-                     onclick="${isOutOfStock ? `alert('Maaf, stok menu ini habis / bahan baku tidak mencukupi!')` : `cartManager.addItem('${product.id}')`}" 
+                     onclick="cartManager.addItem('${product.id}')" 
                      title="${isOutOfStock ? 'Menu habis' : (hasVariants ? 'Pilih varian rasa/bagian' : 'Klik untuk menambah ke keranjang')}">
                     
                     <div class="card-visual-wrapper">
@@ -226,7 +232,8 @@ class VariantSelectManager {
             if (v.ingredients && v.ingredients.length > 0 && typeof cartManager !== 'undefined') {
                 portions = cartManager.getVariantAvailablePortions(v.ingredients);
             }
-            const isOut = portions === 0;
+            const isPo = (typeof cartManager !== 'undefined') && cartManager.orderType === 'take_away';
+            const isOut = !isPo && portions === 0;
 
             let ingredientsDesc = '';
             if (v.ingredients && v.ingredients.length > 0 && typeof inventoryManager !== 'undefined') {
@@ -246,8 +253,8 @@ class VariantSelectManager {
                         <div class="variant-name-row">
                             <span class="variant-title">${v.name}</span>
                             ${portions !== Infinity ? `
-                                <span class="stock-pill ${isOut ? 'stock-pill-out' : (portions <= 5 ? 'stock-pill-low' : 'stock-pill-avail')}">
-                                    ${isOut ? '❌ Habis' : `Sisa ${portions}`}
+                                <span class="stock-pill ${isPo && portions <= 0 ? 'stock-pill-po' : (isOut ? 'stock-pill-out' : (portions <= 5 ? 'stock-pill-low' : 'stock-pill-avail'))}" ${isPo && portions <= 0 ? 'style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE;"' : ''}>
+                                    ${isPo && portions <= 0 ? '📦 Buka PO' : (isOut ? '❌ Habis' : `Sisa ${portions}`)}
                                 </span>
                             ` : ''}
                         </div>

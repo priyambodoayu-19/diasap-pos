@@ -6,11 +6,123 @@
 class InventoryManager {
     constructor() {
         this.rawMaterials = [];
+        this.transitDemand = {};
+        this.activePoDemand = {};
         this.activeTab = 'raw'; // 'raw' | 'direct' | 'menu'
     }
 
     async init() {
         await this.loadRawMaterials();
+        await this.calculateStockDemands();
+    }
+
+    async calculateStockDemands() {
+        try {
+            const activeOrders = await db.getActiveOrders();
+            const products = (typeof productManager !== 'undefined' && productManager.products && productManager.products.length > 0)
+                ? productManager.products
+                : await db.getProducts();
+
+            const transit = {};
+            const activePo = {};
+
+            for (const order of activeOrders) {
+                if (order.isVoid) continue;
+                const isUnpaid = order.status === 'unpaid';
+                const isPaidPo = order.orderType === 'take_away' && order.status !== 'unpaid' && !order.pickedUpAt;
+
+                if (!isUnpaid && !isPaidPo) continue;
+                const targetDemand = isUnpaid ? transit : activePo;
+
+                const items = order.items || [];
+                for (const item of items) {
+                    const qty = Number(item.qty) || 1;
+                    const prod = products.find(p => p.id === item.id);
+
+                    if (item.ingredients && Array.isArray(item.ingredients) && item.ingredients.length > 0) {
+                        for (const ing of item.ingredients) {
+                            if (ing.rawMaterialId && Number(ing.amount) > 0) {
+                                const amt = Number(ing.amount) * qty;
+                                targetDemand[ing.rawMaterialId] = (targetDemand[ing.rawMaterialId] || 0) + amt;
+                            }
+                        }
+                    } else if (prod && prod.variants && Array.isArray(prod.variants) && item.variantId) {
+                        const variant = prod.variants.find(v => v.id === item.variantId);
+                        if (variant && variant.ingredients) {
+                            for (const ing of variant.ingredients) {
+                                if (ing.rawMaterialId && Number(ing.amount) > 0) {
+                                    const amt = Number(ing.amount) * qty;
+                                    targetDemand[ing.rawMaterialId] = (targetDemand[ing.rawMaterialId] || 0) + amt;
+                                }
+                            }
+                        }
+                    } else if (prod && prod.stockType === 'raw_material' && prod.rawMaterialId) {
+                        const amt = (Number(prod.rawMaterialAmount) || 0) * qty;
+                        targetDemand[prod.rawMaterialId] = (targetDemand[prod.rawMaterialId] || 0) + amt;
+                    }
+                }
+            }
+
+            this.transitDemand = transit;
+            this.activePoDemand = activePo;
+            return { transitDemand: transit, activePoDemand: activePo };
+        } catch (e) {
+            console.warn('Gagal menghitung demand stok bahan:', e);
+            this.transitDemand = {};
+            this.activePoDemand = {};
+            return { transitDemand: {}, activePoDemand: {} };
+        }
+    }
+
+    copyShoppingList() {
+        const lines = [
+            '📋 DAFTAR BELANJA & KEBUTUHAN ASAP - DIASAP',
+            `Waktu Rekap: ${new Date().toLocaleString('id-ID')}`,
+            '==========================================='
+        ];
+
+        const needs = this.rawMaterials.filter(m => (Number(m.stock) || 0) < 0);
+        if (needs.length > 0) {
+            lines.push('🔥 DAGING HARUS DIASAP (DEFISIT PO LUNAS):');
+            needs.forEach(m => {
+                const deficit = Math.abs(Number(m.stock));
+                lines.push(`• ${m.name}: ${deficit.toLocaleString('id-ID')} ${m.unit} (${(deficit / 1000).toFixed(2)} kg)`);
+            });
+        } else {
+            lines.push('🔥 DAGING HARUS DIASAP: (Nihil / 0 gr - Stok Ready Cukup)');
+        }
+
+        const transitItems = this.rawMaterials.filter(m => ((this.transitDemand && this.transitDemand[m.id]) || 0) > 0);
+        if (transitItems.length > 0) {
+            lines.push('');
+            lines.push('🕒 STOK TRANSIT (TAGIHAN SEMENTARA BELUM BAYAR):');
+            transitItems.forEach(m => {
+                const tr = this.transitDemand[m.id];
+                lines.push(`• ${m.name}: ${tr.toLocaleString('id-ID')} ${m.unit} (${(tr / 1000).toFixed(2)} kg)`);
+            });
+        }
+
+        lines.push('');
+        lines.push('📦 STOK FISIK READY SAAT INI:');
+        this.rawMaterials.forEach(m => {
+            const ready = Math.max(0, Number(m.stock) || 0);
+            lines.push(`• ${m.name}: ${ready.toLocaleString('id-ID')} ${m.unit}`);
+        });
+
+        lines.push('===========================================');
+        lines.push('DIASAP Smokehouse POS System');
+
+        const text = lines.join('\n');
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => {
+                if (typeof sounds !== 'undefined') sounds.playSuccess();
+                alert('📋 Rincian kebutuhan daging berhasil disalin ke clipboard!\nSilakan paste ke WhatsApp tim belanja / dapur.');
+            }).catch(() => {
+                prompt('Salin teks kebutuhan belanja daging berikut:', text);
+            });
+        } else {
+            prompt('Salin teks kebutuhan belanja daging berikut:', text);
+        }
     }
 
     async loadRawMaterials() {
@@ -99,6 +211,7 @@ class InventoryManager {
 
         await this.loadRawMaterials();
         await productManager.loadProducts();
+        await this.calculateStockDemands();
 
         this.renderStockModal();
         modal.classList.add('active');
@@ -109,11 +222,14 @@ class InventoryManager {
         if (modal) modal.classList.remove('active');
     }
 
-    setTab(tab) {
+    async setTab(tab) {
         this.activeTab = tab;
         document.querySelectorAll('.stock-tab-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.tab === tab);
         });
+        if (tab === 'raw') {
+            await this.calculateStockDemands();
+        }
         this.renderTabContent();
     }
 
@@ -134,31 +250,87 @@ class InventoryManager {
         }
     }
 
-    // Tab 1: Bahan Baku Master (Gramasi)
+    // Tab 1: Bahan Baku Master (Gramasi & Manajemen PO Smokehouse)
     renderRawMaterialsTab(container) {
         const products = productManager.products || [];
+        const itemsNeedSmoking = this.rawMaterials.filter(m => (Number(m.stock) || 0) < 0);
+        const itemsInTransit = this.rawMaterials.filter(m => ((this.transitDemand && this.transitDemand[m.id]) || 0) > 0);
 
         container.innerHTML = `
             <div class="stock-tab-header">
                 <div>
                     <h4 style="font-size: 15px; font-weight: 800; color: var(--secondary); margin-bottom: 2px;">
-                        🌾 Bahan Baku Utama (Resep Master)
+                        🌾 Manajemen Stok & PO Smokehouse
                     </h4>
                     <p style="font-size: 12px; color: #64748B;">
-                        Stok bahan baku ini digunakan bersama oleh berbagai menu (contoh: Ayam Asap 300g cukup untuk 4 porsi Paket A 75g).
+                        Pantau stok ready di toko, stok transit (tagihan sementara), dan defisit daging yang harus segera dibelanjakan & diasap.
                     </p>
                 </div>
-                <button type="button" class="btn-admin-add-new" style="padding: 7px 14px; font-size: 13px;" onclick="inventoryManager.openAddRawMaterialModal()">
-                    + Tambah Bahan Baku
-                </button>
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <button type="button" class="btn-copy-shopping-list" onclick="inventoryManager.copyShoppingList()">
+                        📋 Salin Rekap Belanja Daging
+                    </button>
+                    <button type="button" class="btn-admin-add-new" style="padding: 7px 14px; font-size: 13px;" onclick="inventoryManager.openAddRawMaterialModal()">
+                        + Tambah Bahan Baku
+                    </button>
+                </div>
             </div>
+
+            ${(itemsNeedSmoking.length > 0 || itemsInTransit.length > 0) ? `
+                <div class="production-summary-banner">
+                    <div class="prod-banner-header">
+                        <div class="prod-banner-title">
+                            <span class="prod-fire-icon">🔥</span>
+                            <div>
+                                <strong style="font-size: 14px;">Rekap Kebutuhan Daging & Produksi Asap</strong>
+                                <div style="font-size: 11px; opacity: 0.85;">Kalkulasi otomatis dari pesanan PO lunas & tagihan sementara</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-banner-copy-mini" onclick="inventoryManager.copyShoppingList()">
+                            📋 Salin Untuk WhatsApp
+                        </button>
+                    </div>
+                    <div class="prod-banner-body">
+                        ${itemsNeedSmoking.length > 0 ? `
+                            <div class="prod-banner-row">
+                                <span class="prod-banner-tag tag-deficit">🔥 HARUS SEGERA DIASAP:</span>
+                                <div class="prod-pills-list">
+                                    ${itemsNeedSmoking.map(m => `
+                                        <span class="prod-pill pill-deficit">
+                                            <strong>${m.name}:</strong> ${Math.abs(Number(m.stock)).toLocaleString('id-ID')} ${m.unit} (${(Math.abs(Number(m.stock)) / 1000).toFixed(2)} kg)
+                                        </span>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : `
+                            <div class="prod-banner-row">
+                                <span class="prod-banner-tag tag-safe">✅ STOK READY AMAN:</span>
+                                <span style="font-size: 12px; color: #166534; font-weight: 600;">Semua pesanan lunas saat ini terpenuhi oleh stok ready di toko.</span>
+                            </div>
+                        `}
+                        ${itemsInTransit.length > 0 ? `
+                            <div class="prod-banner-row" style="margin-top: 6px;">
+                                <span class="prod-banner-tag tag-transit">🕒 STOK TRANSIT (BELUM BAYAR):</span>
+                                <div class="prod-pills-list">
+                                    ${itemsInTransit.map(m => `
+                                        <span class="prod-pill pill-transit">
+                                            <strong>${m.name}:</strong> ${(this.transitDemand[m.id] || 0).toLocaleString('id-ID')} ${m.unit}
+                                        </span>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            ` : ''}
 
             <div class="raw-materials-grid">
                 ${this.rawMaterials.map(mat => {
-                    const stock = Number(mat.stock) || 0;
+                    const netStock = Number(mat.stock) || 0;
+                    const readyStock = Math.max(0, netStock);
+                    const harusDiasap = Math.abs(Math.min(0, netStock));
+                    const transit = (this.transitDemand && this.transitDemand[mat.id]) || 0;
                     const minStock = Number(mat.minStock) || 0;
-                    const isLow = stock <= minStock && stock > 0;
-                    const isOut = stock <= 0;
 
                     // Cari seluruh pemakaian bahan baku ini (baik menu resep tunggal maupun varian menu)
                     const usages = [];
@@ -187,11 +359,14 @@ class InventoryManager {
                     });
 
                     let statusClass = 'status-safe';
-                    let statusLabel = '✅ Stok Aman';
-                    if (isOut) {
+                    let statusLabel = '✅ Stok Ready Aman';
+                    if (harusDiasap > 0) {
+                        statusClass = 'status-deficit';
+                        statusLabel = `🔥 Harus Diasap (${harusDiasap.toLocaleString('id-ID')} ${mat.unit})`;
+                    } else if (readyStock <= 0) {
                         statusClass = 'status-out';
-                        statusLabel = '❌ Habis';
-                    } else if (isLow) {
+                        statusLabel = '❌ Stok Ready Habis';
+                    } else if (readyStock <= minStock) {
                         statusClass = 'status-low';
                         statusLabel = '⚠️ Stok Menipis';
                     }
@@ -206,15 +381,40 @@ class InventoryManager {
                                 <span class="stock-status-pill ${statusClass}">${statusLabel}</span>
                             </div>
 
-                            <div class="raw-mat-stock-display">
-                                <span class="raw-mat-stock-val">${stock.toLocaleString('id-ID')}</span>
-                                <span class="raw-mat-unit">${mat.unit}</span>
+                            <!-- 3 METRIC TILES: READY, TRANSIT, HARUS DIASAP -->
+                            <div class="stock-metrics-grid">
+                                <div class="stock-metric-card metric-ready">
+                                    <span class="stock-metric-label">Stok Ready</span>
+                                    <div class="stock-metric-val">
+                                        <span class="stock-val-num">${readyStock.toLocaleString('id-ID')}</span>
+                                        <span class="stock-val-unit">${mat.unit}</span>
+                                    </div>
+                                    <span class="stock-metric-sub">Siap di Toko</span>
+                                </div>
+
+                                <div class="stock-metric-card metric-transit ${transit > 0 ? 'has-transit' : ''}">
+                                    <span class="stock-metric-label">Stok Transit</span>
+                                    <div class="stock-metric-val">
+                                        <span class="stock-val-num">${transit.toLocaleString('id-ID')}</span>
+                                        <span class="stock-val-unit">${mat.unit}</span>
+                                    </div>
+                                    <span class="stock-metric-sub">🕒 Belum Bayar</span>
+                                </div>
+
+                                <div class="stock-metric-card metric-deficit ${harusDiasap > 0 ? 'has-deficit' : ''}">
+                                    <span class="stock-metric-label">🔥 Harus Diasap</span>
+                                    <div class="stock-metric-val">
+                                        <span class="stock-val-num">${harusDiasap.toLocaleString('id-ID')}</span>
+                                        <span class="stock-val-unit">${mat.unit}</span>
+                                    </div>
+                                    <span class="stock-metric-sub">${harusDiasap > 0 ? 'Perlu Dibelanjakan' : 'Aman (0 gr)'}</span>
+                                </div>
                             </div>
 
                             <div class="raw-mat-portions-box">
-                                <div class="portions-box-title">Estimasi Porsi Menu Terkait:</div>
+                                <div class="portions-box-title">Estimasi Porsi Menu (Dari Stok Ready):</div>
                                 ${usages.length > 0 ? usages.map(u => {
-                                    const portions = u.amount > 0 ? Math.floor(stock / u.amount) : 0;
+                                    const portions = u.amount > 0 ? Math.floor(readyStock / u.amount) : 0;
                                     return `
                                         <div class="portion-row">
                                             <div class="portion-name-wrap" title="${u.productName}${u.variantName ? ' (' + u.variantName + ')' : ''} - ${u.amount} ${mat.unit}">
@@ -232,6 +432,7 @@ class InventoryManager {
 
                             <div class="raw-mat-actions">
                                 <div class="quick-restock-group">
+                                    <span style="font-size: 11px; color: #64748B; font-weight: 700; width: 100%; margin-bottom: 2px;">+ Tambah Daging Matang:</span>
                                     <button type="button" class="btn-restock-pill" onclick="inventoryManager.quickAdjustStock('${mat.id}', 500)">+500 ${mat.unit}</button>
                                     <button type="button" class="btn-restock-pill" onclick="inventoryManager.quickAdjustStock('${mat.id}', 1000)">+1.000 ${mat.unit}</button>
                                     <button type="button" class="btn-restock-pill" onclick="inventoryManager.quickAdjustStock('${mat.id}', 2000)">+2.000 ${mat.unit}</button>
@@ -463,14 +664,18 @@ class InventoryManager {
         const mat = this.getRawMaterialById(rawMaterialId);
         if (!mat) return;
 
-        const newStock = (Number(mat.stock) || 0) + Number(addAmount);
+        const prevStock = Number(mat.stock) || 0;
+        const newStock = prevStock + Number(addAmount);
         mat.stock = newStock;
 
         try {
             await db.saveRawMaterial(mat);
             sounds.playSuccess();
+            await this.calculateStockDemands();
             this.renderTabContent();
-            productManager.render();
+            if (typeof productManager !== 'undefined') {
+                productManager.render();
+            }
         } catch (e) {
             alert('Gagal menambah stok: ' + e.message);
         }
@@ -528,12 +733,42 @@ class InventoryManager {
         const unitDisplay = document.getElementById('rawAdjustUnit');
         const minStockInput = document.getElementById('rawAdjustMinStock');
 
+        const netStock = Number(mat.stock) || 0;
+        const readyStock = Math.max(0, netStock);
+        const harusDiasap = Math.abs(Math.min(0, netStock));
+        const transit = (this.transitDemand && this.transitDemand[mat.id]) || 0;
+
         if (title) title.textContent = `Atur Stok: ${mat.name}`;
         if (idInput) idInput.value = mat.id;
         if (nameInput) nameInput.value = mat.name;
-        if (stockInput) stockInput.value = mat.stock;
+        if (stockInput) stockInput.value = netStock;
         if (unitDisplay) unitDisplay.textContent = mat.unit;
         if (minStockInput) minStockInput.value = mat.minStock || 0;
+
+        let infoBox = document.getElementById('rawAdjustMetricsInfo');
+        if (!infoBox && stockInput && stockInput.parentElement) {
+            infoBox = document.createElement('div');
+            infoBox.id = 'rawAdjustMetricsInfo';
+            stockInput.parentElement.insertBefore(infoBox, stockInput);
+        }
+        if (infoBox) {
+            infoBox.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; font-size: 11px;">
+                    <div style="background: #F0FDF4; border: 1px solid #BBF7D0; padding: 6px 8px; border-radius: 6px; text-align: center;">
+                        <div style="color: #166534; font-weight: 700;">Ready</div>
+                        <div style="font-weight: 800; font-size: 13px; color: #15803D;">${readyStock.toLocaleString('id-ID')} ${mat.unit}</div>
+                    </div>
+                    <div style="background: #FFFBEB; border: 1px solid #FDE68A; padding: 6px 8px; border-radius: 6px; text-align: center;">
+                        <div style="color: #92400E; font-weight: 700;">Transit</div>
+                        <div style="font-weight: 800; font-size: 13px; color: #B45309;">${transit.toLocaleString('id-ID')} ${mat.unit}</div>
+                    </div>
+                    <div style="background: ${harusDiasap > 0 ? '#FEF2F2' : '#F8FAFC'}; border: 1px solid ${harusDiasap > 0 ? '#FECACA' : '#E2E8F0'}; padding: 6px 8px; border-radius: 6px; text-align: center;">
+                        <div style="color: ${harusDiasap > 0 ? '#991B1B' : '#64748B'}; font-weight: 700;">🔥 Harus Diasap</div>
+                        <div style="font-weight: 800; font-size: 13px; color: ${harusDiasap > 0 ? '#DC2626' : '#64748B'};">${harusDiasap.toLocaleString('id-ID')} ${mat.unit}</div>
+                    </div>
+                </div>
+            `;
+        }
 
         if (modal) modal.classList.add('active');
     }
@@ -561,8 +796,11 @@ class InventoryManager {
             await db.saveRawMaterial(mat);
             sounds.playSuccess();
             this.closeCustomAdjustModal();
+            await this.calculateStockDemands();
             this.renderTabContent();
-            productManager.render();
+            if (typeof productManager !== 'undefined') {
+                productManager.render();
+            }
         } catch (err) {
             alert('Gagal menyimpan: ' + err.message);
         }
@@ -650,6 +888,7 @@ class InventoryManager {
         try {
             await db.deductStockForOrder(items);
             await this.loadRawMaterials();
+            await this.calculateStockDemands();
             await productManager.loadProducts();
             productManager.render();
         } catch (e) {

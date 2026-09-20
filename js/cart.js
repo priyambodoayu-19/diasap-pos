@@ -66,10 +66,15 @@ class CartManager {
             .filter(item => item.id === productId && (item.variantId || '') === variantId)
             .reduce((sum, item) => sum + item.qty, 0);
 
-        if (available !== Infinity && (currentInCart + qty) > available) {
+        const isPo = this.orderType === 'take_away';
+        if (!isPo && available !== Infinity && (currentInCart + qty) > available) {
             sounds.playWarning();
-            alert(`Stok tidak mencukupi! Hanya tersedia ${available} porsi/unit untuk menu/varian ini.`);
-            return;
+            const switchPo = confirm(`Stok ready di toko tidak mencukupi untuk Dine In (hanya tersedia ${available} porsi).\n\nApakah Anda ingin beralih ke pesanan Pre-Order (Take Away) agar pesanan ini dapat diproses dan diasapkan?`);
+            if (switchPo) {
+                this.setOrderType('take_away');
+            } else {
+                return;
+            }
         }
 
         // Cari item di keranjang dengan id, varian, dan harga terkunci yang sama
@@ -154,10 +159,15 @@ class CartManager {
                     .filter(i => i.id === productId && (i.variantId || '') === (variantId || ''))
                     .reduce((sum, i) => sum + i.qty, 0);
 
-                if (available !== Infinity && currentInCart + delta > available) {
+                const isPo = this.orderType === 'take_away';
+                if (!isPo && available !== Infinity && currentInCart + delta > available) {
                     sounds.playWarning();
-                    alert(`Stok tidak mencukupi! Hanya tersedia ${available} porsi/unit.`);
-                    return;
+                    const switchPo = confirm(`Stok ready di toko tidak mencukupi untuk Dine In (hanya tersedia ${available} porsi).\n\nApakah Anda ingin beralih ke pesanan Pre-Order (Take Away)?`);
+                    if (switchPo) {
+                        this.setOrderType('take_away');
+                    } else {
+                        return;
+                    }
                 }
             }
 

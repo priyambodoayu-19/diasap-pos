@@ -2861,6 +2861,142 @@ input[type="password"]::-ms-clear {
     background: #FEF8F8;
 }
 
+.raw-material-card.status-deficit {
+    border-left: 4px solid #DC2626;
+    background: #FFFBFB;
+}
+
+/* Production & Shopping Summary Banner */
+.production-summary-banner {
+    background: linear-gradient(135deg, #FFF7ED 0%, #FEF2F2 100%);
+    border: 1px solid #FED7AA;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 6px rgba(234, 88, 12, 0.08);
+}
+
+.prod-banner-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.prod-banner-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #9A3412;
+}
+
+.prod-fire-icon {
+    font-size: 24px;
+    background: #FFEDD5;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    border: 1px solid #FDBA74;
+    flex-shrink: 0;
+}
+
+.btn-copy-shopping-list {
+    background: #EA580C;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s;
+}
+
+.btn-copy-shopping-list:hover {
+    background: #C2410C;
+}
+
+.btn-banner-copy-mini {
+    background: #EA580C;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.btn-banner-copy-mini:hover {
+    background: #C2410C;
+}
+
+.prod-banner-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.prod-banner-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.prod-banner-tag {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+}
+
+.prod-banner-tag.tag-deficit {
+    color: #DC2626;
+}
+
+.prod-banner-tag.tag-safe {
+    color: #166534;
+}
+
+.prod-banner-tag.tag-transit {
+    color: #B45309;
+}
+
+.prod-pills-list {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.prod-pill {
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.prod-pill.pill-deficit {
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    color: #B91C1C;
+}
+
+.prod-pill.pill-transit {
+    background: #FFFBEB;
+    border: 1px solid #FDE68A;
+    color: #92400E;
+}
+
 .raw-mat-top {
     display: flex;
     justify-content: space-between;
@@ -2900,6 +3036,132 @@ input[type="password"]::-ms-clear {
 .stock-status-pill.status-out {
     background: #FEE2E2;
     color: #B91C1C;
+}
+
+.stock-status-pill.status-deficit {
+    background: #FEF2F2;
+    color: #DC2626;
+    border: 1px solid #FECACA;
+}
+
+/* 3-Metric Grid for Smokehouse: Ready, Transit, Deficit */
+.stock-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.stock-metric-card {
+    border-radius: 8px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.2s;
+    min-width: 0;
+}
+
+.stock-metric-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.stock-metric-val {
+    display: flex;
+    align-items: baseline;
+    gap: 3px;
+    margin: 2px 0;
+    min-width: 0;
+}
+
+.stock-val-num {
+    font-size: 17px;
+    font-weight: 900;
+    letter-spacing: -0.3px;
+    line-height: 1.1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.stock-val-unit {
+    font-size: 11px;
+    font-weight: 700;
+    opacity: 0.8;
+}
+
+.stock-metric-sub {
+    font-size: 10px;
+    color: #64748B;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Metric variants */
+.stock-metric-card.metric-ready {
+    background: #F0FDF4;
+    border: 1px solid #BBF7D0;
+}
+.stock-metric-card.metric-ready .stock-metric-label {
+    color: #166534;
+}
+.stock-metric-card.metric-ready .stock-val-num {
+    color: #15803D;
+}
+
+.stock-metric-card.metric-transit {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+}
+.stock-metric-card.metric-transit .stock-metric-label {
+    color: #64748B;
+}
+.stock-metric-card.metric-transit .stock-val-num {
+    color: #475569;
+}
+.stock-metric-card.metric-transit.has-transit {
+    background: #FFFBEB;
+    border: 1px solid #FDE68A;
+}
+.stock-metric-card.metric-transit.has-transit .stock-metric-label {
+    color: #92400E;
+}
+.stock-metric-card.metric-transit.has-transit .stock-val-num {
+    color: #B45309;
+}
+
+.stock-metric-card.metric-deficit {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+}
+.stock-metric-card.metric-deficit .stock-metric-label {
+    color: #64748B;
+}
+.stock-metric-card.metric-deficit .stock-val-num {
+    color: #64748B;
+}
+.stock-metric-card.metric-deficit.has-deficit {
+    background: #FEF2F2;
+    border: 2px solid #EF4444;
+    box-shadow: 0 1px 4px rgba(239, 68, 68, 0.15);
+}
+.stock-metric-card.metric-deficit.has-deficit .stock-metric-label {
+    color: #B91C1C;
+}
+.stock-metric-card.metric-deficit.has-deficit .stock-val-num {
+    color: #DC2626;
+    font-size: 18px;
+}
+.stock-metric-card.metric-deficit.has-deficit .stock-metric-sub {
+    color: #DC2626;
+    font-weight: 700;
 }
 
 .raw-mat-stock-display {
@@ -4103,6 +4365,38 @@ input[type="password"]::-ms-clear {
     .lock-card {
         padding: 24px 18px;
         width: 95%;
+    }
+
+    .stock-metrics-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 5px;
+    }
+
+    .stock-metric-card {
+        padding: 6px 5px;
+    }
+
+    .stock-val-num {
+        font-size: 14px;
+    }
+
+    .stock-metric-label {
+        font-size: 9px;
+    }
+
+    .stock-metric-sub {
+        font-size: 9px;
+    }
+
+    .prod-banner-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .btn-copy-shopping-list {
+        width: 100%;
+        justify-content: center;
     }
 }
 

@@ -675,8 +675,8 @@ class DatabaseService {
             if (rows && rows.length > 0) {
                 const formatted = rows.map(r => ({
                     ...r,
-                    stock: Number(r.stock) || 0,
-                    minStock: Number(r.minStock) || 0
+                    stock: isNaN(Number(r.stock)) ? 0 : Number(r.stock),
+                    minStock: isNaN(Number(r.minStock)) ? 0 : Number(r.minStock)
                 }));
                 localStorage.setItem(this.storageKeyRawMaterials, JSON.stringify(formatted));
                 return formatted;
@@ -786,7 +786,8 @@ class DatabaseService {
             const toDeduct = rawDeductions[rawId];
             const mat = rawMaterials.find(m => m.id === rawId);
             if (mat) {
-                mat.stock = Math.max(0, mat.stock - toDeduct);
+                // Diperbolehkan bernilai negatif untuk mencatat defisit PO ("Harus Diasap")
+                mat.stock = (Number(mat.stock) || 0) - toDeduct;
                 try {
                     await this.query(`UPDATE raw_materials SET stock = $1 WHERE id = $2;`, [mat.stock, rawId]);
                 } catch (e) {
@@ -896,15 +897,28 @@ class DatabaseService {
             console.warn('Gagal menandai void transaksi di Neon:', err);
         }
 
-        // 2. Update di cache lokal
+        // 2. Update di cache lokal & kembalikan stok
         let orders = this.getLocalOrders();
-        const order = orders.find(o => o.invoiceNo === invoiceNo);
+        let order = orders.find(o => o.invoiceNo === invoiceNo);
+        if (!order || !order.items || order.items.length === 0) {
+            try {
+                const history = await this.getOrdersHistory(300);
+                order = history.find(o => o.invoiceNo === invoiceNo);
+            } catch (e) {}
+        }
+
         if (order) {
             order.isVoid = true;
             order.voidReason = voidReason || 'Dibatalkan oleh kasir';
             order.voidBy = voidBy || 'Kasir';
             order.voidAt = new Date().toISOString();
-            localStorage.setItem(this.storageKeyOrders, JSON.stringify(orders));
+
+            const localList = this.getLocalOrders();
+            const idx = localList.findIndex(o => o.invoiceNo === invoiceNo);
+            if (idx >= 0) {
+                localList[idx] = { ...localList[idx], ...order };
+                localStorage.setItem(this.storageKeyOrders, JSON.stringify(localList));
+            }
 
             // 3. Kembalikan stok bahan & barang jadi yang sebelumnya terpotong
             if (order.items && order.items.length > 0) {
