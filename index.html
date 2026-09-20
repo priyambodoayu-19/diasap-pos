@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
     <!-- Stylesheet POS -->
-    <link rel="stylesheet" href="css/style.css?v=7.7">
+    <link rel="stylesheet" href="css/style.css?v=7.8">
     <!-- Pustaka Eksternal: Excel XLSX Export, Canvas Struk, PDF Generator -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -608,6 +608,9 @@
                         </span>
                     </div>
                     <div class="bulk-right-group">
+                        <button type="button" class="btn-bulk-toolbar btn-copy-wa" id="btnCopyWa" onclick="activeOrdersManager.copyForWhatsApp()" style="background: #EA580C; color: white; border: 1px solid #C2410C; font-weight: 700; padding: 6px 12px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" title="Salin daftar transaksi aktif untuk dikirim ke grup WhatsApp">
+                            📋 Salin Untuk WhatsApp
+                        </button>
                         <button type="button" class="btn-bulk-toolbar btn-bulk-pdf" id="btnBulkPdf" onclick="activeOrdersManager.downloadBulkPdf()" disabled>
                             📄 Download PDF Resi (58mm)
                         </button>
@@ -1528,16 +1531,16 @@
     <div id="bulkPrintArea" class="bulk-print-only-container"></div>
 
     <!-- ================= JAVASCRIPT MODULES ================= -->
-    <script src="js/config.js?v=7.7"></script>
-    <script src="js/sound.js?v=7.7"></script>
-    <script src="js/db.js?v=7.7"></script>
-    <script src="js/settings.js?v=7.7"></script>
-    <script src="js/inventory.js?v=7.7"></script>
-    <script src="js/products.js?v=7.7"></script>
-    <script src="js/cart.js?v=7.7"></script>
-    <script src="js/payment.js?v=7.7"></script>
-    <script src="js/auth.js?v=7.7"></script>
-    <script src="js/admin.js?v=7.7"></script>
-    <script src="js/app.js?v=7.7"></script>
+    <script src="js/config.js?v=7.8"></script>
+    <script src="js/sound.js?v=7.8"></script>
+    <script src="js/db.js?v=7.8"></script>
+    <script src="js/settings.js?v=7.8"></script>
+    <script src="js/inventory.js?v=7.8"></script>
+    <script src="js/products.js?v=7.8"></script>
+    <script src="js/cart.js?v=7.8"></script>
+    <script src="js/payment.js?v=7.8"></script>
+    <script src="js/auth.js?v=7.8"></script>
+    <script src="js/admin.js?v=7.8"></script>
+    <script src="js/app.js?v=7.8"></script>
 </body>
 </html>

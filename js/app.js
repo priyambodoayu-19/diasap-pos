@@ -1446,6 +1446,148 @@ class ActiveOrdersManager {
         this.updateBulkToolbar();
     }
 
+    // Salin daftar transaksi diproses atau antrean PO untuk dikirim ke WhatsApp
+    copyForWhatsApp() {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':');
+
+        const orders = this.visibleOrders || [];
+        if (orders.length === 0) {
+            alert(`Tidak ada data ${this.activeTab === 'po' ? 'Antrean PO' : 'Transaksi Diproses'} untuk disalin.`);
+            return;
+        }
+
+        const lines = [];
+        if (this.activeTab === 'po') {
+            lines.push('📦 *ANTREAN PO DIASAP (MENUNGGU PICKUP)*');
+            lines.push(`⏰ Update: ${dateStr}, ${timeStr}`);
+            lines.push(`Total Antrean: ${orders.length} Pesanan`);
+            lines.push('');
+
+            const itemSummaryMap = {};
+
+            orders.forEach((o, idx) => {
+                const custName = o.customerName || 'Pelanggan';
+                const invNo = o.invoiceNo;
+                lines.push(`${idx + 1}. 👤 *${custName}* • (${invNo})`);
+
+                // Jadwal & Metode
+                let schedText = o.pickupDate ? `*${o.pickupDate}*` : '-';
+                if (o.pickupTime) schedText += ` (${o.pickupTime})`;
+                let methodText = 'Ambil di Toko';
+                if (o.pickupMethod === 'ojol') methodText = '🛵 Ojol / Kurir';
+                else if (o.pickupMethod === 'delivery') methodText = '🚚 Diantar Toko';
+                else methodText = '🏪 Ambil di Toko';
+                lines.push(`   ⏰ Jadwal: ${schedText} • ${methodText}`);
+
+                // Alamat jika ada
+                if (o.pickupAddress) {
+                    lines.push(`   📍 Alamat: ${o.pickupAddress}`);
+                }
+
+                // Pesanan
+                lines.push('   📋 Pesanan:');
+                const items = o.items || [];
+                if (items.length > 0) {
+                    items.forEach(i => {
+                        let displayName = i.name || i.baseName || 'Item';
+                        if (i.baseName && i.variantName && !displayName.includes(i.variantName)) {
+                            displayName = `${i.baseName} (${i.variantName})`;
+                        }
+                        lines.push(`   • ${i.qty}x ${displayName}`);
+
+                        // Akumulasi ringkasan item
+                        itemSummaryMap[displayName] = (itemSummaryMap[displayName] || 0) + Number(i.qty);
+                    });
+                } else {
+                    lines.push('   • (Tidak ada item)');
+                }
+
+                // Catatan jika ada
+                if (o.notes) {
+                    lines.push(`   📝 Catatan: ${o.notes}`);
+                }
+
+                // Status Resi
+                lines.push(`   🏷️ Status Resi: ${o.resiPrintedAt ? 'Sudah Dicetak ✅' : 'Belum Cetak ⏳'}`);
+                lines.push('');
+            });
+
+            // Total Ringkasan Item PO untuk Dapur
+            const summaryKeys = Object.keys(itemSummaryMap);
+            if (summaryKeys.length > 0) {
+                lines.push('-------------------------------------------');
+                lines.push('🔥 *TOTAL RINGKASAN ITEM PO:*');
+                summaryKeys.forEach(k => {
+                    lines.push(`• ${k}: ${itemSummaryMap[k]}x`);
+                });
+                lines.push('-------------------------------------------');
+            }
+
+            lines.push('_DIASAP Smokehouse POS_');
+        } else {
+            // Transaksi Diproses (Unpaid)
+            const totalBill = orders.reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
+            lines.push('🕒 *TRANSAKSI DIPROSES (BELUM LUNAS) - DIASAP*');
+            lines.push(`⏰ Update: ${dateStr}, ${timeStr}`);
+            lines.push(`Total Tagihan: ${orders.length} Pesanan • Total: ${formatRupiah(totalBill)}`);
+            lines.push('');
+
+            orders.forEach((o, idx) => {
+                const custName = o.customerName || 'Pelanggan';
+                const invNo = o.invoiceNo;
+                const typeText = o.orderType === 'dine_in' ? 'Dine In (Makan di Tempat)' : 'Take Away (PO)';
+                lines.push(`${idx + 1}. 👤 *${custName}* • (${invNo})`);
+                lines.push(`   🏷️ Tipe: ${typeText}`);
+                if (o.orderType === 'take_away' && o.pickupDate) {
+                    const methodText = o.pickupMethod === 'ojol' ? '🛵 Ojol' : (o.pickupMethod === 'delivery' ? '🚚 Diantar' : '🏪 Ambil di Toko');
+                    lines.push(`   ⏰ Jadwal: ${o.pickupDate} ${o.pickupTime ? `(${o.pickupTime})` : ''} • ${methodText}`);
+                }
+                lines.push(`   💰 Total: *${formatRupiah(o.totalAmount)}*`);
+
+                lines.push('   📋 Pesanan:');
+                const items = o.items || [];
+                if (items.length > 0) {
+                    items.forEach(i => {
+                        let displayName = i.name || i.baseName || 'Item';
+                        if (i.baseName && i.variantName && !displayName.includes(i.variantName)) {
+                            displayName = `${i.baseName} (${i.variantName})`;
+                        }
+                        lines.push(`   • ${i.qty}x ${displayName}`);
+                    });
+                } else {
+                    lines.push('   • (Tidak ada item)');
+                }
+
+                if (o.notes) {
+                    lines.push(`   📝 Catatan: ${o.notes}`);
+                }
+                lines.push(`   🏷️ Status Resi: ${o.resiPrintedAt ? 'Sudah Dicetak ✅' : 'Belum Cetak ⏳'}`);
+                lines.push('');
+            });
+
+            lines.push('-------------------------------------------');
+            lines.push('_DIASAP Smokehouse POS_');
+        }
+
+        const text = lines.join('\n');
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => {
+                if (typeof sounds !== 'undefined') sounds.playSuccess();
+                if (typeof showPosToast === 'function') {
+                    showPosToast(`📋 Rekap ${this.activeTab === 'po' ? 'Antrean PO' : 'Transaksi Diproses'} berhasil disalin!`, 3000);
+                } else {
+                    alert('📋 Rekap berhasil disalin ke clipboard!\nSilakan paste ke WhatsApp.');
+                }
+            }).catch(() => {
+                prompt('Salin teks rekap berikut:', text);
+            });
+        } else {
+            prompt('Salin teks rekap berikut:', text);
+        }
+    }
+
     // Perbarui status toolbar bulk
     updateBulkToolbar() {
         const count = this.selectedInvoices.size;
