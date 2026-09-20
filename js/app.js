@@ -366,7 +366,7 @@ async function renderHistoryData() {
     tableBody.innerHTML = orders.map((o, idx) => {
         const isVoid = Boolean(o.isVoid);
         const isUnpaid = o.status === 'unpaid';
-        const isPendingPo = o.orderType === 'take_away' && o.status === 'paid';
+        const isPendingPo = o.orderType === 'take_away' && !isVoid && !isUnpaid && (!o.pickedUpAt || o.status === 'paid');
         const orderCogs = calculateOrderCogs(o);
         const orderRevenue = Number(o.totalAmount) || 0;
         const orderDeliveryFee = Number(o.deliveryFee) || 0;
@@ -448,6 +448,9 @@ async function renderHistoryData() {
                         ` : (isPendingPo ? `
                             <button type="button" class="btn-table-pickup" onclick="activeOrdersManager.markPickedUp('${o.invoiceNo}')" title="Tandai Sudah Diambil">
                                 ✅ Diambil
+                            </button>
+                            <button type="button" class="btn-table-void" onclick="openVoidModal('${o.invoiceNo}')" title="Batalkan Transaksi (Void)">
+                                ⚠️ Void
                             </button>
                         ` : `
                             <button type="button" class="btn-table-void" onclick="openVoidModal('${o.invoiceNo}')" title="Batalkan Transaksi (Void)">
@@ -996,6 +999,7 @@ class ActiveOrdersManager {
         if (!modal) return;
         modal.classList.add('active');
         await this.render();
+        await this.refreshBadge();
     }
 
     closeModal() {
@@ -1021,10 +1025,18 @@ class ActiveOrdersManager {
 
         const activeOrders = await db.getActiveOrders();
         const unpaidList = activeOrders.filter(o => o.status === 'unpaid');
-        const poList = activeOrders.filter(o => o.orderType === 'take_away' && o.status === 'paid');
+        const poList = activeOrders.filter(o => o.orderType === 'take_away' && !o.isVoid && o.status !== 'unpaid' && (!o.pickedUpAt || o.status === 'paid'));
 
         if (countUnpaidEl) countUnpaidEl.textContent = unpaidList.length;
         if (countPoEl) countPoEl.textContent = poList.length;
+
+        // Auto-switch to PO tab jika tab unpaid kosong tapi ada antrean PO
+        if (this.currentTab === 'unpaid' && unpaidList.length === 0 && poList.length > 0) {
+            this.currentTab = 'po';
+            document.querySelectorAll('.active-tab-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.tab === 'po');
+            });
+        }
 
         if (this.currentTab === 'unpaid') {
             if (unpaidList.length === 0) {

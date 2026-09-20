@@ -543,7 +543,10 @@ class DatabaseService {
     // Ambil daftar transaksi aktif (tagihan sementara & PO menunggu diambil)
     async getActiveOrders() {
         const allOrders = await this.getOrdersHistory(300);
-        return allOrders.filter(o => !o.isVoid && (o.status === 'unpaid' || (o.orderType === 'take_away' && o.status === 'paid')));
+        return allOrders.filter(o => !o.isVoid && (
+            o.status === 'unpaid' || 
+            (o.orderType === 'take_away' && (!o.pickedUpAt || o.status === 'paid'))
+        ));
     }
 
     // Ambil order dari cache lokal
@@ -552,16 +555,21 @@ class DatabaseService {
         if (!raw) return [];
         try {
             const list = JSON.parse(raw);
-            return list.map(o => ({
-                ...o,
-                status: o.status || (o.isVoid ? 'void' : (o.orderType === 'dine_in' ? 'completed' : 'paid')),
-                pickupDate: o.pickupDate || '',
-                pickupTime: o.pickupTime || '',
-                pickupMethod: o.pickupMethod || 'self_pickup',
-                pickupAddress: o.pickupAddress || '',
-                deliveryFee: Number(o.deliveryFee || 0),
-                pickedUpAt: o.pickedUpAt || null
-            }));
+            return list.map(o => {
+                const isVoid = Boolean(o.isVoid);
+                const isTakeAwayActive = o.orderType === 'take_away' && !isVoid && o.status !== 'unpaid' && !o.pickedUpAt;
+                const statusVal = isTakeAwayActive ? 'paid' : (o.status || (isVoid ? 'void' : (o.orderType === 'dine_in' ? 'completed' : (o.pickedUpAt ? 'completed' : 'paid'))));
+                return {
+                    ...o,
+                    status: statusVal,
+                    pickupDate: o.pickupDate || '',
+                    pickupTime: o.pickupTime || '',
+                    pickupMethod: o.pickupMethod || 'self_pickup',
+                    pickupAddress: o.pickupAddress || '',
+                    deliveryFee: Number(o.deliveryFee || 0),
+                    pickedUpAt: o.pickedUpAt || null
+                };
+            });
         } catch {
             return [];
         }
@@ -585,7 +593,7 @@ class DatabaseService {
                        COALESCE(o.subtotal_amount, o.total_amount)::numeric as "subtotalAmount",
                        COALESCE(o.final_discount_amount, 0)::numeric as "finalDiscountAmount",
                        COALESCE(o.final_discount_note, '') as "finalDiscountNote",
-                       COALESCE(o.status, 'completed') as "status",
+                       COALESCE(o.status, CASE WHEN o.is_void THEN 'void' WHEN o.order_type = 'take_away' AND o.picked_up_at IS NULL THEN 'paid' ELSE 'completed' END) as "status",
                        COALESCE(o.pickup_date, '') as "pickupDate",
                        COALESCE(o.pickup_time, '') as "pickupTime",
                        COALESCE(o.pickup_method, 'self_pickup') as "pickupMethod",
@@ -616,28 +624,33 @@ class DatabaseService {
             `, [limit]);
 
             if (rows && rows.length > 0) {
-                return rows.map(r => ({
-                    ...r,
-                    totalAmount: Number(r.totalAmount),
-                    cashReceived: Number(r.cashReceived),
-                    changeAmount: Number(r.changeAmount),
-                    subtotalAmount: Number(r.subtotalAmount) || Number(r.totalAmount),
-                    finalDiscountAmount: Number(r.finalDiscountAmount) || 0,
-                    finalDiscountNote: r.finalDiscountNote || '',
-                    cashierName: r.cashierName || 'Kasir',
-                    isVoid: Boolean(r.isVoid),
-                    voidReason: r.voidReason || '',
-                    voidBy: r.voidBy || '',
-                    voidAt: r.voidAt || null,
-                    status: r.status || (r.isVoid ? 'void' : (r.orderType === 'dine_in' ? 'completed' : 'paid')),
-                    pickupDate: r.pickupDate || '',
-                    pickupTime: r.pickupTime || '',
-                    pickupMethod: r.pickupMethod || 'self_pickup',
-                    pickupAddress: r.pickupAddress || '',
-                    deliveryFee: Number(r.deliveryFee) || 0,
-                    pickedUpAt: r.pickedUpAt || null,
-                    items: Array.isArray(r.items) ? r.items : (typeof r.items === 'string' ? JSON.parse(r.items) : [])
-                }));
+                const mappedOrders = rows.map(r => {
+                    const isVoid = Boolean(r.isVoid);
+                    const isTakeAwayActive = r.orderType === 'take_away' && !isVoid && r.status !== 'unpaid' && !r.pickedUpAt;
+                    const statusVal = isTakeAwayActive ? 'paid' : (r.status || (isVoid ? 'void' : (r.orderType === 'dine_in' ? 'completed' : (r.pickedUpAt ? 'completed' : 'paid'))));
+                    return {
+                        ...r,
+                        totalAmount: Number(r.totalAmount),
+                        cashReceived: Number(r.cashReceived),
+                        changeAmount: Number(r.changeAmount),
+                        subtotalAmount: Number(r.subtotalAmount) || Number(r.totalAmount),
+                        finalDiscountAmount: Number(r.finalDiscountAmount) || 0,
+                        finalDiscountNote: r.finalDiscountNote || '',
+                        cashierName: r.cashierName || 'Kasir',
+                        isVoid: isVoid,
+                        voidReason: r.voidReason || '',
+                        voidBy: r.voidBy || '',
+                        voidAt: r.voidAt || null,
+                        status: statusVal,
+                        pickupDate: r.pickupDate || '',
+                        pickupTime: r.pickupTime || '',
+                        pickupMethod: r.pickupMethod || 'self_pickup',
+                        pickupAddress: r.pickupAddress || '',
+                        deliveryFee: Number(r.deliveryFee) || 0,
+                        pickedUpAt: r.pickedUpAt || null,
+                        items: Array.isArray(r.items) ? r.items : (typeof r.items === 'string' ? JSON.parse(r.items) : [])
+                    };
+                });
                 localStorage.setItem(this.storageKeyOrders, JSON.stringify(mappedOrders));
                 return mappedOrders;
             }

@@ -3480,6 +3480,8 @@ input[type="password"]::-ms-clear {
 
 .btn-table-reprint,
 .btn-table-void,
+.btn-table-pickup,
+.btn-table-pay,
 .badge-void {
     display: inline-flex;
     align-items: center;
@@ -3510,6 +3512,36 @@ input[type="password"]::-ms-clear {
     color: #991B1B;
     transform: translateY(-1px);
     box-shadow: 0 2px 5px rgba(220, 38, 38, 0.15);
+}
+
+.btn-table-pickup {
+    background: #ECFDF5;
+    color: #059669;
+    border: 1.5px solid #A7F3D0;
+    cursor: pointer;
+}
+
+.btn-table-pickup:hover {
+    background: #D1FAE5;
+    border-color: #34D399;
+    color: #047857;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(5, 150, 105, 0.15);
+}
+
+.btn-table-pay {
+    background: #EFF6FF;
+    color: #2563EB;
+    border: 1.5px solid #BFDBFE;
+    cursor: pointer;
+}
+
+.btn-table-pay:hover {
+    background: #DBEAFE;
+    border-color: #60A5FA;
+    color: #1D4ED8;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(37, 99, 235, 0.15);
 }
 
 .badge-void {
@@ -5996,39 +6028,6 @@ input[type="password"]::-ms-clear {
     border: 1px solid #FCD34D !important;
 }
 
-.btn-table-pay {
-    padding: 4px 8px;
-    font-size: 11px;
-    font-weight: 700;
-    color: white;
-    background: #10B981;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background 0.15s;
-    margin-right: 4px;
-}
-
-.btn-table-pay:hover {
-    background: #059669;
-}
-
-.btn-table-pickup {
-    padding: 4px 8px;
-    font-size: 11px;
-    font-weight: 700;
-    color: white;
-    background: #059669;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background 0.15s;
-    margin-right: 4px;
-}
-
-.btn-table-pickup:hover {
-    background: #047857;
-}
 
 .row-unpaid td {
     background: #FFFBEB !important;
