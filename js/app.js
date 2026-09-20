@@ -235,6 +235,22 @@ function setHistoryFilter(filterType) {
     renderHistoryData();
 }
 
+// Helper kalkulasi COGS untuk satu pesanan
+function calculateOrderCogs(order) {
+    let orderCogs = 0;
+    if (order && order.items && order.items.length > 0) {
+        order.items.forEach(item => {
+            let itemCogs = Number(item.cogsLocked) || 0;
+            if (itemCogs === 0 && item.id && typeof productManager !== 'undefined' && productManager.getProductById) {
+                const p = productManager.getProductById(item.id);
+                if (p) itemCogs = Number(p.cogs) || 0;
+            }
+            orderCogs += itemCogs * (Number(item.qty) || 1);
+        });
+    }
+    return orderCogs;
+}
+
 async function renderHistoryData() {
     const tableBody = document.getElementById('historyTableBody');
     const totalRevenueEl = document.getElementById('rekapTotalRevenue');
@@ -250,196 +266,195 @@ async function renderHistoryData() {
     const transferTotalEl = document.getElementById('rekapTransferTotal');
 
     if (tableBody) {
-        tableBody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 20px;">Memuat data riwayat...</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="12" style="text-align: center; padding: 20px;">Memuat data riwayat...</td></tr>`;
     }
 
-    const allOrders = await db.getOrdersHistory(500);
+    try {
+        const allOrders = await db.getOrdersHistory(500);
 
-    // Filter berdasarkan Periode yang dipilih
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const startOfWeek = startOfToday - (6 * 24 * 60 * 60 * 1000);
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+        // Filter berdasarkan Periode yang dipilih
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const startOfWeek = startOfToday - (6 * 24 * 60 * 60 * 1000);
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
 
-    const orders = allOrders.filter(o => {
-        const orderTime = new Date(o.createdAt).getTime();
-        if (currentHistoryFilter === 'today') {
-            return orderTime >= startOfToday;
-        } else if (currentHistoryFilter === 'week') {
-            return orderTime >= startOfWeek;
-        } else if (currentHistoryFilter === 'month') {
-            return orderTime >= startOfMonth;
-        } else if (currentHistoryFilter === 'custom') {
-            const startVal = document.getElementById('historyStartDate')?.value;
-            const endVal = document.getElementById('historyEndDate')?.value;
-            if (startVal) {
-                const startMs = new Date(startVal + 'T00:00:00').getTime();
-                if (orderTime < startMs) return false;
-            }
-            if (endVal) {
-                const endMs = new Date(endVal + 'T23:59:59').getTime();
-                if (orderTime > endMs) return false;
-            }
-            return true;
-        }
-        return true; // 'all'
-    });
-
-    let totalRevenue = 0;
-    let totalCogs = 0;
-    let cashRevenue = 0;
-    let qrisRevenue = 0;
-    let transferRevenue = 0;
-
-    // Helper kalkulasi COGS
-    const calculateOrderCogs = (order) => {
-        let orderCogs = 0;
-        if (order.items && order.items.length > 0) {
-            order.items.forEach(item => {
-                let itemCogs = Number(item.cogsLocked) || 0;
-                if (itemCogs === 0 && item.id) {
-                    const p = productManager.getProductById(item.id);
-                    if (p) itemCogs = Number(p.cogs) || 0;
+        const orders = allOrders.filter(o => {
+            const orderTime = new Date(o.createdAt).getTime();
+            if (currentHistoryFilter === 'today') {
+                return orderTime >= startOfToday;
+            } else if (currentHistoryFilter === 'week') {
+                return orderTime >= startOfWeek;
+            } else if (currentHistoryFilter === 'month') {
+                return orderTime >= startOfMonth;
+            } else if (currentHistoryFilter === 'custom') {
+                const startVal = document.getElementById('historyStartDate')?.value;
+                const endVal = document.getElementById('historyEndDate')?.value;
+                if (startVal) {
+                    const startMs = new Date(startVal + 'T00:00:00').getTime();
+                    if (orderTime < startMs) return false;
                 }
-                orderCogs += itemCogs * (Number(item.qty) || 1);
-            });
+                if (endVal) {
+                    const endMs = new Date(endVal + 'T23:59:59').getTime();
+                    if (orderTime > endMs) return false;
+                }
+                return true;
+            }
+            return true; // 'all'
+        });
+
+        let totalRevenue = 0;
+        let totalCogs = 0;
+        let cashRevenue = 0;
+        let qrisRevenue = 0;
+        let transferRevenue = 0;
+
+        let activeOrdersCount = 0;
+        let voidOrdersCount = 0;
+        let totalDeliveryFee = 0;
+        let totalFoodRevenue = 0;
+
+        orders.forEach(o => {
+            if (o.isVoid) {
+                voidOrdersCount++;
+                return; // Transaksi void tidak dihitung ke omset
+            }
+            if (o.status === 'unpaid') {
+                return; // Tagihan sementara belum lunas tidak dihitung ke omset
+            }
+            activeOrdersCount++;
+            const val = Number(o.totalAmount) || 0;
+            const dFee = Number(o.deliveryFee) || 0;
+            const foodVal = Math.max(0, val - dFee);
+
+            totalRevenue += val;
+            totalDeliveryFee += dFee;
+            totalFoodRevenue += foodVal;
+            totalCogs += calculateOrderCogs(o);
+            if (o.paymentMethod === 'cash') cashRevenue += val;
+            else if (o.paymentMethod === 'qris') qrisRevenue += val;
+            else if (o.paymentMethod === 'transfer') transferRevenue += val;
+        });
+
+        // Keuntungan bersih resto HANYA dari omzet produk makanan/minuman dikurangi HPP (ongkir kurir dipisahkan 100%)
+        const totalProfit = totalFoodRevenue - totalCogs;
+        const overallMargin = totalFoodRevenue > 0 ? Math.round((totalProfit / totalFoodRevenue) * 100) : 0;
+        const avgOrder = activeOrdersCount > 0 ? Math.round(totalRevenue / activeOrdersCount) : 0;
+
+        if (totalRevenueEl) totalRevenueEl.textContent = formatRupiah(totalRevenue);
+        if (deliveryFeeTotalEl) deliveryFeeTotalEl.textContent = formatRupiah(totalDeliveryFee);
+        if (foodRevenueEl) foodRevenueEl.textContent = formatRupiah(totalFoodRevenue);
+        if (totalCogsEl) totalCogsEl.textContent = formatRupiah(totalCogs);
+        if (profitNominalEl) profitNominalEl.textContent = formatRupiah(totalProfit);
+        if (profitMarginEl) {
+            profitMarginEl.textContent = `${overallMargin}% Margin`;
+            profitMarginEl.className = `margin-pill ${overallMargin >= 30 ? 'positive' : (overallMargin >= 0 ? 'warning' : 'danger')}`;
         }
-        return orderCogs;
-    };
 
-    let activeOrdersCount = 0;
-    let voidOrdersCount = 0;
-    let totalDeliveryFee = 0;
-    let totalFoodRevenue = 0;
-
-    orders.forEach(o => {
-        if (o.isVoid) {
-            voidOrdersCount++;
-            return; // Transaksi void tidak dihitung ke omset
+        if (totalOrdersEl) {
+            if (voidOrdersCount > 0) {
+                totalOrdersEl.innerHTML = `
+                    <div style="line-height: 1.2;">${activeOrdersCount} Sukses</div>
+                    <div style="font-size: 11px; font-weight: 700; color: #DC2626; margin-top: 3px; line-height: 1;">(${voidOrdersCount} Void)</div>
+                `;
+            } else {
+                totalOrdersEl.textContent = `${activeOrdersCount} Sukses`;
+            }
         }
-        if (o.status === 'unpaid') {
-            return; // Tagihan sementara belum lunas tidak dihitung ke omset
+        if (avgOrderEl) avgOrderEl.textContent = formatRupiah(avgOrder);
+        if (cashTotalEl) cashTotalEl.textContent = formatRupiah(cashRevenue);
+        if (qrisTotalEl) qrisTotalEl.textContent = formatRupiah(qrisRevenue);
+        if (transferTotalEl) transferTotalEl.textContent = formatRupiah(transferRevenue);
+
+        // Render Grafik Sederhana Penjualan (Hanya transaksi lunas/selesai)
+        renderHistoryChart(orders);
+
+        // Simpan data periode saat ini agar dapat difilter secara reaktif
+        window.rawPeriodOrders = orders;
+
+        // Terapkan filter tabel (status pesanan, metode bayar, exclude void, pencarian)
+        applyHistoryTableFilters();
+    } catch (err) {
+        console.error('Error in renderHistoryData:', err);
+        if (tableBody) {
+            tableBody.innerHTML = `<tr><td colspan="12" style="text-align: center; padding: 24px; color: #DC2626;">Gagal memuat data riwayat: ${err.message}.</td></tr>`;
         }
-        activeOrdersCount++;
-        const val = Number(o.totalAmount) || 0;
-        const dFee = Number(o.deliveryFee) || 0;
-        const foodVal = Math.max(0, val - dFee);
-
-        totalRevenue += val;
-        totalDeliveryFee += dFee;
-        totalFoodRevenue += foodVal;
-        totalCogs += calculateOrderCogs(o);
-        if (o.paymentMethod === 'cash') cashRevenue += val;
-        else if (o.paymentMethod === 'qris') qrisRevenue += val;
-        else if (o.paymentMethod === 'transfer') transferRevenue += val;
-    });
-
-    // Keuntungan bersih resto HANYA dari omzet produk makanan/minuman dikurangi HPP (ongkir kurir dipisahkan 100%)
-    const totalProfit = totalFoodRevenue - totalCogs;
-    const overallMargin = totalFoodRevenue > 0 ? Math.round((totalProfit / totalFoodRevenue) * 100) : 0;
-    const avgOrder = activeOrdersCount > 0 ? Math.round(totalRevenue / activeOrdersCount) : 0;
-
-    if (totalRevenueEl) totalRevenueEl.textContent = formatRupiah(totalRevenue);
-    if (deliveryFeeTotalEl) deliveryFeeTotalEl.textContent = formatRupiah(totalDeliveryFee);
-    if (foodRevenueEl) foodRevenueEl.textContent = formatRupiah(totalFoodRevenue);
-    if (totalCogsEl) totalCogsEl.textContent = formatRupiah(totalCogs);
-    if (profitNominalEl) profitNominalEl.textContent = formatRupiah(totalProfit);
-    if (profitMarginEl) {
-        profitMarginEl.textContent = `${overallMargin}% Margin`;
-        profitMarginEl.className = `margin-pill ${overallMargin >= 30 ? 'positive' : (overallMargin >= 0 ? 'warning' : 'danger')}`;
     }
-
-    if (totalOrdersEl) {
-        if (voidOrdersCount > 0) {
-            totalOrdersEl.innerHTML = `
-                <div style="line-height: 1.2;">${activeOrdersCount} Sukses</div>
-                <div style="font-size: 11px; font-weight: 700; color: #DC2626; margin-top: 3px; line-height: 1;">(${voidOrdersCount} Void)</div>
-            `;
-        } else {
-            totalOrdersEl.textContent = `${activeOrdersCount} Sukses`;
-        }
-    }
-    if (avgOrderEl) avgOrderEl.textContent = formatRupiah(avgOrder);
-    if (cashTotalEl) cashTotalEl.textContent = formatRupiah(cashRevenue);
-    if (qrisTotalEl) qrisTotalEl.textContent = formatRupiah(qrisRevenue);
-    if (transferTotalEl) transferTotalEl.textContent = formatRupiah(transferRevenue);
-
-    // Render Grafik Sederhana Penjualan (Hanya transaksi lunas/selesai)
-    renderHistoryChart(orders);
-
-    // Simpan data periode saat ini agar dapat difilter secara reaktif
-    window.rawPeriodOrders = orders;
-
-    // Terapkan filter tabel (status pesanan, metode bayar, exclude void, pencarian)
-    applyHistoryTableFilters();
 }
 
 // Filter tabel riwayat transaksi secara dinamis
 function applyHistoryTableFilters() {
-    const allOrders = window.rawPeriodOrders || [];
-    const searchVal = (document.getElementById('historySearchInput')?.value || '').toLowerCase().trim();
-    const statusVal = document.getElementById('filterHistoryStatus')?.value || 'all';
-    const payVal = document.getElementById('filterHistoryPayment')?.value || 'all';
-    const excludeVoid = document.getElementById('filterExcludeVoid')?.checked ?? true;
+    try {
+        const allOrders = window.rawPeriodOrders || [];
+        const searchVal = (document.getElementById('historySearchInput')?.value || '').toLowerCase().trim();
+        const statusVal = document.getElementById('filterHistoryStatus')?.value || 'all';
+        const payVal = document.getElementById('filterHistoryPayment')?.value || 'all';
+        const excludeVoid = document.getElementById('filterExcludeVoid')?.checked ?? true;
 
-    const filtered = allOrders.filter(o => {
-        const isVoid = Boolean(o.isVoid);
-        const isUnpaid = o.status === 'unpaid';
-        const isPendingPo = o.orderType === 'take_away' && !isVoid && !isUnpaid && (!o.pickedUpAt || o.status === 'paid');
-        const isSent = !isVoid && !isUnpaid && !isPendingPo && o.orderType === 'take_away' && (o.pickupMethod === 'ojol' || o.pickupMethod === 'delivery');
-        const isPicked = !isVoid && !isUnpaid && !isPendingPo && o.orderType === 'take_away' && (o.pickupMethod !== 'ojol' && o.pickupMethod !== 'delivery');
-        const isCompleted = !isVoid && !isUnpaid && !isPendingPo;
+        const filtered = allOrders.filter(o => {
+            const isVoid = Boolean(o.isVoid);
+            const isUnpaid = o.status === 'unpaid';
+            const isPendingPo = o.orderType === 'take_away' && !isVoid && !isUnpaid && (o.status !== 'completed' && !o.pickedUpAt);
+            const isSent = !isVoid && !isUnpaid && !isPendingPo && o.orderType === 'take_away' && (o.pickupMethod === 'ojol' || o.pickupMethod === 'delivery');
+            const isPicked = !isVoid && !isUnpaid && !isPendingPo && o.orderType === 'take_away' && (o.pickupMethod !== 'ojol' && o.pickupMethod !== 'delivery');
+            const isCompleted = !isVoid && !isUnpaid && !isPendingPo;
 
-        // Exclude void
-        if (excludeVoid && isVoid && statusVal !== 'void') {
-            return false;
-        }
+            // Exclude void
+            if (excludeVoid && isVoid && statusVal !== 'void') {
+                return false;
+            }
 
-        // Status filter
-        if (statusVal === 'completed' && !isCompleted) return false;
-        if (statusVal === 'sent' && !isSent) return false;
-        if (statusVal === 'picked' && !isPicked) return false;
-        if (statusVal === 'pending_po' && !isPendingPo) return false;
-        if (statusVal === 'unpaid' && !isUnpaid) return false;
-        if (statusVal === 'void' && !isVoid) return false;
+            // Status filter
+            if (statusVal === 'completed' && !isCompleted) return false;
+            if (statusVal === 'sent' && !isSent) return false;
+            if (statusVal === 'picked' && !isPicked) return false;
+            if (statusVal === 'pending_po' && !isPendingPo) return false;
+            if (statusVal === 'unpaid' && !isUnpaid) return false;
+            if (statusVal === 'void' && !isVoid) return false;
 
-        // Payment method filter
-        if (payVal !== 'all') {
-            if (payVal === 'unpaid') {
-                if (!isUnpaid) return false;
-            } else {
-                if (isUnpaid || (o.paymentMethod || 'cash').toLowerCase() !== payVal) {
+            // Payment method filter
+            if (payVal !== 'all') {
+                if (payVal === 'unpaid') {
+                    if (!isUnpaid) return false;
+                } else {
+                    if (isUnpaid || (o.paymentMethod || 'cash').toLowerCase() !== payVal) {
+                        return false;
+                    }
+                }
+            }
+
+            // Search text filter
+            if (searchVal) {
+                const inv = (o.invoiceNo || '').toLowerCase();
+                const cust = (o.customerName || '').toLowerCase();
+                const notes = (o.notes || '').toLowerCase();
+                const itemsStr = (o.items || []).map(i => i.name || '').join(' ').toLowerCase();
+                if (!inv.includes(searchVal) && !cust.includes(searchVal) && !notes.includes(searchVal) && !itemsStr.includes(searchVal)) {
                     return false;
                 }
             }
-        }
 
-        // Search text filter
-        if (searchVal) {
-            const inv = (o.invoiceNo || '').toLowerCase();
-            const cust = (o.customerName || '').toLowerCase();
-            const notes = (o.notes || '').toLowerCase();
-            const itemsStr = (o.items || []).map(i => i.name || '').join(' ').toLowerCase();
-            if (!inv.includes(searchVal) && !cust.includes(searchVal) && !notes.includes(searchVal) && !itemsStr.includes(searchVal)) {
-                return false;
+            return true;
+        });
+
+        window.currentlyRenderedOrders = filtered;
+
+        const countBadge = document.getElementById('historyFilterCountBadge');
+        if (countBadge) {
+            if (filtered.length === allOrders.length) {
+                countBadge.textContent = `${filtered.length} transaksi`;
+            } else {
+                countBadge.textContent = `Menampilkan ${filtered.length} dari ${allOrders.length} transaksi`;
             }
         }
 
-        return true;
-    });
-
-    window.currentlyRenderedOrders = filtered;
-
-    const countBadge = document.getElementById('historyFilterCountBadge');
-    if (countBadge) {
-        if (filtered.length === allOrders.length) {
-            countBadge.textContent = `${filtered.length} transaksi`;
-        } else {
-            countBadge.textContent = `Menampilkan ${filtered.length} dari ${allOrders.length} transaksi`;
+        renderHistoryTableRows(filtered);
+    } catch (err) {
+        console.error('Error in applyHistoryTableFilters:', err);
+        const tableBody = document.getElementById('historyTableBody');
+        if (tableBody) {
+            tableBody.innerHTML = `<tr><td colspan="12" style="text-align: center; padding: 24px; color: #DC2626;">Gagal memfilter data: ${err.message}.</td></tr>`;
         }
     }
-
-    renderHistoryTableRows(filtered);
 }
 
 // Render baris tabel riwayat transaksi
@@ -447,16 +462,17 @@ function renderHistoryTableRows(orders) {
     const tableBody = document.getElementById('historyTableBody');
     if (!tableBody) return;
 
-    if (!orders || orders.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="12" style="text-align: center; padding: 36px 20px; color: #95a5a6;">Tidak ada transaksi yang cocok dengan filter.</td></tr>`;
-        return;
-    }
+    try {
+        if (!orders || orders.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="12" style="text-align: center; padding: 36px 20px; color: #95a5a6;">Tidak ada transaksi yang cocok dengan filter.</td></tr>`;
+            return;
+        }
 
-    tableBody.innerHTML = orders.map((o, idx) => {
-        const isVoid = Boolean(o.isVoid);
-        const isUnpaid = o.status === 'unpaid';
-        const isPendingPo = o.orderType === 'take_away' && !isVoid && !isUnpaid && (!o.pickedUpAt || o.status === 'paid');
-        const orderCogs = calculateOrderCogs(o);
+        tableBody.innerHTML = orders.map((o, idx) => {
+            const isVoid = Boolean(o.isVoid);
+            const isUnpaid = o.status === 'unpaid';
+            const isPendingPo = o.orderType === 'take_away' && !isVoid && !isUnpaid && (o.status !== 'completed' && !o.pickedUpAt);
+            const orderCogs = calculateOrderCogs(o);
         const orderRevenue = Number(o.totalAmount) || 0;
         const orderDeliveryFee = Number(o.deliveryFee) || 0;
         const orderFoodRevenue = Math.max(0, orderRevenue - orderDeliveryFee);
@@ -610,7 +626,11 @@ function renderHistoryTableRows(orders) {
                 </td>
             </tr>
         `;
-    }).join('');
+        }).join('');
+    } catch (err) {
+        console.error('Error rendering history table rows:', err);
+        tableBody.innerHTML = `<tr><td colspan="12" style="text-align: center; padding: 24px; color: #DC2626;">Gagal menampilkan baris data riwayat: ${err.message}.</td></tr>`;
+    }
 }
 
 // ================= GRAFIK VISUAL PENJUALAN (PURE SVG) =================
@@ -818,7 +838,7 @@ async function exportHistoryToExcel() {
         let statusExcel = 'SELESAI';
         if (isVoid) statusExcel = 'VOID / DIBATALKAN';
         else if (o.status === 'unpaid') statusExcel = 'BELUM BAYAR';
-        else if (o.orderType === 'take_away' && (!o.pickedUpAt || o.status === 'paid')) statusExcel = 'PO MENUNGGU PICKUP';
+        else if (o.orderType === 'take_away' && (o.status !== 'completed' && !o.pickedUpAt)) statusExcel = 'PO MENUNGGU PICKUP';
         else if (o.orderType === 'take_away' && (o.pickupMethod === 'ojol' || o.pickupMethod === 'delivery')) statusExcel = 'SELESAI (SUDAH KIRIM)';
         else if (o.orderType === 'take_away') statusExcel = 'SELESAI (SUDAH DIAMBIL)';
 
