@@ -68,13 +68,11 @@ class CartManager {
 
         const isPo = this.orderType === 'take_away';
         if (!isPo && available !== Infinity && (currentInCart + qty) > available) {
-            sounds.playWarning();
-            const switchPo = confirm(`Stok ready di toko tidak mencukupi untuk Dine In (hanya tersedia ${available} porsi).\n\nApakah Anda ingin beralih ke pesanan Pre-Order (Take Away) agar pesanan ini dapat diproses dan diasapkan?`);
-            if (switchPo) {
-                this.setOrderType('take_away');
-            } else {
-                return;
+            this.setOrderType('take_away');
+            if (typeof showPosToast === 'function') {
+                showPosToast(`📦 Pesanan beralih ke <strong>Pre-Order (PO)</strong>: Stok ready ${displayName} tidak mencukupi (${available} porsi). Pesanan dicatat ke <strong>Harus Diasap</strong>.`);
             }
+            sounds.playBeep();
         }
 
         // Cari item di keranjang dengan id, varian, dan harga terkunci yang sama
@@ -161,13 +159,11 @@ class CartManager {
 
                 const isPo = this.orderType === 'take_away';
                 if (!isPo && available !== Infinity && currentInCart + delta > available) {
-                    sounds.playWarning();
-                    const switchPo = confirm(`Stok ready di toko tidak mencukupi untuk Dine In (hanya tersedia ${available} porsi).\n\nApakah Anda ingin beralih ke pesanan Pre-Order (Take Away)?`);
-                    if (switchPo) {
-                        this.setOrderType('take_away');
-                    } else {
-                        return;
+                    this.setOrderType('take_away');
+                    if (typeof showPosToast === 'function') {
+                        showPosToast(`📦 Pesanan beralih ke <strong>Pre-Order (PO)</strong>: Stok ready ${item.name} tidak mencukupi. Daging masuk antrean <strong>Harus Diasap</strong>.`);
                     }
+                    sounds.playBeep();
                 }
             }
 
