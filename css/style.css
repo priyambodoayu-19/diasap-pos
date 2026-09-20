@@ -1625,6 +1625,29 @@ input:checked + .slider:before {
     color: var(--text-dark);
 }
 
+.history-table th.col-th-invoice,
+.history-table td.col-invoice-cell {
+    min-width: 175px !important;
+    width: 175px !important;
+    white-space: nowrap !important;
+}
+
+.invoice-num-text {
+    white-space: nowrap !important;
+    font-weight: 800;
+    color: var(--secondary);
+    font-size: 13px;
+    line-height: 1.3;
+}
+
+.invoice-cashier-text {
+    font-size: 11px;
+    color: #64748B;
+    margin-top: 3px;
+    white-space: nowrap !important;
+    line-height: 1.2;
+}
+
 .order-badge {
     display: inline-block;
     font-size: 10px;
@@ -3342,23 +3365,33 @@ input[type="password"]::-ms-clear {
 }
 
 /* ==========================================================================
-   VOID TRANSAKSI STYLING
+   VOID TRANSAKSI STYLING & UNIFORM ACTION BUTTONS
    ========================================================================== */
+
+.btn-table-reprint,
+.btn-table-void,
+.badge-void {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 30px;
+    min-width: 72px;
+    padding: 0 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap !important;
+    box-sizing: border-box;
+    line-height: 1;
+    transition: all 0.2s ease;
+}
 
 .btn-table-void {
     background: #FEF2F2;
     color: #DC2626;
-    border: 1px solid #FECACA;
-    padding: 5px 10px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 700;
+    border: 1.5px solid #FECACA;
     cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    transition: all 0.2s;
-    white-space: nowrap;
 }
 
 .btn-table-void:hover {
@@ -3371,21 +3404,17 @@ input[type="password"]::-ms-clear {
 
 .badge-void {
     background: #FEF2F2;
-    color: #991B1B;
-    border: 1px solid #FCA5A5;
-    padding: 3px 8px;
-    border-radius: 5px;
-    font-size: 11px;
-    font-weight: 800;
+    color: #DC2626;
+    border: 1.5px solid #FECACA;
     letter-spacing: 0.5px;
-    display: inline-block;
+    cursor: default;
+    user-select: none;
 }
 
 .void-status-cell {
-    display: flex;
-    flex-direction: column;
+    display: inline-flex;
     align-items: center;
-    gap: 3px;
+    justify-content: center;
 }
 
 .void-meta-info {
@@ -4290,27 +4319,26 @@ input[type="password"]::-ms-clear {
 }
 
 .btn-table-reprint {
-    border: 1px solid #CBD5E1;
+    border: 1.5px solid #CBD5E1;
     background: white;
     color: #334155;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 11px;
-    font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
 }
 
 .btn-table-reprint:hover {
     background: #F1F5F9;
     border-color: #94A3B8;
+    color: #0F172A;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 .table-action-btns-row {
-    display: flex;
-    gap: 4px;
+    display: inline-flex;
+    gap: 6px;
     align-items: center;
     justify-content: center;
+    white-space: nowrap;
 }
 
 /* --- 5. Modal Pilih Varian Menu Kasir --- */

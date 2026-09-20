@@ -353,10 +353,10 @@ async function renderHistoryData() {
         return `
             <tr class="${isVoid ? 'row-voided' : ''}">
                 <td style="text-align: center; color: #64748B;">${idx + 1}</td>
-                <td>
-                    <strong>${o.invoiceNo}</strong>
+                <td class="col-invoice-cell">
+                    <div class="invoice-num-text"><strong>${o.invoiceNo}</strong></div>
                     ${isVoid ? '<div class="tag-void-mini">VOID</div>' : ''}
-                    <div style="font-size: 11px; color: #64748B; margin-top: 2px;">Kasir: <strong>${cashierName}</strong></div>
+                    <div class="invoice-cashier-text">Kasir: <strong>${cashierName}</strong></div>
                 </td>
                 <td style="white-space: nowrap;">${formatDateTime(o.createdAt)}</td>
                 <td>
