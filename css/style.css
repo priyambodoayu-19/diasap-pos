@@ -1716,6 +1716,13 @@ input:checked + .slider:before {
     min-width: 115px;
 }
 
+.col-th-ongkir,
+.col-ongkir-cell {
+    white-space: nowrap !important;
+    min-width: 95px;
+    text-align: right;
+}
+
 .revenue-nominal-text {
     font-weight: 800;
     font-size: 13px;

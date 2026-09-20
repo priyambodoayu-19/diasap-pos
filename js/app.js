@@ -238,6 +238,8 @@ function setHistoryFilter(filterType) {
 async function renderHistoryData() {
     const tableBody = document.getElementById('historyTableBody');
     const totalRevenueEl = document.getElementById('rekapTotalRevenue');
+    const deliveryFeeTotalEl = document.getElementById('rekapDeliveryFeeTotal');
+    const foodRevenueEl = document.getElementById('rekapFoodRevenue');
     const totalCogsEl = document.getElementById('rekapTotalCogs');
     const profitNominalEl = document.getElementById('rekapProfitNominal');
     const profitMarginEl = document.getElementById('rekapProfitMargin');
@@ -245,9 +247,10 @@ async function renderHistoryData() {
     const avgOrderEl = document.getElementById('rekapAvgOrder');
     const cashTotalEl = document.getElementById('rekapCashTotal');
     const qrisTotalEl = document.getElementById('rekapQrisTotal');
+    const transferTotalEl = document.getElementById('rekapTransferTotal');
 
     if (tableBody) {
-        tableBody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 20px;">Memuat data riwayat...</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 20px;">Memuat data riwayat...</td></tr>`;
     }
 
     const allOrders = await db.getOrdersHistory(500);
@@ -286,6 +289,7 @@ async function renderHistoryData() {
     let totalCogs = 0;
     let cashRevenue = 0;
     let qrisRevenue = 0;
+    let transferRevenue = 0;
 
     // Helper kalkulasi COGS
     const calculateOrderCogs = (order) => {
@@ -327,6 +331,7 @@ async function renderHistoryData() {
         totalCogs += calculateOrderCogs(o);
         if (o.paymentMethod === 'cash') cashRevenue += val;
         else if (o.paymentMethod === 'qris') qrisRevenue += val;
+        else if (o.paymentMethod === 'transfer') transferRevenue += val;
     });
 
     // Keuntungan bersih resto HANYA dari omzet produk makanan/minuman dikurangi HPP (ongkir kurir dipisahkan 100%)
@@ -335,23 +340,29 @@ async function renderHistoryData() {
     const avgOrder = activeOrdersCount > 0 ? Math.round(totalRevenue / activeOrdersCount) : 0;
 
     if (totalRevenueEl) totalRevenueEl.textContent = formatRupiah(totalRevenue);
+    if (deliveryFeeTotalEl) deliveryFeeTotalEl.textContent = formatRupiah(totalDeliveryFee);
+    if (foodRevenueEl) foodRevenueEl.textContent = formatRupiah(totalFoodRevenue);
     if (totalCogsEl) totalCogsEl.textContent = formatRupiah(totalCogs);
     if (profitNominalEl) profitNominalEl.textContent = formatRupiah(totalProfit);
     if (profitMarginEl) {
         profitMarginEl.textContent = `${overallMargin}% Margin`;
         profitMarginEl.className = `margin-pill ${overallMargin >= 30 ? 'positive' : (overallMargin >= 0 ? 'warning' : 'danger')}`;
     }
-    const deliveryFeeTotalEl = document.getElementById('rekapDeliveryFeeTotal');
-    if (deliveryFeeTotalEl) deliveryFeeTotalEl.textContent = formatRupiah(totalDeliveryFee);
 
     if (totalOrdersEl) {
-        totalOrdersEl.textContent = voidOrdersCount > 0
-            ? `${activeOrdersCount} Sukses (${voidOrdersCount} Void)`
-            : `${activeOrdersCount} Transaksi`;
+        if (voidOrdersCount > 0) {
+            totalOrdersEl.innerHTML = `
+                <div style="line-height: 1.2;">${activeOrdersCount} Sukses</div>
+                <div style="font-size: 11px; font-weight: 700; color: #DC2626; margin-top: 3px; line-height: 1;">(${voidOrdersCount} Void)</div>
+            `;
+        } else {
+            totalOrdersEl.textContent = `${activeOrdersCount} Sukses`;
+        }
     }
     if (avgOrderEl) avgOrderEl.textContent = formatRupiah(avgOrder);
     if (cashTotalEl) cashTotalEl.textContent = formatRupiah(cashRevenue);
     if (qrisTotalEl) qrisTotalEl.textContent = formatRupiah(qrisRevenue);
+    if (transferTotalEl) transferTotalEl.textContent = formatRupiah(transferRevenue);
 
     // Render Grafik Sederhana Penjualan (Hanya transaksi lunas/selesai)
     renderHistoryChart(orders);
@@ -359,7 +370,7 @@ async function renderHistoryData() {
     if (!tableBody) return;
 
     if (orders.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 36px 20px; color: #95a5a6;">Tidak ada transaksi pada periode yang dipilih.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 36px 20px; color: #95a5a6;">Tidak ada transaksi pada periode yang dipilih.</td></tr>`;
         return;
     }
 
@@ -412,7 +423,15 @@ async function renderHistoryData() {
                 <td class="col-revenue-cell">
                     <div class="revenue-nominal-text ${isVoid ? 'text-strikethrough' : ''}">${formatRupiah(orderRevenue)}</div>
                     ${finalDiscount > 0 ? `<div class="discount-subtext">(Disc: -${formatRupiah(finalDiscount)})</div>` : ''}
-                    ${orderDeliveryFee > 0 ? `<div class="delivery-subtext" style="font-size: 11px; color: #0284C7; font-weight: 600;">(Inc. Kurir: ${formatRupiah(orderDeliveryFee)})</div>` : ''}
+                </td>
+                <td class="col-ongkir-cell" style="text-align: right;">
+                    ${orderDeliveryFee > 0 ? `
+                        <span class="badge-ongkir ${isVoid ? 'text-strikethrough' : ''}" style="color: #0284C7; font-weight: 700; font-size: 13px;">
+                            ${formatRupiah(orderDeliveryFee)}
+                        </span>
+                    ` : `
+                        <span style="color: #94A3B8; font-size: 12px;">-</span>
+                    `}
                 </td>
                 <td class="col-profit-cell">
                     ${isVoid ? `
