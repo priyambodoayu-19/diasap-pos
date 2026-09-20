@@ -370,7 +370,7 @@ async function renderHistoryData() {
     if (!tableBody) return;
 
     if (orders.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 36px 20px; color: #95a5a6;">Tidak ada transaksi pada periode yang dipilih.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="12" style="text-align: center; padding: 36px 20px; color: #95a5a6;">Tidak ada transaksi pada periode yang dipilih.</td></tr>`;
         return;
     }
 
@@ -387,34 +387,46 @@ async function renderHistoryData() {
         const cashierName = o.cashierName || 'Kasir';
         const finalDiscount = Number(o.finalDiscountAmount) || 0;
 
-        const itemsSummary = (o.items && o.items.length > 0)
-            ? o.items.map(i => `${i.name} (x${i.qty})`).join(', ')
-            : '-';
+        const itemsHtml = (o.items && o.items.length > 0)
+            ? `<div class="history-items-list">
+                ${o.items.map(i => `
+                    <div class="history-item-chip" title="${i.name} (x${i.qty})">
+                        <strong class="item-qty-badge">[ ${i.qty}x ]</strong>
+                        <span class="item-name-text">${i.name}</span>
+                    </div>
+                `).join('')}
+            </div>`
+            : '<span style="color: #94A3B8; font-size: 11px;">-</span>';
 
         return `
             <tr class="${isVoid ? 'row-voided' : (isUnpaid ? 'row-unpaid' : '')}">
-                <td style="text-align: center; color: #64748B;">${idx + 1}</td>
+                <td class="col-num-cell" style="text-align: center; color: #64748B;">${idx + 1}</td>
                 <td class="col-invoice-cell">
                     <div class="invoice-num-text"><strong>${o.invoiceNo}</strong></div>
                     ${isVoid ? '<div class="tag-void-mini">VOID</div>' : (isUnpaid ? '<div class="tag-unpaid-mini">TAGIHAN SEMENTARA</div>' : (isPendingPo ? '<div class="tag-po-mini">PO SIAP AMBIL</div>' : ''))}
                     <div class="invoice-cashier-text">Kasir: <strong>${cashierName}</strong></div>
                 </td>
-                <td style="white-space: nowrap;">${formatDateTime(o.createdAt)}</td>
+                <td class="col-time-cell" style="white-space: nowrap;">${formatDateTime(o.createdAt)}</td>
                 <td class="col-customer-cell">
                     <div class="customer-name-text"><strong>${o.customerName || 'Pelanggan'}</strong></div>
                     <div class="customer-type-row">
                         <span class="order-badge ${o.orderType === 'dine_in' ? 'badge-dine-in' : 'badge-take-away'}">${o.orderType === 'dine_in' ? 'Dine In' : 'Take Away (PO)'}</span>
                     </div>
-                    ${o.orderType === 'take_away' && o.pickupDate ? `
-                        <div class="invoice-po-schedule-text">
-                            ⏰ ${o.pickupDate} ${o.pickupTime || ''} (${o.pickupMethod === 'ojol' ? 'Ojol' : (o.pickupMethod === 'delivery' ? 'Antar' : 'Toko')})
-                        </div>
-                    ` : ''}
+                    ${o.notes ? `<div class="customer-notes-mini" title="${o.notes}">📝 <em>${o.notes}</em></div>` : ''}
                 </td>
-                <td class="col-items-cell" title="${itemsSummary}">${itemsSummary}</td>
-                <td style="text-align: center;">
+                <td class="col-schedule-cell" style="white-space: nowrap;">
+                    ${o.orderType === 'take_away' && o.pickupDate ? `
+                        <div class="schedule-date-text">⏰ <strong>${o.pickupDate}</strong> ${o.pickupTime ? `(${o.pickupTime})` : ''}</div>
+                        <div class="schedule-method-text">${o.pickupMethod === 'ojol' ? '🛵 Ojol / Kurir' : (o.pickupMethod === 'delivery' ? '🚚 Diantar' : '🏪 Ambil Toko')}</div>
+                        ${o.pickupAddress ? `<div class="schedule-addr-text" title="${o.pickupAddress}">📍 ${o.pickupAddress}</div>` : ''}
+                    ` : `
+                        <span style="color: #94A3B8; font-size: 11px;">-</span>
+                    `}
+                </td>
+                <td class="col-items-cell">${itemsHtml}</td>
+                <td class="col-method-cell" style="text-align: center; white-space: nowrap;">
                     ${isUnpaid 
-                        ? '<span class="badge-status-unpaid">BELUM BAYAR</span>' 
+                        ? '<span class="badge-method badge-unpaid">BELUM BAYAR</span>' 
                         : `<span class="badge-method badge-${o.paymentMethod}">${(o.paymentMethod || 'cash').toUpperCase()}</span>`}
                 </td>
                 <td class="col-cogs-cell">
@@ -451,27 +463,43 @@ async function renderHistoryData() {
                         </div>
                     `)}
                 </td>
-                <td style="text-align: center;">
+                <td class="col-actions-cell" style="text-align: center;">
                     <div class="table-action-btns-row">
-                        <button type="button" class="btn-table-reprint" onclick="reprintOrder('${o.invoiceNo}')" title="Cetak Ulang / Bagikan Struk">
-                            🖨️ Struk
-                        </button>
                         ${isVoid ? `
-                            <div class="void-status-cell">
-                                <span class="badge-void">VOID</span>
-                            </div>
+                            <button type="button" class="btn-table-reprint" onclick="reprintOrder('${o.invoiceNo}')" title="Cetak Ulang Struk">
+                                🖨️ Struk
+                            </button>
+                            <button type="button" class="btn-table-resi" onclick="activeOrdersManager.printSingleResi('${o.invoiceNo}')" title="Cetak Resi Label 58mm">
+                                🏷️ Resi
+                            </button>
+                            <span class="badge-void" style="width: 68px;">VOID</span>
                         ` : (isUnpaid ? `
                             <button type="button" class="btn-table-pay" onclick="activeOrdersManager.proceedPayment('${o.invoiceNo}')" title="Bayar & Selesaikan Sekarang">
                                 💳 Bayar
+                            </button>
+                            <button type="button" class="btn-table-reprint" onclick="reprintOrder('${o.invoiceNo}')" title="Cetak Struk / Tagihan">
+                                🖨️ Struk
+                            </button>
+                            <button type="button" class="btn-table-del" onclick="activeOrdersManager.cancelOrder('${o.invoiceNo}')" title="Hapus Tagihan (Delete Transaction)">
+                                🗑️ Hapus
                             </button>
                         ` : (isPendingPo ? `
                             <button type="button" class="btn-table-pickup" onclick="activeOrdersManager.markPickedUp('${o.invoiceNo}')" title="Tandai Sudah Diambil">
                                 ✅ Diambil
                             </button>
+                            <button type="button" class="btn-table-reprint" onclick="reprintOrder('${o.invoiceNo}')" title="Cetak Ulang Struk">
+                                🖨️ Struk
+                            </button>
                             <button type="button" class="btn-table-void" onclick="openVoidModal('${o.invoiceNo}')" title="Batalkan Transaksi (Void)">
                                 ⚠️ Void
                             </button>
                         ` : `
+                            <button type="button" class="btn-table-reprint" onclick="reprintOrder('${o.invoiceNo}')" title="Cetak Ulang Struk">
+                                🖨️ Struk
+                            </button>
+                            <button type="button" class="btn-table-resi" onclick="activeOrdersManager.printSingleResi('${o.invoiceNo}')" title="Cetak Resi Label 58mm">
+                                🏷️ Resi
+                            </button>
                             <button type="button" class="btn-table-void" onclick="openVoidModal('${o.invoiceNo}')" title="Batalkan Transaksi (Void)">
                                 ⚠️ Void
                             </button>

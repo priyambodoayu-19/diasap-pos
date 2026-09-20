@@ -1424,14 +1424,15 @@ input:checked + .slider:before {
 }
 
 .modal-content.modal-wide {
-    width: 96%;
-    max-width: 1340px;
-    max-height: 92vh;
+    width: 98% !important;
+    max-width: 98vw !important;
+    max-height: 94vh;
 }
 
 @media (min-width: 1600px) {
     .modal-content.modal-wide {
-        max-width: 1480px;
+        width: 98% !important;
+        max-width: 98vw !important;
     }
 }
 
@@ -1681,19 +1682,22 @@ input:checked + .slider:before {
 /* History Table */
 .history-table-container {
     overflow-x: auto;
-    max-height: 360px;
+    max-height: 520px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #FFFFFF;
 }
 
 .history-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 13px;
+    font-size: 12px;
     text-align: left;
 }
 
 .history-table th {
     background: #F8FAFC !important;
-    padding: 11px 12px;
+    padding: 9px 8px;
     font-weight: 800;
     color: var(--secondary);
     border-bottom: 2px solid var(--border);
@@ -1701,18 +1705,32 @@ input:checked + .slider:before {
     top: 0;
     z-index: 10;
     box-shadow: 0 2px 4px rgba(15, 23, 42, 0.05);
+    font-size: 12px;
+    white-space: nowrap;
 }
 
 .history-table td {
-    padding: 10px 12px;
+    padding: 8px 8px;
     border-bottom: 1px solid var(--border);
     color: var(--text-dark);
+    font-size: 12px;
+    vertical-align: middle;
 }
 
+/* Kolom # */
+.history-table th.col-th-num,
+.history-table td.col-num-cell {
+    width: 28px;
+    text-align: center;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+/* Kolom Invoice */
 .history-table th.col-th-invoice,
 .history-table td.col-invoice-cell {
-    min-width: 175px !important;
-    width: 175px !important;
+    min-width: 135px !important;
+    width: 140px !important;
     white-space: nowrap !important;
 }
 
@@ -1720,47 +1738,69 @@ input:checked + .slider:before {
     white-space: nowrap !important;
     font-weight: 800;
     color: var(--secondary);
-    font-size: 13px;
-    line-height: 1.3;
+    font-size: 12px;
+    line-height: 1.2;
 }
 
 .invoice-cashier-text {
-    font-size: 11px;
+    font-size: 10px;
     color: #64748B;
-    margin-top: 3px;
+    margin-top: 2px;
     white-space: nowrap !important;
     line-height: 1.2;
 }
 
-/* Kolom Pelanggan (2 baris rata kiri) */
+/* Kolom Waktu */
+.history-table th.col-th-time,
+.history-table td.col-time-cell {
+    white-space: nowrap !important;
+    font-size: 11px;
+}
+
+/* Kolom Pelanggan (Hanya nama + badge) */
 .col-th-customer,
 .col-customer-cell {
-    min-width: 115px;
+    min-width: 105px;
     text-align: left;
 }
 
 .customer-name-text {
-    font-weight: 700;
-    font-size: 13px;
+    font-weight: 800;
+    font-size: 12px;
     color: var(--secondary);
     white-space: nowrap !important;
     text-align: left;
-    line-height: 1.3;
+    line-height: 1.2;
+}
+
+.customer-notes-mini {
+    font-size: 10px;
+    color: #B45309;
+    background: #FEF3C7;
+    border: 1px solid #FDE68A;
+    padding: 1px 4px;
+    border-radius: 3px;
+    margin-top: 3px;
+    display: inline-block;
+    max-width: 130px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .customer-type-row {
-    margin-top: 3px;
+    margin-top: 2px;
     text-align: left;
 }
 
 .order-badge {
     display: inline-block;
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 700;
-    padding: 2px 7px;
+    padding: 1px 6px;
     background: #E2E8F0;
     color: #475569;
-    border-radius: 10px;
+    border-radius: 8px;
     margin-left: 0 !important;
     white-space: nowrap !important;
     line-height: 1.2;
@@ -1777,60 +1817,134 @@ input:checked + .slider:before {
     color: #334155;
 }
 
-/* Kolom Modal (HPP), Total Omset, Untung Bersih: Nominal 1 baris, persen baris 2 */
+/* Kolom Jadwal PO (Kolom Baru Terpisah) */
+.col-th-schedule,
+.col-schedule-cell {
+    min-width: 110px;
+    white-space: nowrap !important;
+}
+
+.schedule-date-text {
+    font-size: 11px;
+    font-weight: 700;
+    color: #C2410C;
+    line-height: 1.2;
+}
+
+.schedule-method-text {
+    font-size: 10px;
+    font-weight: 600;
+    color: #475569;
+    margin-top: 2px;
+    line-height: 1.1;
+}
+
+.schedule-addr-text {
+    font-size: 10px;
+    color: #64748B;
+    font-style: italic;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-top: 1px;
+}
+
+/* Kolom Item Pesanan (Per Baris Per Item) */
+.col-th-items,
+.col-items-cell {
+    min-width: 130px;
+    max-width: 220px;
+}
+
+.history-items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.history-item-chip {
+    font-size: 11px;
+    color: #334155;
+    background: #F1F5F9;
+    padding: 2px 5px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+.history-item-chip strong {
+    font-weight: 800;
+    color: #0F172A;
+    font-size: 11px;
+    flex-shrink: 0;
+}
+
+.history-item-chip span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Kolom Modal (HPP), Total Omset, Untung Bersih */
 .col-th-cogs,
 .col-cogs-cell {
     white-space: nowrap !important;
-    min-width: 105px;
+    font-size: 12px;
+    min-width: 80px;
 }
 
 .col-th-revenue,
 .col-revenue-cell {
     white-space: nowrap !important;
-    min-width: 115px;
+    font-size: 12px;
+    min-width: 90px;
 }
 
 .col-th-ongkir,
 .col-ongkir-cell {
     white-space: nowrap !important;
-    min-width: 95px;
+    min-width: 75px;
     text-align: right;
+    font-size: 12px;
 }
 
 .revenue-nominal-text {
     font-weight: 800;
-    font-size: 13px;
+    font-size: 12px;
     color: var(--secondary);
     white-space: nowrap !important;
-    line-height: 1.3;
+    line-height: 1.2;
 }
 
 .discount-subtext {
-    font-size: 10px;
+    font-size: 9px;
     color: #C0392B;
     font-weight: 600;
-    margin-top: 2px;
+    margin-top: 1px;
     white-space: nowrap !important;
-    line-height: 1.2;
+    line-height: 1.1;
 }
 
 .col-th-profit,
 .col-profit-cell {
     white-space: nowrap !important;
-    min-width: 115px;
+    min-width: 90px;
+    font-size: 12px;
 }
 
 .profit-nominal-text {
     white-space: nowrap !important;
-    line-height: 1.3;
-}
-
-.profit-nominal-text .badge-profit {
-    white-space: nowrap !important;
+    line-height: 1.2;
 }
 
 .profit-margin-row {
-    margin-top: 3px;
+    margin-top: 2px;
     line-height: 1;
 }
 
@@ -1841,25 +1955,42 @@ input:checked + .slider:before {
     white-space: nowrap !important;
 }
 
-.col-th-items,
-.col-items-cell {
-    max-width: 260px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
+/* Kolom Metode & Badge 1 Baris Seragam */
 .badge-method {
     display: inline-block;
     font-size: 11px;
     font-weight: 800;
-    padding: 2px 8px;
+    padding: 3px 8px;
     border-radius: 4px;
+    white-space: nowrap !important;
+    line-height: 1.2;
+    text-transform: uppercase;
 }
 
 .badge-cash { background: #DCFCE7; color: #15803D; }
 .badge-qris { background: #E0E7FF; color: #4338CA; }
 .badge-transfer { background: #FEF3C7; color: #B45309; }
+.badge-unpaid { background: #FEF3C7; color: #B45309; border: 1px solid #FCD34D; }
+
+.badge-status-unpaid {
+    display: inline-block;
+    background: #FEF3C7 !important;
+    color: #B45309 !important;
+    border: 1px solid #FCD34D !important;
+    white-space: nowrap !important;
+    padding: 3px 8px !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    border-radius: 4px !important;
+}
+
+/* Kolom Status & Aksi */
+.col-th-actions,
+.col-actions-cell {
+    text-align: center;
+    min-width: 225px;
+    white-space: nowrap !important;
+}
 
 /* Form Kelola Menu */
 .form-group {
@@ -3869,21 +4000,53 @@ input[type="password"]::-ms-clear {
 .btn-table-void,
 .btn-table-pickup,
 .btn-table-pay,
+.btn-table-resi,
+.btn-table-del,
 .badge-void {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    height: 30px;
-    min-width: 72px;
-    padding: 0 10px;
+    gap: 3px;
+    height: 28px;
+    min-width: 68px;
+    padding: 0 8px;
     border-radius: 6px;
     font-size: 11px;
     font-weight: 700;
     white-space: nowrap !important;
     box-sizing: border-box;
     line-height: 1;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
+}
+
+.btn-table-del {
+    background: #FEF2F2;
+    color: #DC2626;
+    border: 1.5px solid #FECACA;
+    cursor: pointer;
+}
+
+.btn-table-del:hover {
+    background: #FEE2E2;
+    border-color: #F87171;
+    color: #991B1B;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(220, 38, 38, 0.15);
+}
+
+.btn-table-resi {
+    background: #F0F9FF;
+    color: #0284C7;
+    border: 1.5px solid #BAE6FD;
+    cursor: pointer;
+}
+
+.btn-table-resi:hover {
+    background: #E0F2FE;
+    border-color: #38BDF8;
+    color: #0369A1;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(2, 132, 199, 0.15);
 }
 
 .btn-table-void {
@@ -4897,7 +5060,7 @@ input[type="password"]::-ms-clear {
 
 .table-action-btns-row {
     display: inline-flex;
-    gap: 6px;
+    gap: 4px;
     align-items: center;
     justify-content: center;
     white-space: nowrap;
