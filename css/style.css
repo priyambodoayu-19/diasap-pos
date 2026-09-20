@@ -730,9 +730,31 @@ input:checked + .slider:before {
     background: var(--card-bg);
     display: flex;
     flex-direction: column;
-    padding: 20px;
+    padding: 20px 20px 40px 20px;
     box-shadow: -5px 0 25px rgba(0,0,0,0.06);
     position: relative;
+    height: 100vh;
+    max-height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
+}
+
+.cart-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.cart-container::-webkit-scrollbar-track {
+    background: #F8FAFC;
+}
+
+.cart-container::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 10px;
+}
+
+.cart-container::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
 }
 
 .cart-header-row {
@@ -851,7 +873,8 @@ input:checked + .slider:before {
 
 /* Cart Items List */
 .cart-items {
-    flex-grow: 1;
+    flex: 0 0 auto;
+    max-height: 260px;
     overflow-y: auto;
     margin-bottom: 14px;
     padding-right: 4px;
@@ -1040,6 +1063,8 @@ input:checked + .slider:before {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    flex-shrink: 0;
+    padding-bottom: 30px;
 }
 
 .total-row {
@@ -1183,8 +1208,8 @@ input:checked + .slider:before {
     background: #FFFFFF;
     border: 2px dashed #CBD5E1;
     border-radius: var(--radius-md);
-    padding: 12px 14px;
-    margin: 10px 0;
+    padding: 10px 12px;
+    margin: 8px 0;
     text-align: center;
     box-sizing: border-box;
     display: flex;
@@ -1193,20 +1218,23 @@ input:checked + .slider:before {
     justify-content: center;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     transition: all 0.2s ease;
+    flex-shrink: 0;
 }
 
 .qris-img-container {
     width: 100%;
+    max-height: 220px;
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     overflow: hidden;
 }
 
 .qris-display-img {
-    width: 100%;
+    width: auto;
     max-width: 100%;
+    max-height: 220px;
     height: auto;
     object-fit: contain;
     display: block;
@@ -1276,6 +1304,49 @@ input:checked + .slider:before {
     box-shadow: var(--shadow-lg);
 }
 
+/* Transfer Bank Info Card */
+.transfer-box {
+    width: 100%;
+    background: #F8FAFC;
+    border: 1.5px dashed #CBD5E1;
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    margin: 8px 0;
+    text-align: center;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.transfer-box-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.transfer-bank-name {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--secondary);
+}
+
+.transfer-acc-number {
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--primary);
+    letter-spacing: 1px;
+    font-family: monospace;
+    margin: 2px 0;
+}
+
+.transfer-acc-holder {
+    font-size: 12px;
+    color: #64748B;
+    font-weight: 600;
+}
+
 /* Checkout Button (Sesuai 'Place Order' di Referensi Visual) */
 .checkout-btn {
     width: 100%;
@@ -1294,6 +1365,9 @@ input:checked + .slider:before {
     gap: 8px;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 4px 14px rgba(45, 113, 248, 0.35);
+    flex-shrink: 0;
+    margin-top: 4px;
+    margin-bottom: 8px;
 }
 
 .checkout-btn:hover:not(:disabled) {

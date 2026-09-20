@@ -47,10 +47,27 @@ class PaymentManager {
             if (cashGroup) cashGroup.style.display = 'none';
             if (quickCash) quickCash.style.display = 'none';
             if (qrisInfo) qrisInfo.style.display = 'none';
-            if (transferInfo) transferInfo.style.display = 'block';
+            if (transferInfo) {
+                transferInfo.style.display = 'block';
+                const settings = (typeof settingsManager !== 'undefined' && settingsManager.settings) ? settingsManager.settings : CONFIG;
+                const bankEl = document.getElementById('cartTransferBankName');
+                const accEl = document.getElementById('cartTransferAccNo');
+                const holderEl = document.getElementById('cartTransferAccHolder');
+                if (bankEl) bankEl.textContent = `BANK ${(settings.bankName || CONFIG.BANK_NAME || 'BCA').toUpperCase()}`;
+                if (accEl) accEl.textContent = settings.bankAccountNo || CONFIG.BANK_ACCOUNT_NO || '-';
+                if (holderEl) holderEl.textContent = settings.bankAccountHolder ? `a.n. ${settings.bankAccountHolder}` : '';
+            }
         }
 
         this.calculate();
+
+        // Otomatis scroll sedikit ke tombol selesai agar kasir tidak terpotong tampilannya
+        setTimeout(() => {
+            const checkoutBtn = document.getElementById('checkoutBtn');
+            if (checkoutBtn) {
+                checkoutBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }, 50);
     }
 
     setQuickCash(amount) {

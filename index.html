@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
     <!-- Stylesheet POS -->
-    <link rel="stylesheet" href="css/style.css?v=6.4">
+    <link rel="stylesheet" href="css/style.css?v=6.5">
     <!-- Pustaka Eksternal: Excel XLSX Export, Canvas Struk, PDF Generator -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -366,6 +366,14 @@
                         </svg>
                         <span>Perbesar Layar QRIS</span>
                     </button>
+                </div>
+
+                <!-- Info Rekening Transfer Bank (Jika dipilih) -->
+                <div class="transfer-box" id="transferInfoGroup" style="display: none;">
+                    <div class="transfer-box-title">Rekening Pembayaran:</div>
+                    <div class="transfer-bank-name" id="cartTransferBankName">BANK BCA</div>
+                    <div class="transfer-acc-number" id="cartTransferAccNo">1234567890</div>
+                    <div class="transfer-acc-holder" id="cartTransferAccHolder">a.n. DIASAP RESTO</div>
                 </div>
 
                 <!-- Status Kembalian -->
@@ -1416,16 +1424,16 @@
     </div>
 
     <!-- ================= JAVASCRIPT MODULES ================= -->
-    <script src="js/config.js?v=6.4"></script>
-    <script src="js/sound.js?v=6.4"></script>
-    <script src="js/db.js?v=6.4"></script>
-    <script src="js/settings.js?v=6.4"></script>
-    <script src="js/inventory.js?v=6.4"></script>
-    <script src="js/products.js?v=6.4"></script>
-    <script src="js/cart.js?v=6.4"></script>
-    <script src="js/payment.js?v=6.4"></script>
-    <script src="js/auth.js?v=6.4"></script>
-    <script src="js/admin.js?v=6.4"></script>
-    <script src="js/app.js?v=6.4"></script>
+    <script src="js/config.js?v=6.5"></script>
+    <script src="js/sound.js?v=6.5"></script>
+    <script src="js/db.js?v=6.5"></script>
+    <script src="js/settings.js?v=6.5"></script>
+    <script src="js/inventory.js?v=6.5"></script>
+    <script src="js/products.js?v=6.5"></script>
+    <script src="js/cart.js?v=6.5"></script>
+    <script src="js/payment.js?v=6.5"></script>
+    <script src="js/auth.js?v=6.5"></script>
+    <script src="js/admin.js?v=6.5"></script>
+    <script src="js/app.js?v=6.5"></script>
 </body>
 </html>
