@@ -522,11 +522,12 @@ input:checked + .slider:before {
     transform: scale(0.98);
 }
 
-/* Card Visual / Thumbnail Box */
+/* Card Visual / Thumbnail Box (Strict 1:1 Ratio) */
 .card-visual-wrapper {
     position: relative;
     width: 100%;
-    height: 115px;
+    aspect-ratio: 1 / 1;
+    height: auto;
     border-radius: var(--radius-md);
     background: #F8FAFC;
     display: flex;
@@ -535,6 +536,20 @@ input:checked + .slider:before {
     margin-bottom: 12px;
     overflow: hidden;
     transition: background-color 0.25s ease;
+}
+
+.product-card-img {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    display: block;
+    border-radius: var(--radius-md);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.product-card:hover .product-card-img {
+    transform: scale(1.05);
 }
 
 .product-card:hover .card-visual-wrapper {
@@ -909,7 +924,39 @@ input:checked + .slider:before {
     font-size: 12px;
     color: var(--text-muted);
     display: flex;
+    align-items: center;
+    justify-content: space-between;
     gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+
+.item-price-calc-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.cart-item-old-price {
+    color: #94A3B8;
+    font-size: 11px;
+}
+
+.cart-item-promo-price {
+    color: var(--promo);
+    font-weight: 800;
+}
+
+.cart-item-saving-pill {
+    background: #FEF2F2;
+    color: var(--promo);
+    font-size: 10px;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 4px;
+    border: 1px solid #FECACA;
+    display: inline-block;
 }
 
 .item-subtotal-meta strong {
@@ -1428,6 +1475,13 @@ input:checked + .slider:before {
     display: flex;
     justify-content: space-between;
     font-size: 12px;
+}
+
+.item-promo-savings-note {
+    font-size: 11px;
+    font-weight: 700;
+    color: #166534;
+    margin-top: 2px;
 }
 
 .receipt-calc-row {
@@ -3002,6 +3056,135 @@ input[type="password"]::-ms-clear {
     border-color: var(--primary-hover);
 }
 
+/* ==========================================================================
+   VISUAL MENU SETTING (UPLOAD FOTO 1:1 & FALLBACK EMOJI)
+   ========================================================================== */
+.admin-visual-box-wrapper {
+    background: #F8FAFC;
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+}
+
+.visual-section-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    color: var(--secondary);
+    font-size: 13px;
+}
+
+.admin-prod-visual-setting {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.admin-prod-visual-preview {
+    width: 100px;
+    height: 100px;
+    min-width: 100px;
+    min-height: 100px;
+    aspect-ratio: 1 / 1;
+    border-radius: 12px;
+    background: white;
+    border: 2px dashed #CBD5E1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.admin-prod-visual-preview img {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    display: block;
+}
+
+.admin-prod-emoji-large {
+    font-size: 46px;
+    line-height: 1;
+}
+
+.admin-prod-visual-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-grow: 1;
+}
+
+.visual-upload-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-visual-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.btn-upload-photo {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.btn-upload-photo:hover {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+.btn-delete-photo {
+    background: #FEE2E2;
+    color: #DC2626;
+    border-color: #FECACA;
+}
+
+.btn-delete-photo:hover {
+    background: #FCA5A5;
+    color: #991B1B;
+}
+
+.visual-emoji-fallback {
+    background: white;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+}
+
+.emoji-fallback-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.admin-prod-thumb {
+    width: 42px;
+    height: 42px;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
 /* Floating Toast Notification */
 .admin-toast {
     position: fixed;
@@ -4219,6 +4402,28 @@ input[type="password"]::-ms-clear {
     color: var(--primary);
 }
 
+.variant-final-price.promo-text {
+    color: var(--promo);
+}
+
+.variant-old-price {
+    display: block;
+    font-size: 11px;
+    color: #94A3B8;
+}
+
+.variant-saving-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--promo);
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    border-radius: 4px;
+    padding: 1px 4px;
+    margin-top: 2px;
+}
+
 .variant-extra-tag {
     font-size: 11px;
     color: #10B981;
@@ -4952,6 +5157,7 @@ input[type="password"]::-ms-clear {
 .receipt-paper.bill-paper .receipt-divider,
 .receipt-paper.bill-paper .receipt-info-row,
 .receipt-paper.bill-paper .receipt-item-row,
+.receipt-paper.bill-paper .item-promo-savings-note,
 .receipt-paper.bill-paper .receipt-calc-row,
 .receipt-paper.bill-paper .bill-payment-section,
 .receipt-paper.bill-paper .bill-transfer-card,

@@ -135,6 +135,7 @@ class DatabaseService {
                        COALESCE(raw_material_amount, 0)::numeric as "rawMaterialAmount",
                        COALESCE(direct_stock, 0)::numeric as "directStock",
                        image_emoji as "emoji",
+                       COALESCE(image_url, '') as "imageUrl",
                        COALESCE(sort_order, 10)::integer as "sortOrder",
                        COALESCE(variants, '[]'::jsonb) as "variants"
                 FROM products 
@@ -153,6 +154,7 @@ class DatabaseService {
                     rawMaterialId: r.rawMaterialId || '',
                     rawMaterialAmount: Number(r.rawMaterialAmount) || 0,
                     directStock: Number(r.directStock) || 0,
+                    imageUrl: r.imageUrl || '',
                     sortOrder: Number(r.sortOrder) || 10,
                     variants: Array.isArray(r.variants) ? r.variants : (typeof r.variants === 'string' ? JSON.parse(r.variants) : [])
                 }));
@@ -211,8 +213,8 @@ class DatabaseService {
         // 1. Simpan ke Neon PostgreSQL Cloud
         try {
             await this.query(`
-                INSERT INTO products (id, name, description, category, price_normal, price_promo, cogs, stock_type, raw_material_id, raw_material_amount, direct_stock, image_emoji, sort_order, variants, is_active)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, TRUE)
+                INSERT INTO products (id, name, description, category, price_normal, price_promo, cogs, stock_type, raw_material_id, raw_material_amount, direct_stock, image_emoji, image_url, sort_order, variants, is_active)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, TRUE)
                 ON CONFLICT (id) DO UPDATE SET
                     name = EXCLUDED.name,
                     description = EXCLUDED.description,
@@ -225,6 +227,7 @@ class DatabaseService {
                     raw_material_amount = EXCLUDED.raw_material_amount,
                     direct_stock = EXCLUDED.direct_stock,
                     image_emoji = EXCLUDED.image_emoji,
+                    image_url = EXCLUDED.image_url,
                     sort_order = EXCLUDED.sort_order,
                     variants = EXCLUDED.variants,
                     is_active = TRUE;
@@ -241,6 +244,7 @@ class DatabaseService {
                 product.rawMaterialAmount || 0,
                 product.directStock || 0,
                 product.emoji || '🍗',
+                product.imageUrl || '',
                 product.sortOrder || 10,
                 JSON.stringify(product.variants || [])
             ]);
@@ -343,14 +347,16 @@ class DatabaseService {
             if (newOrderId && items && items.length > 0) {
                 // Simpan item-item transaksi
                 for (const item of items) {
+                    const priceNormalVal = Number(item.normalPriceLocked || item.priceNormal || item.priceLocked) || 0;
                     await this.query(`
-                        INSERT INTO order_items (order_id, product_id, product_name, price_locked, is_promo, quantity, item_total, cogs_locked, variant_id, variant_name, ingredients_snapshot)
-                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);
+                        INSERT INTO order_items (order_id, product_id, product_name, price_locked, price_normal, is_promo, quantity, item_total, cogs_locked, variant_id, variant_name, ingredients_snapshot)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);
                     `, [
                         newOrderId,
                         item.id,
                         item.name,
                         item.priceLocked,
+                        priceNormalVal,
                         item.isPromo || false,
                         item.qty,
                         item.priceLocked * item.qty,
@@ -409,6 +415,7 @@ class DatabaseService {
                                     'name', oi.product_name,
                                     'qty', oi.quantity,
                                     'priceLocked', oi.price_locked,
+                                    'priceNormal', COALESCE(oi.price_normal, oi.price_locked),
                                     'isPromo', oi.is_promo,
                                     'cogsLocked', COALESCE(oi.cogs_locked, 0),
                                     'variantId', COALESCE(oi.variant_id, ''),

@@ -40,6 +40,7 @@ class CartManager {
         // Kunci harga saat item ditambahkan
         const isPromoActive = productManager.isPromoMode;
         const basePrice = isPromoActive ? Number(product.pricePromo) : Number(product.priceNormal);
+        const normalPrice = Number(product.priceNormal) + extraPrice;
         const priceLocked = basePrice + extraPrice;
         const cogsLocked = (Number(product.cogs) || 0) + extraCogs;
         const displayName = variantName ? `${product.name} (${variantName})` : product.name;
@@ -84,7 +85,10 @@ class CartManager {
                 variantName: variantName,
                 ingredients: ingredients,
                 emoji: product.emoji || '🍗',
+                imageUrl: product.imageUrl || '',
                 priceLocked: priceLocked,
+                priceNormal: normalPrice,
+                normalPriceLocked: normalPrice,
                 cogsLocked: cogsLocked,
                 isPromo: isPromoActive,
                 qty: qty
@@ -295,6 +299,10 @@ class CartManager {
 
         cartList.innerHTML = this.cart.map(item => {
             const itemTotal = item.priceLocked * item.qty;
+            const normalPrice = item.normalPriceLocked || item.priceNormal || item.priceLocked;
+            const hasPromoDiscount = item.isPromo && normalPrice > item.priceLocked;
+            const totalItemSavings = (normalPrice - item.priceLocked) * item.qty;
+
             const promoBadge = item.isPromo 
                 ? `<span class="cart-promo-badge">PROMO</span>` 
                 : `<span class="cart-normal-badge">NORMAL</span>`;
@@ -315,7 +323,15 @@ class CartManager {
                         </div>
                         ${variantBadge ? `<div style="margin-top: 2px;">${variantBadge}</div>` : ''}
                         <div class="item-price-meta">
-                            <span>@${formatRupiah(item.priceLocked)}</span>
+                            <div class="item-price-calc-wrap">
+                                ${hasPromoDiscount ? `
+                                    <span class="cart-item-old-price"><del>${formatRupiah(normalPrice)}</del></span>
+                                    <span class="cart-item-promo-price">@${formatRupiah(item.priceLocked)}</span>
+                                    <span class="cart-item-saving-pill">Hemat ${formatRupiah(totalItemSavings)}</span>
+                                ` : `
+                                    <span>@${formatRupiah(item.priceLocked)}</span>
+                                `}
+                            </div>
                             <span class="item-subtotal-meta">Total: <strong>${formatRupiah(itemTotal)}</strong></span>
                         </div>
                     </div>
@@ -342,6 +358,8 @@ class CartManager {
 
     renderDiscountUI() {
         const subtotalEl = document.getElementById('cartSubtotalDisplay');
+        const promoRow = document.getElementById('cartPromoDiscountRow');
+        const promoDisplay = document.getElementById('cartPromoDiscountDisplay');
         const discRow = document.getElementById('cartDiscountRow');
         const discAmountEl = document.getElementById('cartDiscountAmountDisplay');
         const grandTotalEl = document.getElementById('grandTotal');
@@ -350,8 +368,23 @@ class CartManager {
         const discAmount = this.getFinalDiscountAmount();
         const grandTotal = this.getGrandTotal();
 
+        // Hitung total penghematan promo otomatis
+        const totalPromoSavings = this.cart.reduce((sum, item) => {
+            const normal = item.normalPriceLocked || item.priceNormal || item.priceLocked;
+            return sum + (item.isPromo && normal > item.priceLocked ? (normal - item.priceLocked) * item.qty : 0);
+        }, 0);
+
         if (subtotalEl) subtotalEl.textContent = formatRupiah(subtotal);
         if (grandTotalEl) grandTotalEl.textContent = formatRupiah(grandTotal);
+
+        if (promoRow && promoDisplay) {
+            if (totalPromoSavings > 0) {
+                promoRow.style.display = 'flex';
+                promoDisplay.textContent = `- ${formatRupiah(totalPromoSavings)}`;
+            } else {
+                promoRow.style.display = 'none';
+            }
+        }
 
         if (discRow && discAmountEl) {
             if (discAmount > 0) {

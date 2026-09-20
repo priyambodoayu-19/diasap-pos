@@ -82,6 +82,16 @@ class AdminManager {
                 this.toggleVariantsSection(e.target.checked);
             });
         }
+
+        // Upload Foto Menu 1:1
+        const imageFileInput = document.getElementById('adminProdImageFile');
+        if (imageFileInput) {
+            imageFileInput.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    this.handleProductPhotoUpload(e.target.files[0]);
+                }
+            });
+        }
     }
 
     updateStockFormVisibility() {
@@ -292,7 +302,11 @@ class AdminManager {
                     </td>
                     <td>
                         <div class="admin-prod-identity">
-                            <span class="admin-prod-emoji">${getValidProductEmoji(p.emoji, p.category, p.id)}</span>
+                            ${p.imageUrl ? `
+                                <img src="${p.imageUrl}" alt="${p.name}" class="admin-prod-thumb">
+                            ` : `
+                                <span class="admin-prod-emoji">${getValidProductEmoji(p.emoji, p.category, p.id)}</span>
+                            `}
                             <div>
                                 <div class="admin-prod-name">
                                     ${p.name}
@@ -555,8 +569,13 @@ class AdminManager {
         const deleteBtn = document.getElementById('adminBtnDeleteProduct');
         if (deleteBtn) deleteBtn.style.display = 'none';
 
-        // Set default emoji
+        // Set default foto & emoji
+        const imgUrlInput = document.getElementById('adminProdImageUrl');
+        if (imgUrlInput) imgUrlInput.value = '';
+        const fileInput = document.getElementById('adminProdImageFile');
+        if (fileInput) fileInput.value = '';
         this.setEmojiValue('🍗');
+        this.updateVisualPreview();
         this.updateDiscountPreview();
 
         if (modal) modal.classList.add('active');
@@ -595,6 +614,13 @@ class AdminManager {
         if (emojiInput) emojiInput.value = getValidProductEmoji(product.emoji, product.category, product.id);
         if (descInput) descInput.value = product.desc || '';
         if (sortOrderInput) sortOrderInput.value = product.sortOrder || 10;
+
+        // Prefill Foto Menu 1:1
+        const imgUrlInput = document.getElementById('adminProdImageUrl');
+        if (imgUrlInput) imgUrlInput.value = product.imageUrl || '';
+        const fileInput = document.getElementById('adminProdImageFile');
+        if (fileInput) fileInput.value = '';
+        this.updateVisualPreview();
 
         // Tampilkan tombol hapus saat mode edit
         if (deleteBtn) {
@@ -830,6 +856,79 @@ class AdminManager {
     setEmojiValue(emoji) {
         const input = document.getElementById('adminProdEmoji');
         if (input) input.value = emoji;
+        this.updateVisualPreview();
+    }
+
+    // Upload & Auto-Crop Foto Menu 1:1
+    handleProductPhotoUpload(file) {
+        if (!file || !file.type.startsWith('image/')) {
+            alert('Silakan pilih file gambar (JPG, PNG, atau WebP).');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                // Center-crop ke rasio 1:1 dan resize ke 500x500px agar ringan dan tajam
+                const canvas = document.createElement('canvas');
+                const targetSize = 500;
+                canvas.width = targetSize;
+                canvas.height = targetSize;
+                const ctx = canvas.getContext('2d');
+
+                const minDim = Math.min(img.width, img.height);
+                const sx = (img.width - minDim) / 2;
+                const sy = (img.height - minDim) / 2;
+
+                ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, targetSize, targetSize);
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+                const hiddenInput = document.getElementById('adminProdImageUrl');
+                if (hiddenInput) hiddenInput.value = dataUrl;
+                this.updateVisualPreview();
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    removeProductPhoto() {
+        const hiddenInput = document.getElementById('adminProdImageUrl');
+        const fileInput = document.getElementById('adminProdImageFile');
+        if (hiddenInput) hiddenInput.value = '';
+        if (fileInput) fileInput.value = '';
+        this.updateVisualPreview();
+    }
+
+    updateVisualPreview() {
+        const imageUrl = document.getElementById('adminProdImageUrl')?.value || '';
+        const emojiInput = document.getElementById('adminProdEmoji')?.value || '🍗';
+        const previewImg = document.getElementById('adminProdImagePreview');
+        const previewEmoji = document.getElementById('adminProdEmojiPreview');
+        const removeBtn = document.getElementById('adminBtnRemovePhoto');
+        const uploadBtnLabel = document.getElementById('adminProdUploadBtnLabel');
+
+        if (imageUrl) {
+            if (previewImg) {
+                previewImg.src = imageUrl;
+                previewImg.style.display = 'block';
+            }
+            if (previewEmoji) previewEmoji.style.display = 'none';
+            if (removeBtn) removeBtn.style.display = 'inline-flex';
+            if (uploadBtnLabel) uploadBtnLabel.textContent = 'Ganti Foto (1:1)';
+        } else {
+            if (previewImg) {
+                previewImg.src = '';
+                previewImg.style.display = 'none';
+            }
+            if (previewEmoji) {
+                previewEmoji.textContent = emojiInput.trim() || '🍗';
+                previewEmoji.style.display = 'block';
+            }
+            if (removeBtn) removeBtn.style.display = 'none';
+            if (uploadBtnLabel) uploadBtnLabel.textContent = 'Pilih Foto Menu (1:1)';
+        }
     }
 
     // ================= SIMPAN & HAPUS PRODUK =================
@@ -841,6 +940,7 @@ class AdminManager {
         const name = document.getElementById('adminProdName').value.trim();
         const category = document.getElementById('adminProdCategory').value;
         const emoji = document.getElementById('adminProdEmoji').value.trim() || '🍗';
+        const imageUrl = document.getElementById('adminProdImageUrl')?.value || '';
         const desc = document.getElementById('adminProdDesc').value.trim();
         const cogs = parseFloat(document.getElementById('adminProdCogs').value) || 0;
         const priceNormal = parseFloat(document.getElementById('adminProdPriceNormal').value) || 0;
@@ -952,6 +1052,7 @@ class AdminManager {
             name,
             category,
             emoji,
+            imageUrl,
             desc,
             cogs,
             priceNormal,

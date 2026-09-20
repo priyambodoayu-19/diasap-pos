@@ -128,9 +128,13 @@ class ProductManager {
                     
                     <div class="card-visual-wrapper">
                         ${stockBadge ? `<div class="card-stock-tag">${stockBadge}</div>` : ''}
-                        <div class="product-visual-circle">
-                            <span class="product-emoji">${emojiDisplay}</span>
-                        </div>
+                        ${product.imageUrl ? `
+                            <img src="${product.imageUrl}" alt="${product.name}" class="product-card-img" loading="lazy">
+                        ` : `
+                            <div class="product-visual-circle">
+                                <span class="product-emoji">${emojiDisplay}</span>
+                            </div>
+                        `}
                     </div>
 
                     <div class="card-body-content">
@@ -208,10 +212,13 @@ class VariantSelectManager {
 
         const isPromo = productManager.isPromoMode;
         const basePrice = isPromo ? Number(this.currentProduct.pricePromo) : Number(this.currentProduct.priceNormal);
+        const normalBase = Number(this.currentProduct.priceNormal);
+        const isDiscounted = isPromo && normalBase > basePrice;
 
         container.innerHTML = this.currentProduct.variants.map((v, idx) => {
             const extra = Number(v.priceExtra) || 0;
             const finalPrice = basePrice + extra;
+            const normalFinal = normalBase + extra;
             const isSelected = (this.selectedVariant && this.selectedVariant.id === v.id) || (!this.selectedVariant && idx === 0);
 
             // Cek ketersediaan bahan baku untuk varian ini
@@ -247,7 +254,13 @@ class VariantSelectManager {
                         ${ingredientsDesc ? `<div class="variant-ingredients-text">🌾 Resep: ${ingredientsDesc}</div>` : ''}
                     </div>
                     <div class="variant-price-col">
-                        <span class="variant-final-price">${formatRupiah(finalPrice)}</span>
+                        ${isDiscounted ? `
+                            <span class="variant-old-price"><del>${formatRupiah(normalFinal)}</del></span>
+                            <span class="variant-final-price promo-text">${formatRupiah(finalPrice)}</span>
+                            <span class="variant-saving-badge">Hemat ${formatRupiah(normalBase - basePrice)}</span>
+                        ` : `
+                            <span class="variant-final-price">${formatRupiah(finalPrice)}</span>
+                        `}
                         ${extra > 0 ? `<span class="variant-extra-tag">+${formatRupiah(extra)}</span>` : ''}
                     </div>
                 </div>

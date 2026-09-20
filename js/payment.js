@@ -282,23 +282,47 @@ class PaymentManager {
                     </div>
                 ` : ''}
 
-                <div class="receipt-divider">--------------------------------</div>
-
                 <div class="receipt-items">
-                    ${(order.items || []).map(item => `
-                        <div class="receipt-item-row">
-                            <div class="item-name-line">
-                                <strong>${item.name}</strong> ${item.isPromo ? '(PROMO)' : ''}
+                    ${(order.items || []).map(item => {
+                        const normalPrice = Number(item.priceNormal || item.normalPriceLocked || item.priceLocked) || item.priceLocked;
+                        const hasPromoDiscount = item.isPromo && normalPrice > item.priceLocked;
+                        const itemSavings = (normalPrice - item.priceLocked) * item.qty;
+                        return `
+                            <div class="receipt-item-row">
+                                <div class="item-name-line">
+                                    <strong>${item.name}</strong> ${item.isPromo ? '(PROMO)' : ''}
+                                </div>
+                                <div class="item-calc-line">
+                                    <span>
+                                        ${item.qty} x ${formatRupiah(item.priceLocked)}
+                                        ${hasPromoDiscount ? ` <span style="text-decoration: line-through; color: #64748B; font-size: 11px;">${formatRupiah(normalPrice)}</span>` : ''}
+                                    </span>
+                                    <span><strong>${formatRupiah(item.qty * item.priceLocked)}</strong></span>
+                                </div>
+                                ${hasPromoDiscount ? `
+                                    <div class="item-promo-savings-note">
+                                        * Hemat Promo: -${formatRupiah(itemSavings)} (Diskon ${formatRupiah(normalPrice - item.priceLocked)}/item)
+                                    </div>
+                                ` : ''}
                             </div>
-                            <div class="item-calc-line">
-                                <span>${item.qty} x ${formatRupiah(item.priceLocked)}</span>
-                                <span><strong>${formatRupiah(item.qty * item.priceLocked)}</strong></span>
-                            </div>
-                        </div>
-                    `).join('')}
+                        `;
+                    }).join('')}
                 </div>
 
                 <div class="receipt-divider">================================</div>
+
+                ${(() => {
+                    const orderPromoSavings = (order.items || []).reduce((sum, item) => {
+                        const normal = Number(item.priceNormal || item.normalPriceLocked || item.priceLocked) || item.priceLocked;
+                        return sum + (item.isPromo && normal > item.priceLocked ? (normal - item.priceLocked) * item.qty : 0);
+                    }, 0);
+                    return orderPromoSavings > 0 ? `
+                        <div class="receipt-info-row" style="font-size: 12px; color: #166534; font-weight: bold; margin-bottom: 3px;">
+                            <span>Total Hemat Promo:</span>
+                            <span>-${formatRupiah(orderPromoSavings)}</span>
+                        </div>
+                    ` : '';
+                })()}
 
                 ${finalDiscount > 0 ? `
                     <div class="receipt-info-row" style="font-size: 12px; margin-bottom: 3px;">
@@ -578,20 +602,46 @@ class PaymentManager {
                 <div class="receipt-divider">--------------------------------</div>
 
                 <div class="receipt-items">
-                    ${cartManager.cart.map(item => `
-                        <div class="receipt-item-row">
-                            <div class="item-name-line">
-                                <strong>${item.name}</strong> ${item.isPromo ? '(PROMO)' : ''}
+                    ${cartManager.cart.map(item => {
+                        const normalPrice = Number(item.normalPriceLocked || item.priceNormal || item.priceLocked) || item.priceLocked;
+                        const hasPromoDiscount = item.isPromo && normalPrice > item.priceLocked;
+                        const itemSavings = (normalPrice - item.priceLocked) * item.qty;
+                        return `
+                            <div class="receipt-item-row">
+                                <div class="item-name-line">
+                                    <strong>${item.name}</strong> ${item.isPromo ? '(PROMO)' : ''}
+                                </div>
+                                <div class="item-calc-line">
+                                    <span>
+                                        ${item.qty} x ${formatRupiah(item.priceLocked)}
+                                        ${hasPromoDiscount ? ` <span style="text-decoration: line-through; color: #64748B; font-size: 11px;">${formatRupiah(normalPrice)}</span>` : ''}
+                                    </span>
+                                    <span><strong>${formatRupiah(item.qty * item.priceLocked)}</strong></span>
+                                </div>
+                                ${hasPromoDiscount ? `
+                                    <div class="item-promo-savings-note">
+                                        * Hemat Promo: -${formatRupiah(itemSavings)} (Diskon ${formatRupiah(normalPrice - item.priceLocked)}/item)
+                                    </div>
+                                ` : ''}
                             </div>
-                            <div class="item-calc-line">
-                                <span>${item.qty} x ${formatRupiah(item.priceLocked)}</span>
-                                <span><strong>${formatRupiah(item.qty * item.priceLocked)}</strong></span>
-                            </div>
-                        </div>
-                    `).join('')}
+                        `;
+                    }).join('')}
                 </div>
 
                 <div class="receipt-divider">================================</div>
+
+                ${(() => {
+                    const totalPromoSavings = cartManager.cart.reduce((sum, item) => {
+                        const normal = Number(item.normalPriceLocked || item.priceNormal || item.priceLocked) || item.priceLocked;
+                        return sum + (item.isPromo && normal > item.priceLocked ? (normal - item.priceLocked) * item.qty : 0);
+                    }, 0);
+                    return totalPromoSavings > 0 ? `
+                        <div class="receipt-info-row" style="font-size: 12px; color: #166534; font-weight: bold; margin-bottom: 3px;">
+                            <span>Total Hemat Promo:</span>
+                            <span>-${formatRupiah(totalPromoSavings)}</span>
+                        </div>
+                    ` : '';
+                })()}
 
                 ${finalDiscount > 0 ? `
                     <div class="receipt-info-row" style="margin-bottom: 3px;">

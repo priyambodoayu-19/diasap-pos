@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
     <!-- Stylesheet POS -->
-    <link rel="stylesheet" href="css/style.css?v=5.4">
+    <link rel="stylesheet" href="css/style.css?v=5.5">
     <!-- Pustaka Eksternal: Excel XLSX Export, Canvas Struk, PDF Generator -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -237,6 +237,12 @@
                         <input type="number" id="finalDiscountValue" class="form-control disc-val-input" placeholder="Diskon (Rp) misal: 5000" min="0" step="1">
                         <input type="text" id="finalDiscountNote" class="form-control disc-note-input" placeholder="Catatan (misal: Ultah / Khusus)">
                     </div>
+                </div>
+
+                <!-- Potongan Diskon Promo -->
+                <div class="discount-deduct-row promo-deduct-row" id="cartPromoDiscountRow" style="display: none;">
+                    <span>Hemat Promo:</span>
+                    <span class="disc-amount-text" id="cartPromoDiscountDisplay" style="color: var(--promo);">- Rp 0</span>
                 </div>
 
                 <!-- Potongan Diskon -->
@@ -602,9 +608,9 @@
 
             <form id="adminProductForm">
                 <div class="modal-body">
-                    <!-- Baris 1: ID, Urutan & Icon Emoji -->
+                    <!-- Baris 1: ID & Urutan Tampilan -->
                     <div class="form-row">
-                        <div class="form-group" style="flex: 1;">
+                        <div class="form-group" style="flex: 1.2;">
                             <label for="adminProdId">Kode Menu / SKU <span class="text-danger">*</span></label>
                             <input type="text" id="adminProdId" class="form-control font-bold" placeholder="Contoh: E, M3, T3" required autocomplete="off">
                             <small class="form-help">Kode unik / SKU menu di POS (dapat diubah)</small>
@@ -614,19 +620,60 @@
                             <input type="number" id="adminProdSortOrder" class="form-control" placeholder="10" min="1" step="1" value="10">
                             <small class="form-help">Urutan kartu di kasir</small>
                         </div>
-                        <div class="form-group" style="flex: 1.2;">
-                            <label for="adminProdEmoji">Icon Emoji</label>
-                            <div class="emoji-input-wrapper">
-                                <input type="text" id="adminProdEmoji" class="form-control emoji-input" placeholder="🍗" value="🍗" maxlength="4">
-                                <div class="emoji-quick-pills">
-                                    <button type="button" class="btn-emoji-quick" onclick="adminManager.setEmojiValue('🍗')">🍗</button>
-                                    <button type="button" class="btn-emoji-quick" onclick="adminManager.setEmojiValue('🍖')">🍖</button>
-                                    <button type="button" class="btn-emoji-quick" onclick="adminManager.setEmojiValue('🥩')">🥩</button>
-                                    <button type="button" class="btn-emoji-quick" onclick="adminManager.setEmojiValue('🍱')">🍱</button>
-                                    <button type="button" class="btn-emoji-quick" onclick="adminManager.setEmojiValue('🍹')">🍹</button>
-                                    <button type="button" class="btn-emoji-quick" onclick="adminManager.setEmojiValue('💧')">💧</button>
-                                    <button type="button" class="btn-emoji-quick" onclick="adminManager.setEmojiValue('🍚')">🍚</button>
-                                    <button type="button" class="btn-emoji-quick" onclick="adminManager.setEmojiValue('🌶️')">🌶️</button>
+                    </div>
+
+                    <!-- Baris Visual Menu: Upload Foto 1:1 atau Icon Emoji -->
+                    <div class="form-group admin-visual-box-wrapper">
+                        <label class="font-bold visual-section-label">
+                            <span>📸 Visual Menu (Foto Rasio 1:1 atau Icon Emoji)</span>
+                            <span class="text-muted" style="font-size: 11px; font-weight: normal;">Format JPG, PNG, WebP</span>
+                        </label>
+                        <div class="admin-prod-visual-setting">
+                            <!-- 1:1 Square Preview Box -->
+                            <div class="admin-prod-visual-preview" id="adminProdVisualPreviewBox">
+                                <img id="adminProdImagePreview" src="" alt="Preview Foto Menu" style="display: none;">
+                                <span id="adminProdEmojiPreview" class="admin-prod-emoji-large">🍗</span>
+                            </div>
+
+                            <div class="admin-prod-visual-controls">
+                                <!-- Upload Buttons Area -->
+                                <div class="visual-upload-actions">
+                                    <input type="file" id="adminProdImageFile" accept="image/png, image/jpeg, image/webp" style="display: none;">
+                                    <input type="hidden" id="adminProdImageUrl" value="">
+                                    <button type="button" class="btn-visual-action btn-upload-photo" onclick="document.getElementById('adminProdImageFile').click()">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                            <polyline points="21 15 16 10 5 21"></polyline>
+                                        </svg>
+                                        <span id="adminProdUploadBtnLabel">Pilih Foto Menu (1:1)</span>
+                                    </button>
+                                    <button type="button" class="btn-visual-action btn-delete-photo" id="adminBtnRemovePhoto" style="display: none;" onclick="adminManager.removeProductPhoto()">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        </svg>
+                                        <span>Hapus Foto</span>
+                                    </button>
+                                </div>
+
+                                <!-- Fallback Emoji Picker -->
+                                <div class="visual-emoji-fallback">
+                                    <div class="emoji-fallback-header">
+                                        <span style="font-size: 12px; font-weight: 700; color: var(--text-dark);">Icon Emoji Alternatif:</span>
+                                        <input type="text" id="adminProdEmoji" class="form-control emoji-input" placeholder="🍗" value="🍗" maxlength="4" style="width: 48px; text-align: center; padding: 4px 6px;" oninput="adminManager.updateVisualPreview()">
+                                    </div>
+                                    <div class="emoji-quick-pills">
+                                        <button type="button" class="btn-emoji-quick" onclick="adminManager.setEmojiValue('🍗')">🍗</button>
+                                        <button type="button" class="btn-emoji-quick" onclick="adminManager.setEmojiValue('🍖')">🍖</button>
+                                        <button type="button" class="btn-emoji-quick" onclick="adminManager.setEmojiValue('🥩')">🥩</button>
+                                        <button type="button" class="btn-emoji-quick" onclick="adminManager.setEmojiValue('🍱')">🍱</button>
+                                        <button type="button" class="btn-emoji-quick" onclick="adminManager.setEmojiValue('🍹')">🍹</button>
+                                        <button type="button" class="btn-emoji-quick" onclick="adminManager.setEmojiValue('💧')">💧</button>
+                                        <button type="button" class="btn-emoji-quick" onclick="adminManager.setEmojiValue('🍚')">🍚</button>
+                                        <button type="button" class="btn-emoji-quick" onclick="adminManager.setEmojiValue('🌶️')">🌶️</button>
+                                    </div>
+                                    <small class="form-help" style="margin-top: 2px;">Jika tidak ada foto, menu otomatis menampilkan icon emoji ini.</small>
                                 </div>
                             </div>
                         </div>
@@ -1264,16 +1311,16 @@
     </div>
 
     <!-- ================= JAVASCRIPT MODULES ================= -->
-    <script src="js/config.js?v=4.0"></script>
-    <script src="js/sound.js?v=4.0"></script>
-    <script src="js/db.js?v=4.0"></script>
-    <script src="js/settings.js?v=4.0"></script>
-    <script src="js/inventory.js?v=4.0"></script>
-    <script src="js/products.js?v=4.0"></script>
-    <script src="js/cart.js?v=4.1"></script>
-    <script src="js/payment.js?v=4.5"></script>
-    <script src="js/auth.js?v=4.0"></script>
-    <script src="js/admin.js?v=4.0"></script>
-    <script src="js/app.js?v=4.0"></script>
+    <script src="js/config.js?v=5.5"></script>
+    <script src="js/sound.js?v=5.5"></script>
+    <script src="js/db.js?v=5.5"></script>
+    <script src="js/settings.js?v=5.5"></script>
+    <script src="js/inventory.js?v=5.5"></script>
+    <script src="js/products.js?v=5.5"></script>
+    <script src="js/cart.js?v=5.5"></script>
+    <script src="js/payment.js?v=5.5"></script>
+    <script src="js/auth.js?v=5.5"></script>
+    <script src="js/admin.js?v=5.5"></script>
+    <script src="js/app.js?v=5.5"></script>
 </body>
 </html>
