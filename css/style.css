@@ -1350,7 +1350,15 @@ input:checked + .slider:before {
 }
 
 .modal-content.modal-wide {
-    max-width: 850px;
+    width: 96%;
+    max-width: 1340px;
+    max-height: 92vh;
+}
+
+@media (min-width: 1600px) {
+    .modal-content.modal-wide {
+        max-width: 1480px;
+    }
 }
 
 /* Ensure any form inside modal-content participates in flexbox and enables modal-body scroll */
@@ -1579,11 +1587,13 @@ input:checked + .slider:before {
     font-weight: 600;
     color: #64748B;
     font-size: 13px;
+    white-space: nowrap !important;
 }
 
 .badge-profit {
     font-weight: 800;
     font-size: 13px;
+    white-space: nowrap !important;
 }
 
 .badge-profit.profit-positive {
@@ -1648,14 +1658,114 @@ input:checked + .slider:before {
     line-height: 1.2;
 }
 
+/* Kolom Pelanggan (2 baris rata kiri) */
+.col-th-customer,
+.col-customer-cell {
+    min-width: 115px;
+    text-align: left;
+}
+
+.customer-name-text {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--secondary);
+    white-space: nowrap !important;
+    text-align: left;
+    line-height: 1.3;
+}
+
+.customer-type-row {
+    margin-top: 3px;
+    text-align: left;
+}
+
 .order-badge {
     display: inline-block;
     font-size: 10px;
     font-weight: 700;
-    padding: 2px 6px;
+    padding: 2px 7px;
     background: #E2E8F0;
+    color: #475569;
     border-radius: 10px;
-    margin-left: 4px;
+    margin-left: 0 !important;
+    white-space: nowrap !important;
+    line-height: 1.2;
+    text-align: left;
+}
+
+.order-badge.badge-dine-in {
+    background: #E0E7FF;
+    color: #3730A3;
+}
+
+.order-badge.badge-take-away {
+    background: #E2E8F0;
+    color: #334155;
+}
+
+/* Kolom Modal (HPP), Total Omset, Untung Bersih: Nominal 1 baris, persen baris 2 */
+.col-th-cogs,
+.col-cogs-cell {
+    white-space: nowrap !important;
+    min-width: 105px;
+}
+
+.col-th-revenue,
+.col-revenue-cell {
+    white-space: nowrap !important;
+    min-width: 115px;
+}
+
+.revenue-nominal-text {
+    font-weight: 800;
+    font-size: 13px;
+    color: var(--secondary);
+    white-space: nowrap !important;
+    line-height: 1.3;
+}
+
+.discount-subtext {
+    font-size: 10px;
+    color: #C0392B;
+    font-weight: 600;
+    margin-top: 2px;
+    white-space: nowrap !important;
+    line-height: 1.2;
+}
+
+.col-th-profit,
+.col-profit-cell {
+    white-space: nowrap !important;
+    min-width: 115px;
+}
+
+.profit-nominal-text {
+    white-space: nowrap !important;
+    line-height: 1.3;
+}
+
+.profit-nominal-text .badge-profit {
+    white-space: nowrap !important;
+}
+
+.profit-margin-row {
+    margin-top: 3px;
+    line-height: 1;
+}
+
+.profit-void-text {
+    color: #94A3B8;
+    font-size: 11px;
+    font-style: italic;
+    white-space: nowrap !important;
+}
+
+.col-th-items,
+.col-items-cell {
+    max-width: 260px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .badge-method {
@@ -4285,7 +4395,7 @@ input[type="password"]::-ms-clear {
 
 .history-svg-chart {
     width: 100%;
-    height: auto;
+    max-height: 210px;
     min-width: 500px;
     display: block;
 }

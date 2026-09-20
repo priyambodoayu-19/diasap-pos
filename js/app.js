@@ -359,27 +359,35 @@ async function renderHistoryData() {
                     <div class="invoice-cashier-text">Kasir: <strong>${cashierName}</strong></div>
                 </td>
                 <td style="white-space: nowrap;">${formatDateTime(o.createdAt)}</td>
-                <td>
-                    <div><strong>${o.customerName || 'Pelanggan'}</strong></div>
-                    <span class="order-badge">${o.orderType === 'dine_in' ? 'Dine In' : 'Take Away'}</span>
+                <td class="col-customer-cell">
+                    <div class="customer-name-text"><strong>${o.customerName || 'Pelanggan'}</strong></div>
+                    <div class="customer-type-row">
+                        <span class="order-badge ${o.orderType === 'dine_in' ? 'badge-dine-in' : 'badge-take-away'}">${o.orderType === 'dine_in' ? 'Dine In' : 'Take Away'}</span>
+                    </div>
                 </td>
-                <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${itemsSummary}">${itemsSummary}</td>
-                <td><span class="badge-method badge-${o.paymentMethod}">${(o.paymentMethod || 'cash').toUpperCase()}</span></td>
-                <td><span class="badge-cogs ${isVoid ? 'text-strikethrough' : ''}">${formatRupiah(orderCogs)}</span></td>
-                <td>
-                    <strong class="${isVoid ? 'text-strikethrough' : ''}">${formatRupiah(orderRevenue)}</strong>
-                    ${finalDiscount > 0 ? `<div style="font-size: 10px; color: #C0392B;">(Disc: -${formatRupiah(finalDiscount)})</div>` : ''}
+                <td class="col-items-cell" title="${itemsSummary}">${itemsSummary}</td>
+                <td style="text-align: center;"><span class="badge-method badge-${o.paymentMethod}">${(o.paymentMethod || 'cash').toUpperCase()}</span></td>
+                <td class="col-cogs-cell">
+                    <span class="badge-cogs ${isVoid ? 'text-strikethrough' : ''}">${formatRupiah(orderCogs)}</span>
                 </td>
-                <td>
+                <td class="col-revenue-cell">
+                    <div class="revenue-nominal-text ${isVoid ? 'text-strikethrough' : ''}">${formatRupiah(orderRevenue)}</div>
+                    ${finalDiscount > 0 ? `<div class="discount-subtext">(Disc: -${formatRupiah(finalDiscount)})</div>` : ''}
+                </td>
+                <td class="col-profit-cell">
                     ${isVoid ? `
-                        <span style="color: #94A3B8; font-size: 11px; font-style: italic;">Dibatalkan</span>
+                        <span class="profit-void-text">Dibatalkan</span>
                     ` : `
-                        <span class="badge-profit ${orderProfit >= 0 ? 'profit-positive' : 'profit-negative'}">
-                            ${orderProfit >= 0 ? '+' : ''}${formatRupiah(orderProfit)}
-                        </span>
-                        <span class="margin-pill ${orderMargin >= 30 ? 'positive' : 'warning'}" style="font-size: 10px; margin-left: 4px;">
-                            ${orderMargin}%
-                        </span>
+                        <div class="profit-nominal-text">
+                            <span class="badge-profit ${orderProfit >= 0 ? 'profit-positive' : 'profit-negative'}">
+                                ${orderProfit >= 0 ? '+' : ''}${formatRupiah(orderProfit)}
+                            </span>
+                        </div>
+                        <div class="profit-margin-row">
+                            <span class="margin-pill ${orderMargin >= 30 ? 'positive' : 'warning'}">
+                                ${orderMargin}%
+                            </span>
+                        </div>
                     `}
                 </td>
                 <td style="text-align: center;">

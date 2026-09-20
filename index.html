@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
     <!-- Stylesheet POS -->
-    <link rel="stylesheet" href="css/style.css?v=5.6">
+    <link rel="stylesheet" href="css/style.css?v=5.7">
     <!-- Pustaka Eksternal: Excel XLSX Export, Canvas Struk, PDF Generator -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -460,15 +460,15 @@
                     <table class="history-table">
                         <thead>
                             <tr>
-                                <th>#</th>
+                                <th style="text-align: center; width: 35px;">#</th>
                                 <th class="col-th-invoice">No. Invoice</th>
-                                <th>Waktu</th>
-                                <th>Pelanggan</th>
-                                <th>Item Pesanan</th>
-                                <th>Metode</th>
-                                <th>Modal (HPP)</th>
-                                <th>Total Omset</th>
-                                <th>Untung Bersih</th>
+                                <th style="white-space: nowrap;">Waktu</th>
+                                <th class="col-th-customer">Pelanggan</th>
+                                <th class="col-th-items">Item Pesanan</th>
+                                <th style="text-align: center;">Metode</th>
+                                <th class="col-th-cogs">Modal (HPP)</th>
+                                <th class="col-th-revenue">Total Omset</th>
+                                <th class="col-th-profit">Untung Bersih</th>
                                 <th style="text-align: center; min-width: 160px;">Status & Aksi</th>
                             </tr>
                         </thead>
@@ -1321,6 +1321,6 @@
     <script src="js/payment.js?v=5.5"></script>
     <script src="js/auth.js?v=5.5"></script>
     <script src="js/admin.js?v=5.5"></script>
-    <script src="js/app.js?v=5.6"></script>
+    <script src="js/app.js?v=5.7"></script>
 </body>
 </html>
