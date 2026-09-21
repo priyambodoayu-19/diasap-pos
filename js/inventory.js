@@ -685,20 +685,8 @@ class InventoryManager {
                                 </div>
                             </details>
 
-                            <div class="raw-mat-actions">
-                                <div class="quick-restock-group">
-                                    <span style="font-size: 11px; color: #166534; font-weight: 800; width: 100%; margin-bottom: 2px;">➕ Tambah Daging Matang (Asap):</span>
-                                    <button type="button" class="btn-restock-pill btn-pill-add" onclick="inventoryManager.quickAdjustStock('${mat.id}', 500)">+500 ${mat.unit}</button>
-                                    <button type="button" class="btn-restock-pill btn-pill-add" onclick="inventoryManager.quickAdjustStock('${mat.id}', 1000)">+1.000 ${mat.unit}</button>
-                                    <button type="button" class="btn-restock-pill btn-pill-add" onclick="inventoryManager.quickAdjustStock('${mat.id}', 2000)">+2.000 ${mat.unit}</button>
-                                </div>
-                                <div class="quick-restock-group" style="margin-top: 4px;">
-                                    <span style="font-size: 11px; color: #991B1B; font-weight: 800; width: 100%; margin-bottom: 2px;">➖ Kurangi Daging Matang:</span>
-                                    <button type="button" class="btn-restock-pill btn-pill-reduce" onclick="inventoryManager.quickAdjustStockWithConfirm('${mat.id}', -250)">-250 ${mat.unit}</button>
-                                    <button type="button" class="btn-restock-pill btn-pill-reduce" onclick="inventoryManager.quickAdjustStockWithConfirm('${mat.id}', -500)">-500 ${mat.unit}</button>
-                                    <button type="button" class="btn-restock-pill btn-pill-reduce" onclick="inventoryManager.quickAdjustStockWithConfirm('${mat.id}', -1000)">-1.000 ${mat.unit}</button>
-                                </div>
-                                <div class="raw-mat-btn-row" style="margin-top: 6px;">
+                            <div class="raw-mat-actions" style="margin-top: 12px;">
+                                <div class="raw-mat-btn-row">
                                     <button type="button" class="btn-stock-custom-adjust" onclick="inventoryManager.openCustomAdjustModal('${mat.id}')">
                                         ✏️ Atur / Masuk Stok (+ / -)
                                     </button>
@@ -788,20 +776,7 @@ class InventoryManager {
                             </div>
 
                             <div class="raw-mat-actions" style="margin-top: 14px;">
-                                <div class="quick-restock-group">
-                                    <span style="font-size: 11px; color: #0369A1; font-weight: 800; width: 100%; margin-bottom: 2px;">➕ Tambah Belanja Mentah:</span>
-                                    <button type="button" class="btn-restock-pill btn-pill-add" onclick="inventoryManager.quickAdjustStock('${mat.id}', 1000)">+1 kg</button>
-                                    <button type="button" class="btn-restock-pill btn-pill-add" onclick="inventoryManager.quickAdjustStock('${mat.id}', 2000)">+2 kg</button>
-                                    <button type="button" class="btn-restock-pill btn-pill-add" onclick="inventoryManager.quickAdjustStock('${mat.id}', 5000)">+5 kg</button>
-                                    <button type="button" class="btn-restock-pill btn-pill-add" onclick="inventoryManager.quickAdjustStock('${mat.id}', 10000)">+10 kg</button>
-                                </div>
-                                <div class="quick-restock-group" style="margin-top: 4px;">
-                                    <span style="font-size: 11px; color: #991B1B; font-weight: 800; width: 100%; margin-bottom: 2px;">➖ Kurangi Mentah (Ambil / Susut):</span>
-                                    <button type="button" class="btn-restock-pill btn-pill-reduce" onclick="inventoryManager.quickAdjustStockWithConfirm('${mat.id}', -1000)">-1 kg</button>
-                                    <button type="button" class="btn-restock-pill btn-pill-reduce" onclick="inventoryManager.quickAdjustStockWithConfirm('${mat.id}', -2000)">-2 kg</button>
-                                    <button type="button" class="btn-restock-pill btn-pill-reduce" onclick="inventoryManager.quickAdjustStockWithConfirm('${mat.id}', -5000)">-5 kg</button>
-                                </div>
-                                <div class="raw-mat-btn-row" style="margin-top: 6px;">
+                                <div class="raw-mat-btn-row">
                                     <button type="button" class="btn-stock-custom-adjust" onclick="inventoryManager.openCustomAdjustModal('${mat.id}')">
                                         ✏️ Atur / Opname Mentah (+ / -)
                                     </button>
