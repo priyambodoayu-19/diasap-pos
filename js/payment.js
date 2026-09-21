@@ -210,7 +210,7 @@ class PaymentManager {
 
             // Potong stok bahan baku master & barang jadi
             if (typeof inventoryManager !== 'undefined') {
-                await inventoryManager.deductOrderStock(items);
+                await inventoryManager.deductOrderStock(items, savedOrder || orderData);
             }
 
             // Efek suara sukses kasir

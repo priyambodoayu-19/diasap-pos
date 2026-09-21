@@ -7751,3 +7751,256 @@ input[type="password"]::-ms-clear {
     width: fit-content;
 }
 
+/* ================= RIWAYAT PERUBAHAN STOK (STOCK HISTORY) ================= */
+.btn-stock-history-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #EFF6FF;
+    border: 1px solid #BFDBFE;
+    color: #1D4ED8;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.btn-stock-history-nav:hover {
+    background: #DBEAFE;
+    border-color: #93C5FD;
+    color: #1E40AF;
+}
+
+.btn-stock-history-mini {
+    background: #EFF6FF;
+    border: 1px solid #BFDBFE;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #1D4ED8;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+
+.btn-stock-history-mini:hover {
+    background: #DBEAFE;
+    border-color: #93C5FD;
+}
+
+.stock-history-summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.stock-history-card {
+    background: #FFFFFF;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-shadow: var(--shadow-sm);
+}
+
+.stock-history-card.card-hist-add {
+    background: #F0FDF4;
+    border-color: #BBF7D0;
+}
+
+.stock-history-card.card-hist-reduce {
+    background: #FEF2F2;
+    border-color: #FECACA;
+}
+
+.stock-hist-card-label {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748B;
+}
+
+.stock-hist-card-val {
+    font-size: 19px;
+    font-weight: 800;
+    color: var(--secondary);
+    line-height: 1.2;
+}
+
+.stock-hist-card-sub {
+    font-size: 11px;
+    color: #64748B;
+}
+
+.stock-history-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #F8FAFC;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 14px;
+}
+
+.stock-hist-tool-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    flex: 1;
+}
+
+.stock-hist-search-wrap {
+    min-width: 220px;
+    flex: 1;
+}
+
+.stock-hist-search-input {
+    width: 100%;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.15s;
+    background: #FFFFFF;
+}
+
+.stock-hist-search-input:focus {
+    border-color: var(--primary);
+}
+
+.stock-hist-select-wrap {
+    min-width: 140px;
+}
+
+.stock-hist-filter-select {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 12px;
+    background: #FFFFFF;
+    color: var(--secondary);
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+}
+
+.stock-hist-filter-select:focus {
+    border-color: var(--primary);
+}
+
+.stock-hist-badge-count {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748B;
+    background: #E2E8F0;
+    padding: 4px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+.stock-history-table-container {
+    overflow-x: auto;
+    background: #FFFFFF;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: var(--shadow-sm);
+    max-height: 480px;
+    overflow-y: auto;
+}
+
+.stock-history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.stock-history-table thead th {
+    background: #F1F5F9;
+    color: #475569;
+    font-weight: 800;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 10px 12px;
+    border-bottom: 2px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.stock-history-table tbody td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #F1F5F9;
+    vertical-align: middle;
+}
+
+.stock-history-table tbody tr:hover {
+    background: #F8FAFC;
+}
+
+.stock-hist-author-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #F1F5F9;
+    border: 1px solid #E2E8F0;
+    color: #334155;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 20px;
+}
+
+.badge-stock-type {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.badge-stock-add {
+    background: #DCFCE7;
+    color: #15803D;
+    border: 1px solid #BBF7D0;
+}
+
+.badge-stock-reduce {
+    background: #FEE2E2;
+    color: #DC2626;
+    border: 1px solid #FECACA;
+}
+
+.badge-stock-set {
+    background: #E0E7FF;
+    color: #4338CA;
+    border: 1px solid #C7D2FE;
+}
+
+.badge-stock-order {
+    background: #FEF3C7;
+    color: #B45309;
+    border: 1px solid #FDE68A;
+}
+
+.badge-stock-restore {
+    background: #F3E8FF;
+    color: #7E22CE;
+    border: 1px solid #E9D5FF;
+}
+
+

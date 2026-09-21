@@ -12,6 +12,7 @@ class DatabaseService {
         this.storageKeyOrders = 'diasap_orders_cache';
         this.storageKeyRawMaterials = 'diasap_raw_materials_cache';
         this.storageKeySettings = 'diasap_store_settings_cache';
+        this.storageKeyStockLogs = 'diasap_stock_logs_cache';
     }
 
     // Daftarkan listener status koneksi
@@ -72,7 +73,7 @@ class DatabaseService {
         }
     }
 
-    // Pastikan kolom baru (status, pickup_date, dll) tersedia di tabel orders Neon
+    // Pastikan kolom baru (status, pickup_date, dll) dan tabel riwayat stok tersedia di Neon
     async ensureSchema() {
         const statements = [
             `ALTER TABLE orders ADD COLUMN IF NOT EXISTS status VARCHAR(30) DEFAULT 'completed';`,
@@ -81,7 +82,21 @@ class DatabaseService {
             `ALTER TABLE orders ADD COLUMN IF NOT EXISTS pickup_method VARCHAR(30) DEFAULT 'self_pickup';`,
             `ALTER TABLE orders ADD COLUMN IF NOT EXISTS pickup_address TEXT;`,
             `ALTER TABLE orders ADD COLUMN IF NOT EXISTS picked_up_at TIMESTAMP;`,
-            `ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_fee NUMERIC DEFAULT 0;`
+            `ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_fee NUMERIC DEFAULT 0;`,
+            `CREATE TABLE IF NOT EXISTS stock_logs (
+                id VARCHAR(50) PRIMARY KEY,
+                material_id VARCHAR(50),
+                material_name VARCHAR(150),
+                item_type VARCHAR(30) DEFAULT 'raw_material',
+                change_type VARCHAR(30),
+                amount NUMERIC,
+                unit VARCHAR(20),
+                stock_before NUMERIC,
+                stock_after NUMERIC,
+                author VARCHAR(100),
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );`
         ];
         for (const sql of statements) {
             try {
@@ -791,7 +806,7 @@ class DatabaseService {
     }
 
     // Deduct stock saat transaksi kasir selesai
-    async deductStockForOrder(items) {
+    async deductStockForOrder(items, orderInfo = null) {
         if (!items || items.length === 0) return;
 
         const products = await this.getProducts();
@@ -822,18 +837,35 @@ class DatabaseService {
             }
         }
 
+        const author = orderInfo?.cashierName || ((typeof authManager !== 'undefined') ? authManager.getActiveCashier() : 'Kasir');
+        const orderNotes = orderInfo?.invoiceNo ? `Pesanan ${orderInfo.invoiceNo} (${orderInfo.customerName || 'Pelanggan'})` : 'Transaksi Kasir';
+
         // 1. Potong Bahan Baku
         for (const rawId of Object.keys(rawDeductions)) {
             const toDeduct = rawDeductions[rawId];
             const mat = rawMaterials.find(m => m.id === rawId);
             if (mat) {
-                // Diperbolehkan bernilai negatif untuk mencatat defisit PO ("Harus Diasap")
-                mat.stock = (Number(mat.stock) || 0) - toDeduct;
+                const prev = Number(mat.stock) || 0;
+                mat.stock = prev - toDeduct;
                 try {
                     await this.query(`UPDATE raw_materials SET stock = $1 WHERE id = $2;`, [mat.stock, rawId]);
                 } catch (e) {
                     console.warn(`Gagal update stok bahan ${rawId} di Neon:`, e);
                 }
+
+                // Catat log
+                this.addStockLog({
+                    materialId: mat.id,
+                    materialName: mat.name,
+                    itemType: 'raw_material',
+                    changeType: 'order_deduct',
+                    amount: -toDeduct,
+                    unit: mat.unit || 'gr',
+                    stockBefore: prev,
+                    stockAfter: mat.stock,
+                    author: author,
+                    notes: orderNotes
+                }).catch(err => console.warn('Gagal addStockLog:', err));
             }
         }
         localStorage.setItem(this.storageKeyRawMaterials, JSON.stringify(rawMaterials));
@@ -843,19 +875,34 @@ class DatabaseService {
             const toDeduct = directDeductions[prodId];
             const prod = products.find(p => p.id === prodId);
             if (prod) {
-                prod.directStock = Math.max(0, prod.directStock - toDeduct);
+                const prev = Number(prod.directStock) || 0;
+                prod.directStock = Math.max(0, prev - toDeduct);
                 try {
                     await this.query(`UPDATE products SET direct_stock = $1 WHERE id = $2;`, [prod.directStock, prodId]);
                 } catch (e) {
                     console.warn(`Gagal update direct_stock produk ${prodId} di Neon:`, e);
                 }
+
+                // Catat log
+                this.addStockLog({
+                    materialId: prod.id,
+                    materialName: prod.name,
+                    itemType: 'direct_product',
+                    changeType: 'order_deduct',
+                    amount: -toDeduct,
+                    unit: 'pcs',
+                    stockBefore: prev,
+                    stockAfter: prod.directStock,
+                    author: author,
+                    notes: orderNotes
+                }).catch(err => console.warn('Gagal addStockLog:', err));
             }
         }
         localStorage.setItem(this.storageKeyProducts, JSON.stringify(products));
     }
 
     // Kembalikan stok bahan & barang jadi saat transaksi di-void / dibatalkan
-    async restoreStockForOrder(items) {
+    async restoreStockForOrder(items, orderInfo = null) {
         if (!items || items.length === 0) return;
 
         const products = await this.getProducts();
@@ -885,17 +932,35 @@ class DatabaseService {
             }
         }
 
+        const author = orderInfo?.voidBy || ((typeof authManager !== 'undefined') ? authManager.getActiveCashier() : 'Kasir');
+        const voidNotes = orderInfo?.invoiceNo ? `Void Pesanan ${orderInfo.invoiceNo} (${orderInfo.voidReason || 'Dibatalkan'})` : 'Pengembalian Void';
+
         // 1. Kembalikan Bahan Baku Master
         for (const rawId of Object.keys(rawRestorations)) {
             const toAdd = rawRestorations[rawId];
             const mat = rawMaterials.find(m => m.id === rawId);
             if (mat) {
-                mat.stock = (Number(mat.stock) || 0) + toAdd;
+                const prev = Number(mat.stock) || 0;
+                mat.stock = prev + toAdd;
                 try {
                     await this.query(`UPDATE raw_materials SET stock = $1 WHERE id = $2;`, [mat.stock, rawId]);
                 } catch (e) {
                     console.warn(`Gagal update pengembalian stok bahan ${rawId} di Neon:`, e);
                 }
+
+                // Catat log
+                this.addStockLog({
+                    materialId: mat.id,
+                    materialName: mat.name,
+                    itemType: 'raw_material',
+                    changeType: 'void_restore',
+                    amount: toAdd,
+                    unit: mat.unit || 'gr',
+                    stockBefore: prev,
+                    stockAfter: mat.stock,
+                    author: author,
+                    notes: voidNotes
+                }).catch(err => console.warn('Gagal addStockLog:', err));
             }
         }
         localStorage.setItem(this.storageKeyRawMaterials, JSON.stringify(rawMaterials));
@@ -905,12 +970,27 @@ class DatabaseService {
             const toAdd = directRestorations[prodId];
             const prod = products.find(p => p.id === prodId);
             if (prod) {
-                prod.directStock = (Number(prod.directStock) || 0) + toAdd;
+                const prev = Number(prod.directStock) || 0;
+                prod.directStock = prev + toAdd;
                 try {
                     await this.query(`UPDATE products SET direct_stock = $1 WHERE id = $2;`, [prod.directStock, prodId]);
                 } catch (e) {
                     console.warn(`Gagal update pengembalian direct_stock produk ${prodId} di Neon:`, e);
                 }
+
+                // Catat log
+                this.addStockLog({
+                    materialId: prod.id,
+                    materialName: prod.name,
+                    itemType: 'direct_product',
+                    changeType: 'void_restore',
+                    amount: toAdd,
+                    unit: 'pcs',
+                    stockBefore: prev,
+                    stockAfter: prod.directStock,
+                    author: author,
+                    notes: voidNotes
+                }).catch(err => console.warn('Gagal addStockLog:', err));
             }
         }
         localStorage.setItem(this.storageKeyProducts, JSON.stringify(products));
@@ -938,10 +1018,14 @@ class DatabaseService {
             console.warn('Gagal menandai void transaksi di Neon:', err);
         }
 
-        // 2. Update di cache lokal & kembalikan stok
-        let orders = this.getLocalOrders();
-        let order = orders.find(o => o.invoiceNo === invoiceNo);
-        if (!order || !order.items || order.items.length === 0) {
+        // 2. Update status di LocalStorage
+        let order = null;
+        try {
+            const active = await this.getActiveOrders();
+            order = active.find(o => o.invoiceNo === invoiceNo);
+        } catch (e) {}
+
+        if (!order) {
             try {
                 const history = await this.getOrdersHistory(300);
                 order = history.find(o => o.invoiceNo === invoiceNo);
@@ -963,11 +1047,101 @@ class DatabaseService {
 
             // 3. Kembalikan stok bahan & barang jadi yang sebelumnya terpotong
             if (order.items && order.items.length > 0) {
-                await this.restoreStockForOrder(order.items);
+                await this.restoreStockForOrder(order.items, order);
             }
         }
 
         return true;
+    }
+
+    // ================= MANAJEMEN RIWAYAT STOK (STOCK LOGS) =================
+
+    async addStockLog(logData) {
+        if (!logData) return null;
+        if (!logData.id) {
+            logData.id = 'STK-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+        }
+        if (!logData.createdAt) {
+            logData.createdAt = new Date().toISOString();
+        }
+
+        // 1. Simpan ke Cache Lokal (localStorage)
+        try {
+            const localLogs = this.getLocalStockLogs();
+            localLogs.unshift(logData);
+            if (localLogs.length > 500) localLogs.length = 500;
+            localStorage.setItem(this.storageKeyStockLogs, JSON.stringify(localLogs));
+        } catch (e) {
+            console.warn('Gagal simpan stock logs ke localStorage:', e);
+        }
+
+        // 2. Simpan ke Neon PostgreSQL
+        try {
+            await this.query(`
+                INSERT INTO stock_logs (id, material_id, material_name, item_type, change_type, amount, unit, stock_before, stock_after, author, notes, created_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                ON CONFLICT (id) DO UPDATE SET
+                    material_id = EXCLUDED.material_id,
+                    material_name = EXCLUDED.material_name,
+                    item_type = EXCLUDED.item_type,
+                    change_type = EXCLUDED.change_type,
+                    amount = EXCLUDED.amount,
+                    unit = EXCLUDED.unit,
+                    stock_before = EXCLUDED.stock_before,
+                    stock_after = EXCLUDED.stock_after,
+                    author = EXCLUDED.author,
+                    notes = EXCLUDED.notes;
+            `, [
+                logData.id,
+                logData.materialId || '',
+                logData.materialName || '',
+                logData.itemType || 'raw_material',
+                logData.changeType || 'add',
+                Number(logData.amount) || 0,
+                logData.unit || 'gr',
+                Number(logData.stockBefore) || 0,
+                Number(logData.stockAfter) || 0,
+                logData.author || 'Kasir',
+                logData.notes || '',
+                logData.createdAt
+            ]);
+        } catch (err) {
+            console.warn('Gagal simpan stock log ke Neon DB, tersimpan di lokal:', err);
+        }
+
+        return logData;
+    }
+
+    async getStockLogs(limit = 300) {
+        try {
+            const rows = await this.query(`
+                SELECT id, material_id as "materialId", material_name as "materialName",
+                       item_type as "itemType", change_type as "changeType", amount, unit,
+                       stock_before as "stockBefore", stock_after as "stockAfter",
+                       author, notes, created_at as "createdAt"
+                FROM stock_logs
+                ORDER BY created_at DESC
+                LIMIT $1;
+            `, [limit]);
+
+            if (rows && rows.length > 0) {
+                localStorage.setItem(this.storageKeyStockLogs, JSON.stringify(rows));
+                return rows;
+            }
+        } catch (err) {
+            console.warn('Gagal memuat stock_logs dari Neon, gunakan cache lokal:', err);
+        }
+
+        return this.getLocalStockLogs();
+    }
+
+    getLocalStockLogs() {
+        try {
+            const data = localStorage.getItem(this.storageKeyStockLogs);
+            return data ? JSON.parse(data) : [];
+        } catch {
+            return [];
+        }
     }
 }
 

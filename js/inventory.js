@@ -8,7 +8,12 @@ class InventoryManager {
         this.rawMaterials = [];
         this.transitDemand = {};
         this.activePoDemand = {};
-        this.activeTab = 'raw'; // 'raw' | 'direct' | 'menu'
+        this.activeTab = 'raw'; // 'raw' | 'direct' | 'menu' | 'history'
+        this.cachedStockLogs = [];
+        this.historyFilterMaterial = 'all';
+        this.historyFilterType = 'all';
+        this.historyFilterAuthor = 'all';
+        this.historySearchTerm = '';
     }
 
     async init() {
@@ -107,6 +112,25 @@ class InventoryManager {
         mat.stock = current + Number(deltaGrams);
         try {
             await db.saveRawMaterial(mat);
+
+            // Catat riwayat perubahan stok
+            const author = (typeof authManager !== 'undefined') ? authManager.getActiveCashier() : 'Kasir';
+            const diff = Number(deltaGrams);
+            const changeType = diff >= 0 ? 'add' : 'reduce';
+            const actionText = diff >= 0 ? 'Penambahan cepat' : 'Pengurangan cepat';
+            await db.addStockLog({
+                materialId: mat.id,
+                materialName: mat.name,
+                itemType: 'raw_material',
+                changeType: changeType,
+                amount: diff,
+                unit: mat.unit || 'gr',
+                stockBefore: current,
+                stockAfter: mat.stock,
+                author: author,
+                notes: `${actionText} (${diff > 0 ? '+' : ''}${diff.toLocaleString('id-ID')} ${mat.unit || 'gr'})`
+            }).catch(err => console.warn('Gagal catat stock log:', err));
+
             if (typeof sounds !== 'undefined') sounds.playSuccess();
             await this.calculateStockDemands();
             this.renderTabContent();
@@ -114,7 +138,7 @@ class InventoryManager {
                 productManager.render();
             }
         } catch (e) {
-            alert('Gagal menambah stok: ' + e.message);
+            alert('Gagal mengubah stok: ' + e.message);
         }
     }
 
@@ -335,6 +359,12 @@ class InventoryManager {
         });
         if (tab === 'raw') {
             await this.calculateStockDemands();
+        } else if (tab === 'history') {
+            try {
+                this.cachedStockLogs = await db.getStockLogs(300);
+            } catch (e) {
+                console.warn('Gagal memuat stock logs:', e);
+            }
         }
         this.renderTabContent();
     }
@@ -351,9 +381,19 @@ class InventoryManager {
             this.renderRawMaterialsTab(contentEl);
         } else if (this.activeTab === 'direct') {
             this.renderDirectStockTab(contentEl);
-        } else {
+        } else if (this.activeTab === 'menu') {
             this.renderMenuAvailabilityTab(contentEl);
+        } else if (this.activeTab === 'history') {
+            this.renderStockHistoryTab(contentEl);
         }
+    }
+
+    async openHistoryForMaterial(materialId) {
+        this.historyFilterMaterial = materialId || 'all';
+        this.historyFilterType = 'all';
+        this.historyFilterAuthor = 'all';
+        this.historySearchTerm = '';
+        await this.setTab('history');
     }
 
     // Tab 1: Bahan Baku Master (Gramasi & Manajemen PO Smokehouse)
@@ -376,6 +416,9 @@ class InventoryManager {
                     </p>
                 </div>
                 <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <button type="button" class="btn-stock-history-nav" onclick="inventoryManager.setTab('history')">
+                        📜 Lihat Riwayat Stok
+                    </button>
                     <button type="button" class="btn-copy-shopping-list" onclick="inventoryManager.copyShoppingList()">
                         📋 Salin Rekap Belanja Daging
                     </button>
@@ -602,6 +645,9 @@ class InventoryManager {
                                     <button type="button" class="btn-stock-custom-adjust" onclick="inventoryManager.openCustomAdjustModal('${mat.id}')">
                                         ✏️ Atur / Masuk Stok (+ / -)
                                     </button>
+                                    <button type="button" class="btn-stock-history-mini" onclick="inventoryManager.openHistoryForMaterial('${mat.id}')" title="Lihat riwayat mutasi stok ${mat.name}">
+                                        📜 Riwayat
+                                    </button>
                                     <button type="button" class="btn-stock-delete" onclick="inventoryManager.handleDeleteRawMaterial('${mat.id}')" title="Hapus bahan baku">
                                         🗑️
                                     </button>
@@ -702,6 +748,9 @@ class InventoryManager {
                                     <button type="button" class="btn-stock-custom-adjust" onclick="inventoryManager.openCustomAdjustModal('${mat.id}')">
                                         ✏️ Atur / Opname Mentah (+ / -)
                                     </button>
+                                    <button type="button" class="btn-stock-history-mini" onclick="inventoryManager.openHistoryForMaterial('${mat.id}')" title="Lihat riwayat mutasi stok ${mat.name}">
+                                        📜 Riwayat
+                                    </button>
                                     <button type="button" class="btn-stock-delete" onclick="inventoryManager.handleDeleteRawMaterial('${mat.id}')" title="Hapus bahan mentah">
                                         🗑️
                                     </button>
@@ -789,6 +838,7 @@ class InventoryManager {
                                                 <button type="button" class="btn-restock-pill" onclick="inventoryManager.adjustDirectStock('${p.id}', 12)">+12</button>
                                                 <button type="button" class="btn-restock-pill" onclick="inventoryManager.adjustDirectStock('${p.id}', 24)">+24</button>
                                                 <button type="button" class="btn-admin-action" style="padding: 4px 8px; font-size: 11px;" onclick="inventoryManager.promptSetDirectStock('${p.id}', ${stock})">Set Nilai</button>
+                                                <button type="button" class="btn-stock-history-mini" style="padding: 4px 8px; font-size: 11px;" onclick="inventoryManager.openHistoryForMaterial('${p.id}')" title="Lihat riwayat stok ${p.name}">📜 Riwayat</button>
                                             </div>
                                         </td>
                                     </tr>
@@ -946,10 +996,27 @@ class InventoryManager {
         const prod = productManager.getProductById(productId);
         if (!prod) return;
 
-        prod.directStock = (Number(prod.directStock) || 0) + Number(addAmount);
+        const prev = Number(prod.directStock) || 0;
+        prod.directStock = prev + Number(addAmount);
 
         try {
             await db.saveProduct(prod);
+
+            const author = (typeof authManager !== 'undefined') ? authManager.getActiveCashier() : 'Kasir';
+            const num = Number(addAmount);
+            await db.addStockLog({
+                materialId: prod.id,
+                materialName: prod.name,
+                itemType: 'direct_product',
+                changeType: num >= 0 ? 'add' : 'reduce',
+                amount: num,
+                unit: 'pcs',
+                stockBefore: prev,
+                stockAfter: prod.directStock,
+                author: author,
+                notes: `Restock barang jadi (${num >= 0 ? '+' : ''}${num} pcs)`
+            }).catch(err => console.warn('Gagal catat stock log:', err));
+
             sounds.playSuccess();
             this.renderTabContent();
             productManager.render();
@@ -971,9 +1038,25 @@ class InventoryManager {
             return;
         }
 
+        const prev = Number(prod.directStock) || 0;
         prod.directStock = val;
         try {
             await db.saveProduct(prod);
+
+            const author = (typeof authManager !== 'undefined') ? authManager.getActiveCashier() : 'Kasir';
+            await db.addStockLog({
+                materialId: prod.id,
+                materialName: prod.name,
+                itemType: 'direct_product',
+                changeType: 'set',
+                amount: val - prev,
+                unit: 'pcs',
+                stockBefore: prev,
+                stockAfter: val,
+                author: author,
+                notes: 'Set manual stok barang jadi'
+            }).catch(err => console.warn('Gagal catat stock log:', err));
+
             sounds.playSuccess();
             this.renderTabContent();
             productManager.render();
@@ -1011,6 +1094,15 @@ class InventoryManager {
         if (nameInput) nameInput.value = mat.name;
         if (minStockInput) minStockInput.value = mat.minStock || 0;
         if (amountInput) amountInput.value = '';
+
+        const authorInput = document.getElementById('rawAdjustAuthor');
+        const notesInput = document.getElementById('rawAdjustNotes');
+        if (authorInput) {
+            authorInput.value = (typeof authManager !== 'undefined') ? authManager.getActiveCashier() : 'Kasir';
+        }
+        if (notesInput) {
+            notesInput.value = '';
+        }
 
         document.querySelectorAll('.raw-unit-label').forEach(el => el.textContent = unit);
         const badgeEl = document.getElementById('rawAdjustInputUnitBadge');
@@ -1234,6 +1326,8 @@ class InventoryManager {
         const name = document.getElementById('rawAdjustName').value.trim();
         const minStock = parseFloat(document.getElementById('rawAdjustMinStock').value) || 0;
         const inputAmount = parseFloat(document.getElementById('rawAdjustAmountInput').value);
+        const author = document.getElementById('rawAdjustAuthor')?.value.trim() || ((typeof authManager !== 'undefined') ? authManager.getActiveCashier() : 'Kasir');
+        const notes = document.getElementById('rawAdjustNotes')?.value.trim() || '';
 
         if (isNaN(inputAmount)) {
             alert('Silakan masukkan jumlah stok yang valid!');
@@ -1261,6 +1355,22 @@ class InventoryManager {
 
         try {
             await db.saveRawMaterial(mat);
+
+            // Simpan ke log perubahan stok
+            const diff = finalStock - current;
+            await db.addStockLog({
+                materialId: mat.id,
+                materialName: mat.name,
+                itemType: 'raw_material',
+                changeType: mode,
+                amount: diff,
+                unit: mat.unit || 'gr',
+                stockBefore: current,
+                stockAfter: finalStock,
+                author: author,
+                notes: notes || (mode === 'add' ? 'Tambah stok' : (mode === 'reduce' ? 'Kurang stok' : 'Set total / Opname'))
+            }).catch(err => console.warn('Gagal catat stock log:', err));
+
             sounds.playSuccess();
             this.closeCustomAdjustModal();
             await this.calculateStockDemands();
@@ -1269,7 +1379,6 @@ class InventoryManager {
                 productManager.render();
             }
             if (typeof showPosToast === 'function') {
-                const diff = finalStock - current;
                 const sign = diff >= 0 ? '+' : '';
                 showPosToast(`✅ Stok ${mat.name} berhasil diperbarui: ${finalStock.toLocaleString('id-ID')} ${mat.unit} (${sign}${diff.toLocaleString('id-ID')})`, 3000);
             }
@@ -1320,6 +1429,23 @@ class InventoryManager {
 
         try {
             await db.saveRawMaterial(newMat);
+
+            if (stock > 0) {
+                const author = (typeof authManager !== 'undefined') ? authManager.getActiveCashier() : 'Kasir';
+                await db.addStockLog({
+                    materialId: newMat.id,
+                    materialName: newMat.name,
+                    itemType: 'raw_material',
+                    changeType: 'add',
+                    amount: stock,
+                    unit: newMat.unit,
+                    stockBefore: 0,
+                    stockAfter: stock,
+                    author: author,
+                    notes: 'Stok awal bahan baru'
+                }).catch(err => console.warn('Gagal catat stock log:', err));
+            }
+
             await this.loadRawMaterials();
             sounds.playSuccess();
             this.closeAddRawMaterialModal();
@@ -1356,15 +1482,331 @@ class InventoryManager {
     }
 
     // Dipanggil saat transaksi kasir selesai
-    async deductOrderStock(items) {
+    async deductOrderStock(items, orderInfo = null) {
         try {
-            await db.deductStockForOrder(items);
+            await db.deductStockForOrder(items, orderInfo);
             await this.loadRawMaterials();
             await this.calculateStockDemands();
             await productManager.loadProducts();
             productManager.render();
         } catch (e) {
             console.warn('Gagal memotong stok:', e);
+        }
+    }
+
+    // ================= TAB 4: RIWAYAT PERUBAHAN STOK =================
+    async renderStockHistoryTab(container) {
+        if (!container) return;
+
+        // Ambil daftar unik author / kasir untuk filter
+        const logs = Array.isArray(this.cachedStockLogs) ? this.cachedStockLogs : [];
+        const authorSet = new Set();
+        logs.forEach(l => {
+            if (l.author) authorSet.add(l.author.trim());
+        });
+        const authors = Array.from(authorSet).sort();
+
+        // Kumpulkan opsi bahan baku & barang jadi untuk filter
+        const products = (typeof productManager !== 'undefined' && productManager.products) ? productManager.products : [];
+        const directProducts = products.filter(p => p.stockType === 'direct');
+
+        // Ringkasan Cepat
+        const totalLogs = logs.length;
+        const lastAdd = logs.find(l => l.changeType === 'add' || Number(l.amount) > 0);
+        const lastReduce = logs.find(l => l.changeType === 'reduce' || Number(l.amount) < 0 || l.changeType === 'order_deduct');
+
+        container.innerHTML = `
+            <div class="stock-tab-header">
+                <div>
+                    <h4 style="font-size: 15px; font-weight: 800; color: var(--secondary); margin-bottom: 2px;">
+                        📜 Riwayat Perubahan & Mutasi Stok
+                    </h4>
+                    <p style="font-size: 12px; color: #64748B;">
+                        Catatan audit transparan: siapa yang menginput stok, kapan, berapa banyak penambahan/pengurangan, dan stok akhir.
+                    </p>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <button type="button" class="btn-stock-history-nav" onclick="inventoryManager.refreshStockHistory()">
+                        🔄 Segarkan Data
+                    </button>
+                </div>
+            </div>
+
+            <!-- Kartu Ringkasan Riwayat -->
+            <div class="stock-history-summary-cards">
+                <div class="stock-history-card">
+                    <div class="stock-hist-card-label">📊 Total Catatan Mutasi</div>
+                    <div class="stock-hist-card-val">${totalLogs} Log</div>
+                    <div class="stock-hist-card-sub">Tersinkronisasi otomatis dengan database</div>
+                </div>
+
+                <div class="stock-history-card card-hist-add">
+                    <div class="stock-hist-card-label" style="color: #166534;">➕ Terakhir Ditambah / Restock</div>
+                    <div class="stock-hist-card-val" style="color: #15803D;">
+                        ${lastAdd ? `+${Number(lastAdd.amount).toLocaleString('id-ID')} ${lastAdd.unit || 'gr'}` : '-'}
+                    </div>
+                    <div class="stock-hist-card-sub">
+                        ${lastAdd ? `<strong>${lastAdd.materialName}</strong> • Oleh: <em>${lastAdd.author || 'Kasir'}</em>` : 'Belum ada data masuk'}
+                    </div>
+                </div>
+
+                <div class="stock-history-card card-hist-reduce">
+                    <div class="stock-hist-card-label" style="color: #991B1B;">➖ Terakhir Berkurang / Terjual</div>
+                    <div class="stock-hist-card-val" style="color: #DC2626;">
+                        ${lastReduce ? `${Number(lastReduce.amount).toLocaleString('id-ID')} ${lastReduce.unit || 'gr'}` : '-'}
+                    </div>
+                    <div class="stock-hist-card-sub">
+                        ${lastReduce ? `<strong>${lastReduce.materialName}</strong> • Oleh: <em>${lastReduce.author || 'Kasir'}</em>` : 'Belum ada data keluar'}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toolbar Pencarian & Filter -->
+            <div class="stock-history-toolbar">
+                <div class="stock-hist-tool-left">
+                    <div class="stock-hist-search-wrap">
+                        <input type="text" id="stockHistSearchInput" class="stock-hist-search-input" 
+                            placeholder="🔍 Cari nama bahan / kasir / catatan..." 
+                            value="${this.historySearchTerm || ''}"
+                            oninput="inventoryManager.handleHistorySearchInput(this.value)">
+                    </div>
+
+                    <div class="stock-hist-select-wrap">
+                        <select id="stockHistFilterMat" class="stock-hist-filter-select" onchange="inventoryManager.handleHistoryFilterMaterial(this.value)">
+                            <option value="all">🌾 Semua Bahan & Produk</option>
+                            <optgroup label="🌾 Bahan Baku Utama (Resep Master)">
+                                ${this.rawMaterials.map(m => `
+                                    <option value="${m.id}" ${this.historyFilterMaterial === m.id ? 'selected' : ''}>
+                                        ${m.name} (${m.unit})
+                                    </option>
+                                `).join('')}
+                            </optgroup>
+                            ${directProducts.length > 0 ? `
+                                <optgroup label="🥤 Stok Barang Jadi (Fisik)">
+                                    ${directProducts.map(p => `
+                                        <option value="${p.id}" ${this.historyFilterMaterial === p.id ? 'selected' : ''}>
+                                            ${p.name} (pcs)
+                                        </option>
+                                    `).join('')}
+                                </optgroup>
+                            ` : ''}
+                        </select>
+                    </div>
+
+                    <div class="stock-hist-select-wrap">
+                        <select id="stockHistFilterType" class="stock-hist-filter-select" onchange="inventoryManager.handleHistoryFilterType(this.value)">
+                            <option value="all" ${this.historyFilterType === 'all' ? 'selected' : ''}>📋 Semua Operasi</option>
+                            <option value="add" ${this.historyFilterType === 'add' ? 'selected' : ''}>➕ Tambah Stok (Add / Restock)</option>
+                            <option value="reduce" ${this.historyFilterType === 'reduce' ? 'selected' : ''}>➖ Kurangi Stok (Manual)</option>
+                            <option value="set" ${this.historyFilterType === 'set' ? 'selected' : ''}>📝 Set Total (Opname)</option>
+                            <option value="order_deduct" ${this.historyFilterType === 'order_deduct' ? 'selected' : ''}>🛒 Penjualan Kasir (Order Deduct)</option>
+                            <option value="void_restore" ${this.historyFilterType === 'void_restore' ? 'selected' : ''}>↩️ Pengembalian Void</option>
+                        </select>
+                    </div>
+
+                    <div class="stock-hist-select-wrap">
+                        <select id="stockHistFilterAuthor" class="stock-hist-filter-select" onchange="inventoryManager.handleHistoryFilterAuthor(this.value)">
+                            <option value="all" ${this.historyFilterAuthor === 'all' ? 'selected' : ''}>👤 Semua Petugas / Kasir</option>
+                            ${authors.map(a => `
+                                <option value="${a}" ${this.historyFilterAuthor.toLowerCase() === a.toLowerCase() ? 'selected' : ''}>
+                                    👤 ${a}
+                                </option>
+                            `).join('')}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="stock-hist-tool-right">
+                    <span class="stock-hist-badge-count" id="stockHistRowCount">0 riwayat</span>
+                </div>
+            </div>
+
+            <!-- Tabel Riwayat -->
+            <div class="stock-history-table-container">
+                <table class="stock-history-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px; text-align: center;">#</th>
+                            <th style="width: 140px; white-space: nowrap;">Waktu & Tanggal</th>
+                            <th style="width: 130px; white-space: nowrap;">Petugas / Kasir</th>
+                            <th>Nama Bahan / Barang</th>
+                            <th style="width: 130px; text-align: center;">Jenis Perubahan</th>
+                            <th style="width: 120px; text-align: right; white-space: nowrap;">Perubahan (±)</th>
+                            <th style="width: 170px; text-align: right; white-space: nowrap;">Stok (Sebelum ➔ Sesudah)</th>
+                            <th style="min-width: 180px;">Catatan / Keterangan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stockHistoryTableBody">
+                        <!-- Diisi oleh renderStockHistoryTable() -->
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        this.renderStockHistoryTable();
+    }
+
+    renderStockHistoryTable() {
+        const tbody = document.getElementById('stockHistoryTableBody');
+        const countBadge = document.getElementById('stockHistRowCount');
+        if (!tbody) return;
+
+        const filtered = this.getFilteredStockLogs();
+        if (countBadge) {
+            countBadge.textContent = `${filtered.length} riwayat ditemukan`;
+        }
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 40px 20px; color: #64748B;">
+                        <div style="font-size: 28px; margin-bottom: 8px;">📭</div>
+                        <div style="font-weight: 700; font-size: 14px; color: #334155;">Belum Ada Riwayat Perubahan Stok Sesuai Filter</div>
+                        <div style="font-size: 12px; margin-top: 4px;">Setiap kali Anda menambah, mengurangi, atau menjual porsi menu, riwayatnya akan otomatis tercatat di sini.</div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = filtered.map((log, idx) => {
+            const dateObj = new Date(log.createdAt || Date.now());
+            const dateFormatted = !isNaN(dateObj.getTime())
+                ? dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' +
+                  dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':')
+                : '-';
+
+            const unit = log.unit || 'gr';
+            const amt = Number(log.amount) || 0;
+            const sign = amt > 0 ? '+' : '';
+            const amtFormatted = `${sign}${amt.toLocaleString('id-ID')} ${unit}`;
+
+            const beforeVal = Number(log.stockBefore) || 0;
+            const afterVal = Number(log.stockAfter) || 0;
+            const beforeAfterText = `${beforeVal.toLocaleString('id-ID')} ➔ <strong>${afterVal.toLocaleString('id-ID')}</strong> <small>${unit}</small>`;
+
+            let typeBadge = '';
+            switch (log.changeType) {
+                case 'add':
+                    typeBadge = `<span class="badge-stock-type badge-stock-add">➕ Tambah</span>`;
+                    break;
+                case 'reduce':
+                    typeBadge = `<span class="badge-stock-type badge-stock-reduce">➖ Kurang</span>`;
+                    break;
+                case 'set':
+                    typeBadge = `<span class="badge-stock-type badge-stock-set">📝 Set Opname</span>`;
+                    break;
+                case 'order_deduct':
+                    typeBadge = `<span class="badge-stock-type badge-stock-order">🛒 Kasir / PO</span>`;
+                    break;
+                case 'void_restore':
+                    typeBadge = `<span class="badge-stock-type badge-stock-restore">↩️ Void Batal</span>`;
+                    break;
+                default:
+                    typeBadge = `<span class="badge-stock-type">${log.changeType || 'Update'}</span>`;
+            }
+
+            const isPositive = amt > 0;
+            const amtColor = isPositive ? '#16A34A' : (amt < 0 ? '#DC2626' : '#475569');
+
+            const itemTypeLabel = log.itemType === 'direct_product' ? '🥤 Barang Jadi' : '🌾 Bahan Baku';
+
+            return `
+                <tr>
+                    <td style="text-align: center; color: #94A3B8; font-weight: 700; font-size: 11px;">${idx + 1}</td>
+                    <td style="white-space: nowrap; font-size: 12px; color: #475569;">
+                        <div>${dateFormatted}</div>
+                    </td>
+                    <td style="white-space: nowrap;">
+                        <span class="stock-hist-author-pill">
+                            👤 <strong>${log.author || 'Kasir'}</strong>
+                        </span>
+                    </td>
+                    <td>
+                        <div style="font-weight: 700; color: #1E293B; font-size: 13px;">${log.materialName || 'Item'}</div>
+                        <div style="font-size: 11px; color: #64748B;">${itemTypeLabel} • ID: ${log.materialId || '-'}</div>
+                    </td>
+                    <td style="text-align: center;">
+                        ${typeBadge}
+                    </td>
+                    <td style="text-align: right; font-weight: 800; font-size: 13px; color: ${amtColor}; white-space: nowrap;">
+                        ${amtFormatted}
+                    </td>
+                    <td style="text-align: right; font-size: 12px; color: #334155; white-space: nowrap;">
+                        ${beforeAfterText}
+                    </td>
+                    <td style="font-size: 12px; color: #475569;">
+                        ${log.notes ? `<span>${log.notes}</span>` : '<span style="color: #94A3B8; font-style: italic;">-</span>'}
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    getFilteredStockLogs() {
+        let list = Array.isArray(this.cachedStockLogs) ? [...this.cachedStockLogs] : [];
+
+        // Filter material
+        if (this.historyFilterMaterial && this.historyFilterMaterial !== 'all') {
+            list = list.filter(l => l.materialId === this.historyFilterMaterial);
+        }
+
+        // Filter type
+        if (this.historyFilterType && this.historyFilterType !== 'all') {
+            list = list.filter(l => l.changeType === this.historyFilterType);
+        }
+
+        // Filter author
+        if (this.historyFilterAuthor && this.historyFilterAuthor !== 'all') {
+            list = list.filter(l => (l.author || '').toLowerCase() === this.historyFilterAuthor.toLowerCase());
+        }
+
+        // Search term
+        if (this.historySearchTerm) {
+            const q = this.historySearchTerm;
+            list = list.filter(l => 
+                (l.materialName || '').toLowerCase().includes(q) ||
+                (l.author || '').toLowerCase().includes(q) ||
+                (l.notes || '').toLowerCase().includes(q) ||
+                (l.materialId || '').toLowerCase().includes(q)
+            );
+        }
+
+        return list;
+    }
+
+    handleHistorySearchInput(val) {
+        this.historySearchTerm = (val || '').toLowerCase().trim();
+        this.renderStockHistoryTable();
+    }
+
+    handleHistoryFilterMaterial(val) {
+        this.historyFilterMaterial = val;
+        this.renderStockHistoryTable();
+    }
+
+    handleHistoryFilterType(val) {
+        this.historyFilterType = val;
+        this.renderStockHistoryTable();
+    }
+
+    handleHistoryFilterAuthor(val) {
+        this.historyFilterAuthor = val;
+        this.renderStockHistoryTable();
+    }
+
+    async refreshStockHistory() {
+        try {
+            this.cachedStockLogs = await db.getStockLogs(300);
+            const contentEl = document.getElementById('stockModalTabContent');
+            if (contentEl && this.activeTab === 'history') {
+                this.renderStockHistoryTab(contentEl);
+            }
+            if (typeof showPosToast === 'function') {
+                showPosToast('🔄 Riwayat stok berhasil diperbarui', 2000);
+            }
+        } catch (e) {
+            alert('Gagal merefresh riwayat stok: ' + e.message);
         }
     }
 }

@@ -1081,6 +1081,9 @@
                 <button type="button" class="stock-tab-btn" data-tab="menu" onclick="inventoryManager.setTab('menu')">
                     📋 Tinjauan Kesiapan Jual Menu
                 </button>
+                <button type="button" class="stock-tab-btn" data-tab="history" onclick="inventoryManager.setTab('history')">
+                    📜 Riwayat Perubahan Stok
+                </button>
             </div>
 
             <div class="modal-body admin-modal-body" id="stockModalTabContent">
@@ -1221,9 +1224,19 @@
                         </div>
                     </div>
 
-                    <div class="form-group" style="margin-top: 14px; margin-bottom: 0;">
-                        <label for="rawAdjustMinStock" style="font-size: 12px; font-weight: 600; color: #64748B;">Batas Minimum Peringatan (Min Stock)</label>
-                        <input type="number" id="rawAdjustMinStock" class="form-control" min="0" step="1">
+                    <div class="form-row" style="margin-top: 14px; gap: 10px; display: flex;">
+                        <div class="form-group" style="flex: 1.2; margin-bottom: 8px;">
+                            <label for="rawAdjustAuthor" style="font-size: 12px; font-weight: 700; color: #334155;">Petugas / Kasir <span class="text-danger">*</span></label>
+                            <input type="text" id="rawAdjustAuthor" class="form-control" placeholder="Nama Petugas / Kasir" required>
+                        </div>
+                        <div class="form-group" style="flex: 0.8; margin-bottom: 8px;">
+                            <label for="rawAdjustMinStock" style="font-size: 12px; font-weight: 600; color: #64748B;">Min. Alert</label>
+                            <input type="number" id="rawAdjustMinStock" class="form-control" min="0" step="1">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="rawAdjustNotes" style="font-size: 12px; font-weight: 600; color: #64748B;">Catatan / Keterangan (Opsional)</label>
+                        <input type="text" id="rawAdjustNotes" class="form-control" placeholder="Contoh: Hasil smoke pagi, Belanja pasar, Koreksi fisik">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -1596,16 +1609,16 @@
     <div id="bulkPrintArea" class="bulk-print-only-container"></div>
 
     <!-- ================= JAVASCRIPT MODULES ================= -->
-    <script src="js/config.js?v=8.1"></script>
-    <script src="js/sound.js?v=8.1"></script>
-    <script src="js/db.js?v=8.1"></script>
-    <script src="js/settings.js?v=8.1"></script>
-    <script src="js/inventory.js?v=8.1"></script>
-    <script src="js/products.js?v=8.1"></script>
-    <script src="js/cart.js?v=8.1"></script>
-    <script src="js/payment.js?v=8.1"></script>
-    <script src="js/auth.js?v=8.1"></script>
-    <script src="js/admin.js?v=8.1"></script>
-    <script src="js/app.js?v=8.1"></script>
+    <script src="js/config.js?v=8.2"></script>
+    <script src="js/sound.js?v=8.2"></script>
+    <script src="js/db.js?v=8.2"></script>
+    <script src="js/settings.js?v=8.2"></script>
+    <script src="js/inventory.js?v=8.2"></script>
+    <script src="js/products.js?v=8.2"></script>
+    <script src="js/cart.js?v=8.2"></script>
+    <script src="js/payment.js?v=8.2"></script>
+    <script src="js/auth.js?v=8.2"></script>
+    <script src="js/admin.js?v=8.2"></script>
+    <script src="js/app.js?v=8.2"></script>
 </body>
 </html>
