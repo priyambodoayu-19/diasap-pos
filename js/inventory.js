@@ -228,6 +228,25 @@ class InventoryManager {
             lines.push('• (Belum ada catatan stok mentah)');
         }
 
+        // 4. SISA DAGING ASAP (READY TOKO)
+        lines.push('');
+        lines.push('🥩 4. SISA DAGING ASAP (READY TOKO):');
+        if (cookedItems.length > 0) {
+            cookedItems.forEach(m => {
+                const stock = Math.max(0, Number(m.stock) || 0);
+                const stockKg = (stock / 1000).toFixed(1);
+                let shortName = m.name.replace(/ayam\s*asap\s*/i, '').replace(/daging\s*/i, '').trim();
+                shortName = shortName.charAt(0).toUpperCase() + shortName.slice(1);
+                if (stock <= 0) {
+                    lines.push(`• ${shortName} : 0 kg (Habis / Sedang PO)`);
+                } else {
+                    lines.push(`• ${shortName} : ${stockKg} kg (${stock.toLocaleString('id-ID')} ${m.unit || 'gr'})`);
+                }
+            });
+        } else {
+            lines.push('• (Belum ada bahan matang)');
+        }
+
         // Info jika ada tagihan sementara belum bayar (transit)
         const transitItems = cookedItems.filter(m => ((this.transitDemand && this.transitDemand[m.id]) || 0) > 0);
         if (transitItems.length > 0) {
@@ -514,7 +533,37 @@ class InventoryManager {
                         ` : ''}
                     </div>
                 </div>
-            ` : ''}
+            ` : `
+                <div class="production-summary-banner banner-safe">
+                    <div class="prod-banner-header">
+                        <div class="prod-banner-title" style="color: #166534;">
+                            <span class="prod-fire-icon" style="background: #DCFCE7; border-color: #86EFAC; color: #16A34A;">✅</span>
+                            <div>
+                                <strong style="font-size: 14px; color: #166534;">Status Kebutuhan Daging & Produksi Asap: AMAN (Nihil)</strong>
+                                <div style="font-size: 11px; color: #15803D; opacity: 0.9;">Semua pesanan lunas saat ini terpenuhi oleh stok ready di toko. Tidak ada defisit asap atau belanja mendesak.</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-banner-copy-mini" style="background: #16A34A;" onclick="inventoryManager.copyShoppingList()">
+                            📋 Salin Rekap WhatsApp
+                        </button>
+                    </div>
+                    <div class="prod-banner-body">
+                        <div class="prod-banner-row">
+                            <span class="prod-banner-tag tag-safe">✅ STOK READY AMAN:</span>
+                            <div class="prod-pills-list">
+                                ${cookedMaterials.map(m => {
+                                    const stock = Math.max(0, Number(m.stock) || 0);
+                                    return `
+                                        <span class="prod-pill pill-safe">
+                                            <strong>${m.name}:</strong> ${stock.toLocaleString('id-ID')} ${m.unit} (${(stock / 1000).toFixed(2)} kg ready)
+                                        </span>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `}
 
             <!-- SECTION 1: DAGING ASAP MATANG -->
             <div class="stock-section-title-wrap">
@@ -609,24 +658,32 @@ class InventoryManager {
                                 </div>
                             </div>
 
-                            <div class="raw-mat-portions-box">
-                                <div class="portions-box-title">Estimasi Porsi Menu (Dari Stok Ready):</div>
-                                ${usages.length > 0 ? usages.map(u => {
-                                    const portions = u.amount > 0 ? Math.floor(readyStock / u.amount) : 0;
-                                    return `
-                                        <div class="portion-row">
-                                            <div class="portion-name-wrap" title="${u.productName}${u.variantName ? ' (' + u.variantName + ')' : ''} - ${u.amount} ${mat.unit}">
-                                                <strong class="portion-name-text">${u.productName}</strong>
-                                                ${u.variantName ? `<span class="badge-var-mini">${u.variantName}</span>` : ''} 
-                                                <span class="portion-amount-text" style="color: #64748B; font-size: 11px;">(${u.amount} ${mat.unit}):</span>
+                            <details class="portions-details-accordion">
+                                <summary class="portions-summary-btn">
+                                    <span class="portions-summary-left">
+                                        📊 <strong>Estimasi Porsi Menu Ready</strong> (${usages.length} menu)
+                                    </span>
+                                    <span class="portions-chevron-icon">▼</span>
+                                </summary>
+                                <div class="raw-mat-portions-box">
+                                    <div class="portions-box-title">Estimasi Porsi Menu (Dari Stok Ready):</div>
+                                    ${usages.length > 0 ? usages.map(u => {
+                                        const portions = u.amount > 0 ? Math.floor(readyStock / u.amount) : 0;
+                                        return `
+                                            <div class="portion-row">
+                                                <div class="portion-name-wrap" title="${u.productName}${u.variantName ? ' (' + u.variantName + ')' : ''} - ${u.amount} ${mat.unit}">
+                                                    <strong class="portion-name-text">${u.productName}</strong>
+                                                    ${u.variantName ? `<span class="badge-var-mini">${u.variantName}</span>` : ''} 
+                                                    <span class="portion-amount-text" style="color: #64748B; font-size: 11px;">(${u.amount} ${mat.unit}):</span>
+                                                </div>
+                                                <span class="portion-count ${portions === 0 ? 'text-danger' : 'text-success'}">
+                                                    <strong>${portions}</strong> porsi
+                                                </span>
                                             </div>
-                                            <span class="portion-count ${portions === 0 ? 'text-danger' : 'text-success'}">
-                                                <strong>${portions}</strong> porsi
-                                            </span>
-                                        </div>
-                                    `;
-                                }).join('') : '<div style="font-size: 11px; color: #94A3B8; font-style: italic;">Belum ada menu yang dihubungkan ke bahan ini.</div>'}
-                            </div>
+                                        `;
+                                    }).join('') : '<div style="font-size: 11px; color: #94A3B8; font-style: italic;">Belum ada menu yang dihubungkan ke bahan ini.</div>'}
+                                </div>
+                            </details>
 
                             <div class="raw-mat-actions">
                                 <div class="quick-restock-group">
