@@ -175,8 +175,16 @@ class AdminManager {
         if (modal) modal.classList.remove('active');
     }
 
+    filterByCategory(cat) {
+        this.currentCategory = cat;
+        this.renderTable();
+    }
+
     async render() {
         await productManager.loadProducts();
+        if (typeof categoryManager !== 'undefined') {
+            categoryManager.renderAdminPills();
+        }
         this.renderStats();
         this.renderTable();
     }
@@ -244,7 +252,7 @@ class AdminManager {
         if (filtered.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="8" style="text-align: center; padding: 36px 20px; color: #94A3B8;">
+                    <td colspan="10" style="text-align: center; padding: 36px 20px; color: #94A3B8;">
                         <div style="font-size: 32px; margin-bottom: 8px;">🔍</div>
                         <div style="font-weight: 700; font-size: 15px; color: #64748B;">Tidak ada menu yang sesuai</div>
                         <div style="font-size: 13px;">Coba ubah kata kunci pencarian atau kategori filter.</div>
@@ -268,20 +276,16 @@ class AdminManager {
             const currentPrice = hasDiscount ? pricePromo : priceNormal;
             const currentMargin = currentPrice > 0 ? Math.round((currentProfit / currentPrice) * 100) : 0;
 
-            let catLabel = 'Makanan';
-            let catBadgeClass = 'cat-makanan';
-            if (p.category === 'minuman') {
-                catLabel = 'Minuman';
-                catBadgeClass = 'cat-minuman';
-            } else if (p.category === 'tambahan') {
-                catLabel = 'Tambahan';
-                catBadgeClass = 'cat-tambahan';
-            }
+            const catObj = (typeof categoryManager !== 'undefined') 
+                ? categoryManager.getCategoryById(p.category) 
+                : { id: p.category, name: p.category, icon: '🍽️' };
+            const catLabel = catObj ? `${catObj.icon || ''} ${catObj.name}` : (p.category || 'Makanan');
+            const catBadgeClass = `cat-${p.category}`;
 
             const hasVariants = p.variants && Array.isArray(p.variants) && p.variants.length > 0;
             const variantsBadge = hasVariants 
                 ? `<span class="badge-has-variants" title="Varian: ${p.variants.map(v => v.name).join(', ')}">✨ ${p.variants.length} Varian</span>` 
-                : '';
+                : `<span class="badge-no-variants">Tanpa Varian</span>`;
 
             return `
                 <tr>
@@ -307,45 +311,47 @@ class AdminManager {
                             ` : `
                                 <span class="admin-prod-emoji">${getValidProductEmoji(p.emoji, p.category, p.id)}</span>
                             `}
-                            <div>
-                                <div class="admin-prod-name">
+                            <div class="admin-prod-info-col">
+                                <div class="admin-prod-name-single" title="${p.name}">
                                     ${p.name}
+                                </div>
+                                <div class="admin-prod-sub-meta">
                                     ${variantsBadge}
                                 </div>
-                                <div class="admin-prod-code">Kode: <strong>${p.id}</strong> &bull; <span class="category-badge ${catBadgeClass}">${catLabel}</span></div>
                                 ${p.desc ? `<div class="admin-prod-desc-inline">${p.desc}</div>` : ''}
                             </div>
                         </div>
+                    </td>
+                    <td style="white-space: nowrap;">
+                        <span class="admin-sku-badge">${p.id}</span>
+                    </td>
+                    <td style="white-space: nowrap;">
+                        <span class="category-badge ${catBadgeClass}">${catLabel}</span>
                     </td>
                     <td>
                         <div class="admin-cogs-cell">${formatRupiah(cogs)}</div>
                     </td>
                     <td>
-                        <div class="admin-price-normal">${formatRupiah(priceNormal)}</div>
+                        <div class="admin-price-normal-single">${formatRupiah(priceNormal)}</div>
                     </td>
                     <td>
-                        <div class="admin-price-promo-wrap">
+                        <div class="admin-price-promo-single">
                             <span class="admin-price-promo ${hasDiscount ? 'has-discount' : ''}">${formatRupiah(pricePromo)}</span>
                             ${hasDiscount ? `
-                                <span class="admin-discount-badge-compact">-${discountPct}% (Hemat ${formatRupiah(savings)})</span>
+                                <span class="admin-discount-badge-compact" title="Hemat ${formatRupiah(savings)}">-${discountPct}%</span>
                             ` : `
-                                <span class="admin-no-discount-tag">Normal (Tanpa Diskon)</span>
+                                <span class="admin-no-discount-tag">Normal</span>
                             `}
                         </div>
                     </td>
                     <td>
-                        <div class="admin-profit-wrap">
-                            <div class="admin-profit-row-top">
-                                <span class="admin-profit-val ${currentProfit >= 0 ? 'profit-positive' : 'profit-negative'}">
-                                    ${currentProfit >= 0 ? '+' : ''}${formatRupiah(currentProfit)}
-                                </span>
-                                <span class="admin-margin-badge ${currentMargin >= 30 ? 'margin-good' : (currentMargin >= 0 ? 'margin-ok' : 'margin-loss')}">
-                                    ${currentMargin}%
-                                </span>
-                            </div>
-                            ${hasDiscount ? `
-                                <div class="admin-profit-sub-note">Normal: +${formatRupiah(profitNormal)}</div>
-                            ` : ''}
+                        <div class="admin-profit-single">
+                            <span class="admin-profit-val ${currentProfit >= 0 ? 'profit-positive' : 'profit-negative'}">
+                                ${currentProfit >= 0 ? '+' : ''}${formatRupiah(currentProfit)}
+                            </span>
+                            <span class="admin-margin-badge ${currentMargin >= 30 ? 'margin-good' : (currentMargin >= 0 ? 'margin-ok' : 'margin-loss')}">
+                                ${currentMargin}%
+                            </span>
                         </div>
                     </td>
                     <td class="col-desc">
@@ -578,6 +584,10 @@ class AdminManager {
         this.updateVisualPreview();
         this.updateDiscountPreview();
 
+        if (typeof categoryManager !== 'undefined') {
+            categoryManager.renderSelectOptions();
+        }
+
         if (modal) modal.classList.add('active');
     }
 
@@ -610,7 +620,11 @@ class AdminManager {
             idInput.disabled = false; // SKU / Kode Menu kini dapat diedit
         }
         if (nameInput) nameInput.value = product.name;
-        if (catSelect) catSelect.value = product.category || 'makanan';
+        if (typeof categoryManager !== 'undefined') {
+            categoryManager.renderSelectOptions(product.category || 'makanan');
+        } else if (catSelect) {
+            catSelect.value = product.category || 'makanan';
+        }
         if (emojiInput) emojiInput.value = getValidProductEmoji(product.emoji, product.category, product.id);
         if (descInput) descInput.value = product.desc || '';
         if (sortOrderInput) sortOrderInput.value = product.sortOrder || 10;

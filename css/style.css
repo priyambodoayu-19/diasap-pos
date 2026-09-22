@@ -128,26 +128,32 @@ input::placeholder, textarea::placeholder {
     overflow-y: auto;
     border-right: 2px solid var(--border);
     transition: background-color 0.3s;
+    container-type: inline-size;
+    container-name: menuSection;
 }
 
 .menu-container.promo-mode {
     background-color: #FAF2F2;
 }
 
-/* Header Kiri */
+/* Header Atas: Brand DIASAP di Kiri & Mode Promo di Kanan (Lapang & Menonjol) */
 .top-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 18px;
-    flex-wrap: wrap;
-    gap: 15px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1.5px solid var(--border);
+    gap: 16px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .brand-section {
     display: flex;
     align-items: center;
     gap: 12px;
+    flex-shrink: 0;
 }
 
 .brand-logo-badge {
@@ -161,30 +167,61 @@ input::placeholder, textarea::placeholder {
     justify-content: center;
     font-size: 24px;
     box-shadow: 0 4px 14px rgba(45, 113, 248, 0.28);
+    flex-shrink: 0;
 }
 
 .brand-text h1 {
     font-size: 22px;
-    font-weight: 800;
+    font-weight: 900;
     letter-spacing: -0.5px;
     color: var(--secondary);
     line-height: 1.1;
+    white-space: nowrap;
 }
 
 .brand-text span {
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.8px;
     color: var(--primary);
+    white-space: nowrap;
 }
 
-.header-right-controls {
-    display: flex;
+/* Lencana Kasir Aktif */
+.active-cashier-pill {
+    display: inline-flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 8px 10px;
-    justify-content: flex-end;
+    gap: 6px;
+    padding: 0 12px;
+    height: 40px;
+    background: #FFFFFF;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--secondary);
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+}
+
+.active-cashier-pill:hover {
+    background: var(--primary-light);
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(45, 113, 248, 0.12);
+}
+
+.cashier-pill-icon {
+    font-size: 15px;
+    line-height: 1;
+}
+
+.cashier-pill-name {
+    font-weight: 800;
 }
 
 /* Status Koneksi DB */
@@ -192,12 +229,13 @@ input::placeholder, textarea::placeholder {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 12px;
-    border-radius: 20px;
+    padding: 0 12px;
+    height: 40px;
+    border-radius: 12px;
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 700;
     background: white;
-    border: 1px solid var(--border);
+    border: 1.5px solid var(--border);
     box-shadow: var(--shadow-sm);
     white-space: nowrap !important;
     flex-shrink: 0;
@@ -221,12 +259,13 @@ input::placeholder, textarea::placeholder {
     box-shadow: 0 0 8px rgba(243, 156, 18, 0.7);
 }
 
-/* Tombol Header */
+/* Tombol Header & Nav */
 .btn-nav-action {
     background: white;
     border: 1.5px solid var(--border);
     color: var(--secondary);
-    padding: 8px 14px;
+    padding: 0 14px;
+    height: 40px;
     border-radius: 12px;
     font-size: 13px;
     font-weight: 700;
@@ -248,33 +287,104 @@ input::placeholder, textarea::placeholder {
     box-shadow: 0 4px 12px rgba(45, 113, 248, 0.12);
 }
 
-/* Switch Promo */
+/* Khusus Tombol Pengaturan Toko di Header Atas */
+.btn-settings-nav {
+    background: #FFFFFF;
+    border: 1.5px solid var(--border);
+    color: var(--secondary);
+    font-weight: 700;
+}
+
+.btn-settings-nav:hover {
+    background: #F8FAFC;
+    border-color: #94A3B8;
+    color: var(--primary);
+}
+
+/* ==========================================================================
+   MODE HARGA SWITCH (PROMINENT / PALING MENONJOL)
+   ========================================================================== */
 .promo-switch-container {
     display: inline-flex;
     align-items: center;
-    background: white;
-    padding: 6px 14px;
-    border-radius: 30px;
-    box-shadow: var(--shadow-sm);
-    border: 1.5px solid var(--border);
+    gap: 10px;
+    background: #EFF6FF;
+    border: 1.5px solid #93C5FD;
+    padding: 0 13px;
+    height: 40px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
     white-space: nowrap !important;
     flex-shrink: 0;
-    height: 38px;
     box-sizing: border-box;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.switch-label {
-    margin-right: 10px;
-    font-weight: 700;
-    font-size: 13px;
-    color: var(--secondary);
+.promo-switch-container:hover {
+    background: #E0EEFE;
+    border-color: #60A5FA;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.14);
+    transform: translateY(-1px);
 }
 
+.promo-switch-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.promo-mode-icon {
+    font-size: 17px;
+    line-height: 1;
+    transition: transform 0.2s ease;
+}
+
+.promo-mode-text-wrap {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.promo-mode-sub {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    color: #3B82F6;
+    text-transform: uppercase;
+    line-height: 1;
+    margin-bottom: 2px;
+    transition: color 0.2s;
+}
+
+.promo-mode-main, #priceModeLabel {
+    font-weight: 800;
+    font-size: 13.5px;
+    color: #1D4ED8;
+    line-height: 1.1;
+    min-width: 50px;
+    transition: color 0.2s;
+}
+
+.promo-key-hint {
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #DBEAFE;
+    color: #1D4ED8;
+    border: 1px solid #BFDBFE;
+    line-height: 1;
+    transition: all 0.2s;
+}
+
+/* Switch Slider */
 .switch {
     position: relative;
     display: inline-block;
-    width: 44px;
-    height: 22px;
+    width: 38px;
+    height: 20px;
     flex-shrink: 0;
 }
 
@@ -288,62 +398,350 @@ input::placeholder, textarea::placeholder {
     position: absolute;
     cursor: pointer;
     top: 0; left: 0; right: 0; bottom: 0;
-    background-color: #CBD5E1;
+    background-color: #BFDBFE;
     transition: .25s ease;
-    border-radius: 24px;
+    border-radius: 20px;
 }
 
 .slider:before {
     position: absolute;
     content: "";
-    height: 16px;
-    width: 16px;
+    height: 14px;
+    width: 14px;
     left: 3px;
     bottom: 3px;
-    background-color: white;
+    background-color: #2563EB;
     transition: .25s ease;
     border-radius: 50%;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
 input:checked + .slider {
-    background-color: var(--promo);
+    background-color: #FFFFFF;
 }
 
 input:checked + .slider:before {
-    transform: translateX(22px);
+    transform: translateX(18px);
+    background-color: #E11D48;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
 
-#priceModeLabel {
-    margin-left: 8px;
-    font-weight: 800;
-    font-size: 13px;
+/* STATUS PROMO AKTIF (MENCENGANGKAN & TIDAK MUNGKIN LUPA) */
+.promo-switch-container.is-promo-active,
+.promo-switch-container:has(#promoToggle:checked) {
+    background: linear-gradient(135deg, #FF453A 0%, #E11D48 100%) !important;
+    border-color: #FF8A8A !important;
+    box-shadow: 0 4px 18px rgba(225, 29, 72, 0.45), 0 0 0 3px rgba(239, 68, 68, 0.25) !important;
+    animation: promoAlertPulse 2s infinite alternate !important;
+}
+
+.promo-switch-container.is-promo-active .promo-mode-icon,
+.promo-switch-container:has(#promoToggle:checked) .promo-mode-icon {
+    transform: scale(1.15);
+}
+
+.promo-switch-container.is-promo-active .promo-mode-sub,
+.promo-switch-container:has(#promoToggle:checked) .promo-mode-sub {
+    color: rgba(255, 255, 255, 0.88) !important;
+}
+
+.promo-switch-container.is-promo-active .promo-mode-main,
+.promo-switch-container.is-promo-active #priceModeLabel,
+.promo-switch-container:has(#promoToggle:checked) .promo-mode-main,
+.promo-switch-container:has(#promoToggle:checked) #priceModeLabel {
+    color: #FFFFFF !important;
+    font-weight: 900;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.promo-switch-container.is-promo-active .promo-key-hint,
+.promo-switch-container:has(#promoToggle:checked) .promo-key-hint {
+    background: rgba(255, 255, 255, 0.25) !important;
+    color: #FFFFFF !important;
+    border-color: rgba(255, 255, 255, 0.45) !important;
+}
+
+.promo-switch-container.is-promo-active .slider,
+.promo-switch-container:has(#promoToggle:checked) .slider {
+    background-color: rgba(255, 255, 255, 0.35);
+}
+
+@keyframes promoAlertPulse {
+    0% {
+        box-shadow: 0 4px 14px rgba(225, 29, 72, 0.4), 0 0 0 2px rgba(239, 68, 68, 0.25);
+        transform: scale(1);
+    }
+    100% {
+        box-shadow: 0 6px 24px rgba(225, 29, 72, 0.6), 0 0 0 4px rgba(239, 68, 68, 0.38);
+        transform: scale(1.02);
+    }
+}
+
+/* ==========================================================================
+   SECONDARY ACTION TOOLBAR (OPERASIONAL KASIR & PROFIL MINI - IDE 2)
+   ========================================================================== */
+.pos-action-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    position: relative;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+    min-height: 38px;
+}
+
+.pos-action-toolbar .toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+}
+
+.pos-action-toolbar .btn-nav-action,
+.btn-cashier-trigger {
+    background: #FFFFFF;
+    border: 1.5px solid var(--border);
     color: var(--secondary);
-    min-width: 52px;
+    padding: 0 13px;
+    height: 38px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.promo-active-text {
-    color: var(--promo) !important;
-    animation: pulsePromo 1.5s infinite;
+.pos-action-toolbar .btn-nav-action:hover,
+.btn-cashier-trigger:hover,
+.cashier-profile-dropdown.is-open .btn-cashier-trigger {
+    background: #F8FAFC;
+    border-color: #CBD5E1;
+    color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
 }
 
-@keyframes pulsePromo {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.65; }
+/* ==========================================================================
+   PROFIL KASIR MINI & DROPDOWN STATUS SISTEM (IDE 2: 1 TITIK RINGKAS)
+   ========================================================================== */
+.cashier-profile-dropdown {
+    position: relative;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.btn-cashier-trigger {
+    padding: 0 11px;
+}
+
+.cashier-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    background-color: var(--warning);
+    box-shadow: 0 0 6px rgba(243, 156, 18, 0.7);
+    flex-shrink: 0;
+    transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.cashier-status-dot.status-online {
+    background-color: var(--success);
+    box-shadow: 0 0 7px rgba(39, 174, 96, 0.8);
+}
+
+.cashier-status-dot.status-offline {
+    background-color: var(--warning);
+    box-shadow: 0 0 7px rgba(243, 156, 18, 0.8);
+}
+
+.cashier-avatar-icon {
+    font-size: 13px;
+    line-height: 1;
+}
+
+.cashier-name-text {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--secondary);
+}
+
+.cashier-chevron {
+    color: #94A3B8;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s;
+    margin-left: 1px;
+}
+
+.cashier-profile-dropdown.is-open .cashier-chevron {
+    transform: rotate(180deg);
+    color: var(--primary);
+}
+
+/* Menu Pop-up / Dropdown */
+.cashier-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 240px;
+    background: #FFFFFF;
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(15, 23, 42, 0.04);
+    padding: 10px;
+    z-index: 1050;
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    animation: cashierDropdownPop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cashier-profile-dropdown.is-open .cashier-dropdown-menu {
+    display: flex;
+}
+
+@keyframes cashierDropdownPop {
+    from {
+        opacity: 0;
+        transform: translateY(-6px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.dropdown-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 4px 6px 8px 6px;
+}
+
+.dropdown-user-info {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.dropdown-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #EFF6FF;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    border: 1.5px solid rgba(45, 113, 248, 0.2);
+    flex-shrink: 0;
+}
+
+.dropdown-user-meta {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.dropdown-user-name {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: var(--secondary);
+    line-height: 1.2;
+}
+
+.dropdown-user-role {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.cashier-dropdown-menu .status-indicator {
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 5px 8px;
+    height: auto;
+    border-radius: 7px;
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    width: 100%;
+    justify-content: center;
+    box-shadow: none;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: #E2E8F0;
+    margin: 2px 0;
+}
+
+.dropdown-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    padding: 8px 10px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--secondary);
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s, color 0.15s;
+    font-family: inherit;
+}
+
+.dropdown-item:hover {
+    background: #F1F5F9;
+    color: var(--primary);
+}
+
+.dropdown-item svg {
+    flex-shrink: 0;
+}
+
+.dropdown-item-danger {
+    color: #DC2626;
+}
+
+.dropdown-item-danger:hover {
+    background: #FEF2F2 !important;
+    color: #B91C1C !important;
 }
 
 /* ==========================================================================
    CATEGORY SELECTOR (Sesuai Referensi Visual "referensi UI design")
    ========================================================================== */
 .category-bar {
-    margin-bottom: 18px;
+    margin-bottom: 16px;
 }
 
 .category-pills {
     display: flex;
     gap: 12px;
     overflow-x: auto;
-    padding: 2px 2px 8px 2px;
+    padding: 2px 2px 6px 2px;
     scrollbar-width: thin;
     scrollbar-color: #CBD5E1 transparent;
 }
@@ -358,18 +756,21 @@ input:checked + .slider:before {
 }
 
 .cat-pill {
+    flex: 1 1 0;
+    min-width: 180px;
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 10px 16px;
+    gap: 10px;
+    padding: 10px 20px 10px 14px;
     background: #FFFFFF;
     border: 1.5px solid var(--border);
-    border-radius: 16px;
+    border-radius: 14px;
     cursor: pointer;
     white-space: nowrap;
     transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
     flex-shrink: 0;
+    box-sizing: border-box;
 }
 
 .cat-pill:hover {
@@ -380,19 +781,20 @@ input:checked + .slider:before {
 
 .cat-pill.active {
     background: #FFFFFF;
-    border-color: var(--primary);
+    border: 2px solid var(--primary);
     box-shadow: 0 6px 18px rgba(45, 113, 248, 0.14);
 }
 
 .cat-pill-icon-wrap {
-    width: 36px;
-    height: 36px;
-    border-radius: 12px;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
     background: #F8FAFC;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 19px;
+    flex-shrink: 0;
     transition: all 0.2s ease;
 }
 
@@ -404,14 +806,18 @@ input:checked + .slider:before {
     display: flex;
     flex-direction: column;
     text-align: left;
+    min-width: 0;
+    flex: 1;
 }
 
 .cat-pill-title {
-    font-size: 13.5px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--text-dark);
     line-height: 1.2;
     transition: color 0.2s;
+    letter-spacing: -0.2px;
+    white-space: nowrap;
 }
 
 .cat-pill.active .cat-pill-title {
@@ -422,9 +828,10 @@ input:checked + .slider:before {
 .cat-pill-count {
     font-size: 11px;
     font-weight: 600;
-    color: var(--text-light);
+    color: var(--text-muted);
     margin-top: 2px;
     transition: color 0.2s;
+    white-space: nowrap;
 }
 
 .cat-pill.active .cat-pill-count {
@@ -651,12 +1058,16 @@ input:checked + .slider:before {
 }
 
 .category-badge {
-    font-size: 10px;
-    font-weight: 800;
+    font-size: 11px;
+    font-weight: 700;
     padding: 3px 8px;
-    border-radius: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    border-radius: 6px;
+    letter-spacing: 0.3px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    text-transform: capitalize;
 }
 
 .cat-makanan { background: #FEF3C7; color: #B45309; }
@@ -2624,22 +3035,97 @@ input[type="password"]::-ms-clear {
     flex-shrink: 0;
 }
 
-.admin-prod-name {
+.admin-prod-info-col {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.admin-prod-name,
+.admin-prod-name-single {
     font-weight: 700;
     color: var(--secondary);
-    font-size: 14px;
+    font-size: 13.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 250px;
+    line-height: 1.3;
 }
 
-.admin-prod-code {
-    font-size: 11px;
+.admin-prod-code,
+.admin-prod-sub-meta {
+    font-size: 11.5px;
     color: var(--text-muted);
-    margin-top: 2px;
+    margin-top: 3px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
 }
 
-.admin-price-normal {
+.meta-dot {
+    color: #CBD5E1;
+    font-size: 10px;
+}
+
+.badge-has-variants {
+    display: inline-flex;
+    align-items: center;
+    background: #EFF6FF;
+    color: #2563EB;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    border: 1px solid #DBEAFE;
+}
+
+.badge-no-variants {
+    display: inline-flex;
+    align-items: center;
+    background: #F1F5F9;
+    color: #64748B;
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 1px 5px;
+    border-radius: 4px;
+}
+
+.admin-sku-badge {
+    display: inline-block;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+    font-size: 12px;
     font-weight: 700;
     color: #334155;
-    font-size: 14px;
+    background: #F8FAFC;
+    padding: 3px 8px;
+    border-radius: 5px;
+    border: 1px solid #CBD5E1;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+}
+
+.admin-price-normal,
+.admin-price-normal-single {
+    font-weight: 700;
+    color: #334155;
+    font-size: 13.5px;
+    white-space: nowrap;
+}
+
+.admin-price-promo-single {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.admin-profit-single {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
 }
 
 .admin-price-promo-wrap {
@@ -2762,6 +3248,135 @@ input[type="password"]::-ms-clear {
     background: #FEE2E2;
     border-color: #FCA5A5;
     color: #B91C1C;
+}
+
+.btn-manage-cats {
+    background: none;
+    border: none;
+    color: var(--primary);
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+    transition: color 0.15s;
+}
+
+.btn-manage-cats:hover {
+    color: #B91C1C;
+}
+
+/* Modal Category Manager Styles */
+.modal-category-manager {
+    max-width: 480px;
+    width: 92%;
+    border-radius: var(--radius-lg);
+    background: white;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+}
+
+.add-category-box {
+    background: #F8FAFC;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    margin-bottom: 16px;
+}
+
+.add-cat-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 8px;
+}
+
+.add-cat-inputs {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.cat-list-heading {
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748B;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.cat-list-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.category-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: #FFFFFF;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    transition: all 0.15s;
+}
+
+.category-item-row:hover {
+    background: #F8FAFC;
+    border-color: #CBD5E1;
+}
+
+.cat-item-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cat-item-icon {
+    font-size: 20px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #F1F5F9;
+    border-radius: 6px;
+}
+
+.cat-item-meta {
+    display: flex;
+    flex-direction: column;
+}
+
+.cat-item-name {
+    font-weight: 700;
+    font-size: 13.5px;
+    color: var(--secondary);
+}
+
+.cat-item-count {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.btn-del-cat {
+    padding: 5px 10px;
+    background: #FEF2F2;
+    color: #DC2626;
+    border: 1px solid #FECACA;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.btn-del-cat:hover {
+    background: #FEE2E2;
+    border-color: #FCA5A5;
 }
 
 .admin-modal-footer {
@@ -3027,8 +3642,9 @@ input[type="password"]::-ms-clear {
 /* Tabs Nav inside Stock Modal */
 .stock-tabs-nav {
     display: flex;
+    align-items: center;
     gap: 8px;
-    padding: 12px 20px;
+    padding: 10px 20px;
     background: #F8FAFC;
     border-bottom: 1px solid var(--border);
     overflow-x: auto;
@@ -3036,16 +3652,39 @@ input[type="password"]::-ms-clear {
 }
 
 .stock-tab-btn {
-    padding: 8px 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    height: 38px;
+    padding: 0 16px;
     border-radius: 8px;
     border: 1px solid transparent;
     background: transparent;
     color: #64748B;
+    font-family: inherit;
     font-weight: 700;
     font-size: 13px;
+    line-height: 1;
     cursor: pointer;
     white-space: nowrap;
     transition: all 0.2s;
+    box-sizing: border-box;
+    margin: 0;
+}
+
+.stock-tab-btn .tab-btn-icon {
+    font-size: 15px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stock-tab-btn .tab-btn-text {
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
 }
 
 .stock-tab-btn:hover {
@@ -3073,8 +3712,10 @@ input[type="password"]::-ms-clear {
 /* Raw Materials Cards Grid */
 .raw-materials-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr));
     gap: 14px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .raw-material-card {
@@ -3087,6 +3728,8 @@ input[type="password"]::-ms-clear {
     gap: 12px;
     box-shadow: var(--shadow-sm);
     transition: all 0.2s;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 .raw-material-card.status-safe {
@@ -3108,14 +3751,29 @@ input[type="password"]::-ms-clear {
     background: #FFFBFB;
 }
 
-/* Production & Shopping Summary Banner */
+/* Production & Shopping Summary Banner with High Contrast Hierarchy */
 .production-summary-banner {
-    background: linear-gradient(135deg, #FFF7ED 0%, #FEF2F2 100%);
-    border: 1px solid #FED7AA;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-left: 5px solid #EA580C;
     border-radius: 12px;
-    padding: 14px 16px;
+    padding: 14px 18px;
     margin-bottom: 16px;
-    box-shadow: 0 2px 6px rgba(234, 88, 12, 0.08);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+}
+
+.production-summary-banner.banner-safe {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-left: 5px solid #10B981;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.06);
+}
+
+.production-summary-banner.banner-alert {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-left: 5px solid #EF4444;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.06);
 }
 
 .prod-banner-header {
@@ -3123,7 +3781,7 @@ input[type="password"]::-ms-clear {
     justify-content: space-between;
     align-items: center;
     gap: 12px;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     flex-wrap: wrap;
 }
 
@@ -3131,20 +3789,30 @@ input[type="password"]::-ms-clear {
     display: flex;
     align-items: center;
     gap: 10px;
-    color: #9A3412;
+    color: #0F172A;
 }
 
-.prod-fire-icon {
-    font-size: 24px;
-    background: #FFEDD5;
-    width: 40px;
-    height: 40px;
+.prod-banner-icon {
+    font-size: 20px;
+    width: 38px;
+    height: 38px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 10px;
-    border: 1px solid #FDBA74;
     flex-shrink: 0;
+}
+
+.prod-banner-icon.icon-safe {
+    background: #ECFDF5;
+    border: 1px solid #A7F3D0;
+    color: #059669;
+}
+
+.prod-banner-icon.icon-alert {
+    background: #FFF7ED;
+    border: 1px solid #FED7AA;
+    color: #EA580C;
 }
 
 .btn-copy-shopping-list {
@@ -3167,31 +3835,46 @@ input[type="password"]::-ms-clear {
 }
 
 .btn-banner-copy-mini {
-    background: #EA580C;
-    color: #FFFFFF;
     border: none;
     border-radius: 6px;
-    padding: 5px 10px;
-    font-size: 11px;
+    padding: 6px 12px;
+    font-size: 11.5px;
     font-weight: 700;
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     transition: background 0.15s;
 }
 
-.btn-banner-copy-mini:hover {
+.btn-banner-copy-mini.btn-copy-safe {
+    background: #059669;
+    color: #FFFFFF;
+}
+
+.btn-banner-copy-mini.btn-copy-safe:hover {
+    background: #047857;
+}
+
+.btn-banner-copy-mini.btn-copy-alert {
+    background: #EA580C;
+    color: #FFFFFF;
+}
+
+.btn-banner-copy-mini.btn-copy-alert:hover {
     background: #C2410C;
 }
 
 .prod-banner-body {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
 }
 
 .prod-banner-row {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     flex-wrap: wrap;
 }
 
@@ -3200,65 +3883,156 @@ input[type="password"]::-ms-clear {
     font-weight: 800;
     letter-spacing: 0.3px;
     flex-shrink: 0;
+    padding: 4px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.prod-banner-tag.tag-cooked {
+    background: #ECFDF5;
+    color: #047857;
+    border: 1px solid #A7F3D0;
+}
+
+.prod-banner-tag.tag-freezer {
+    background: #EFF6FF;
+    color: #1D4ED8;
+    border: 1px solid #BFDBFE;
 }
 
 .prod-banner-tag.tag-deficit {
-    color: #DC2626;
+    background: #FEF2F2;
+    color: #B91C1C;
+    border: 1px solid #FECACA;
 }
 
-.prod-banner-tag.tag-safe {
-    color: #166534;
+.prod-banner-tag.tag-estimate {
+    background: #FFFBEB;
+    color: #B45309;
+    border: 1px solid #FDE68A;
 }
 
 .prod-banner-tag.tag-transit {
-    color: #B45309;
-}
-
-.prod-banner-tag.tag-raw {
-    color: #0369A1;
+    background: #FFFBEB;
+    color: #92400E;
+    border: 1px solid #FDE68A;
 }
 
 .prod-pills-list {
     display: flex;
-    gap: 6px;
+    gap: 8px;
     flex-wrap: wrap;
+    align-items: center;
 }
 
 .prod-pill {
-    padding: 3px 8px;
-    border-radius: 6px;
+    padding: 4px 10px;
+    border-radius: 8px;
     font-size: 12px;
-    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #FFFFFF;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    transition: transform 0.1s;
+}
+
+.prod-pill .pill-name {
+    font-weight: 700;
+    color: #0F172A;
+    font-size: 12px;
+}
+
+.prod-pill.pill-cooked {
+    background: #FAFCF9;
+    border: 1px solid #86EFAC;
+}
+
+.prod-pill.pill-cooked .pill-val {
+    font-weight: 800;
+    color: #059669;
+    font-size: 12.5px;
+}
+
+.prod-pill.pill-cooked .pill-badge {
+    font-size: 11px;
+    font-weight: 700;
+    color: #047857;
+    background: #DCFCE7;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.prod-pill.pill-freezer {
+    background: #F8FAFC;
+    border: 1px solid #93C5FD;
+}
+
+.prod-pill.pill-freezer .pill-val-freezer {
+    font-weight: 800;
+    color: #2563EB;
+    font-size: 12.5px;
+}
+
+.prod-pill.pill-freezer .pill-badge-freezer {
+    font-size: 11px;
+    font-weight: 700;
+    color: #1D4ED8;
+    background: #DBEAFE;
+    padding: 2px 6px;
+    border-radius: 4px;
 }
 
 .prod-pill.pill-deficit {
     background: #FEF2F2;
-    border: 1px solid #FECACA;
+    border: 1px solid #FCA5A5;
+}
+
+.prod-pill.pill-deficit .pill-val-deficit {
+    font-weight: 800;
+    color: #DC2626;
+    font-size: 12.5px;
+}
+
+.prod-pill.pill-deficit .pill-badge-deficit {
+    font-size: 11px;
+    font-weight: 700;
     color: #B91C1C;
+    background: #FEE2E2;
+    padding: 2px 6px;
+    border-radius: 4px;
 }
 
 .prod-pill.pill-transit {
     background: #FFFBEB;
     border: 1px solid #FDE68A;
+}
+
+.prod-pill.pill-transit .pill-badge-transit {
+    font-size: 11px;
+    font-weight: 700;
     color: #92400E;
-}
-
-.prod-pill.pill-raw {
-    background: #F0F9FF;
-    border: 1px solid #BAE6FD;
-    color: #0369A1;
-}
-
-.prod-pill.pill-safe {
-    background: #DCFCE7;
-    border: 1px solid #BBF7D0;
-    color: #15803D;
-}
-
-.prod-pill.pill-warning {
     background: #FEF3C7;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.prod-pill.pill-freezer-ok {
+    background: #F0FDF4;
+    border: 1px solid #86EFAC;
+}
+
+.prod-pill.pill-freezer-warn {
+    background: #FFFBEB;
     border: 1px solid #FDE68A;
-    color: #B45309;
+}
+
+.prod-pill.pill-freezer-buy {
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
 }
 
 .stock-section-title-wrap {
@@ -3347,25 +4121,28 @@ input[type="password"]::-ms-clear {
 /* 3-Metric Grid for Smokehouse: Ready, Transit, Deficit */
 .stock-metrics-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .stock-metric-card {
     border-radius: 8px;
-    padding: 8px 10px;
+    padding: 8px 8px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     transition: all 0.2s;
     min-width: 0;
+    box-sizing: border-box;
 }
 
 .stock-metric-label {
     font-size: 10px;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
+    text-transform: capitalize;
+    letter-spacing: 0.1px;
     margin-bottom: 2px;
     white-space: nowrap;
     overflow: hidden;
@@ -3378,16 +4155,24 @@ input[type="password"]::-ms-clear {
     gap: 3px;
     margin: 2px 0;
     min-width: 0;
+    white-space: nowrap;
 }
 
 .stock-val-num {
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 900;
     letter-spacing: -0.3px;
     line-height: 1.1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.stock-status-text-val {
+    font-size: 12.5px !important;
+    font-weight: 800 !important;
+    white-space: nowrap !important;
+    line-height: 1.2 !important;
 }
 
 .stock-val-unit {
@@ -3616,6 +4401,49 @@ input[type="password"]::-ms-clear {
 
 .btn-stock-delete:hover {
     background: #FECACA;
+}
+
+.btn-stock-custom-adjust-mini {
+    padding: 4px 9px;
+    background: #F0F9FF;
+    color: #0284C7;
+    border: 1px solid #BAE6FD;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-stock-custom-adjust-mini:hover {
+    background: #E0F2FE;
+    border-color: #7DD3FC;
+    color: #0369A1;
+}
+
+.variant-avail-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.variant-avail-row {
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.variant-avail-ing {
+    color: #64748B;
+    font-size: 11px;
+    white-space: nowrap;
 }
 
 /* Stock Config Box in Product Modal */
@@ -4272,6 +5100,108 @@ input[type="password"]::-ms-clear {
 }
 
 /* ==========================================================================
+   TOOLBAR & KATEGORI RESPONSIVE (1 BARIS, SISAKAN ICON JIKA JENDELA MENGECEIL)
+   ========================================================================== */
+
+/* 1. Container Query: Jika area menu mengecil (lebar <= 780px) */
+@container menuSection (max-width: 780px) {
+    .pos-action-toolbar .toolbar-group {
+        flex-wrap: nowrap !important;
+        gap: 6px !important;
+    }
+
+    .pos-action-toolbar .btn-nav-action {
+        padding: 0 10px !important;
+        gap: 6px !important;
+    }
+
+    .pos-action-toolbar .btn-nav-text {
+        display: none !important;
+    }
+
+    .category-pills {
+        flex-wrap: nowrap !important;
+        gap: 8px !important;
+        overflow-x: auto;
+    }
+
+    .category-pills .cat-pill {
+        min-width: unset !important;
+        width: 44px !important;
+        height: 44px !important;
+        padding: 0 !important;
+        justify-content: center !important;
+        border-radius: 12px !important;
+        flex: 0 0 44px !important;
+    }
+
+    .category-pills .cat-pill-info {
+        display: none !important;
+    }
+
+    .category-pills .cat-pill-icon-wrap {
+        width: 100% !important;
+        height: 100% !important;
+        background: transparent !important;
+        font-size: 20px !important;
+    }
+
+    .category-pills .cat-pill.active {
+        background: #EFF6FF !important;
+        border-color: var(--primary) !important;
+    }
+}
+
+/* 2. Media Query: Layar laptop sedang / jendela browser mengecil (<= 1260px) */
+@media (max-width: 1260px) {
+    .pos-action-toolbar .toolbar-group {
+        flex-wrap: nowrap !important;
+        gap: 6px !important;
+    }
+
+    .pos-action-toolbar .btn-nav-action {
+        padding: 0 10px !important;
+        gap: 6px !important;
+    }
+
+    .pos-action-toolbar .btn-nav-text {
+        display: none !important;
+    }
+
+    .category-pills {
+        flex-wrap: nowrap !important;
+        gap: 8px !important;
+        overflow-x: auto;
+    }
+
+    .category-pills .cat-pill {
+        min-width: unset !important;
+        width: 44px !important;
+        height: 44px !important;
+        padding: 0 !important;
+        justify-content: center !important;
+        border-radius: 12px !important;
+        flex: 0 0 44px !important;
+    }
+
+    .category-pills .cat-pill-info {
+        display: none !important;
+    }
+
+    .category-pills .cat-pill-icon-wrap {
+        width: 100% !important;
+        height: 100% !important;
+        background: transparent !important;
+        font-size: 20px !important;
+    }
+
+    .category-pills .cat-pill.active {
+        background: #EFF6FF !important;
+        border-color: var(--primary) !important;
+    }
+}
+
+/* ==========================================================================
    RESPONSIVE DESIGN: LAYAR LAPTOP / DESKTOP SEDANG (MAX-WIDTH: 1200px)
    ========================================================================== */
 
@@ -4415,9 +5345,24 @@ input[type="password"]::-ms-clear {
     }
 
     .cat-pill {
-        flex-shrink: 0;
-        font-size: 12px;
-        padding: 6px 12px;
+        min-width: unset !important;
+        width: 44px !important;
+        height: 44px !important;
+        padding: 0 !important;
+        justify-content: center !important;
+        border-radius: 12px !important;
+        flex: 0 0 44px !important;
+    }
+
+    .cat-pill-info {
+        display: none !important;
+    }
+
+    .cat-pill-icon-wrap {
+        width: 100% !important;
+        height: 100% !important;
+        background: transparent !important;
+        font-size: 20px !important;
     }
 
     .search-box {
@@ -4754,23 +5699,27 @@ input[type="password"]::-ms-clear {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 12px;
-    background: #F8FAFC;
-    border: 1px solid #CBD5E1;
-    border-radius: 20px;
-    font-size: 12px;
+    padding: 0 12px;
+    height: 40px;
+    background: #FFFFFF;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-size: 13px;
     font-weight: 700;
-    color: #1E293B;
+    color: var(--secondary);
     cursor: pointer;
-    transition: all 0.2s ease;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
     user-select: none;
 }
 
 .active-cashier-pill:hover {
-    background: #F1F5F9;
-    border-color: #94A3B8;
+    background: var(--primary-light);
+    border-color: var(--primary);
+    color: var(--primary);
     transform: translateY(-1px);
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 4px 12px rgba(45, 113, 248, 0.12);
 }
 
 .cashier-pill-icon {
@@ -5014,6 +5963,42 @@ input[type="password"]::-ms-clear {
     font-size: 12px;
     border-radius: 6px;
     border: 1px solid #CBD5E1;
+}
+
+.history-filter-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.btn-copy-history-wa {
+    background: #EA580C !important;
+    color: white !important;
+    border: 1.5px solid #C2410C !important;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 6px rgba(234, 88, 12, 0.25);
+    white-space: nowrap;
+}
+
+.btn-copy-history-wa:hover {
+    background: #C2410C !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(234, 88, 12, 0.35);
+}
+
+.modal-footer .btn-copy-history-wa {
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 10px;
 }
 
 .history-chart-wrapper {
@@ -7154,6 +8139,39 @@ input[type="password"]::-ms-clear {
     box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
 }
 
+.btn-bulk-pickup {
+    background: #16A34A;
+    color: white;
+    border-color: #16A34A;
+}
+
+.btn-bulk-pickup:hover:not(:disabled) {
+    background: #15803D;
+    box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
+}
+
+.btn-bulk-pay {
+    background: #0284C7;
+    color: white;
+    border-color: #0284C7;
+}
+
+.btn-bulk-pay:hover:not(:disabled) {
+    background: #0369A1;
+    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);
+}
+
+.btn-bulk-delete {
+    background: #DC2626;
+    color: white;
+    border-color: #DC2626;
+}
+
+.btn-bulk-delete:hover:not(:disabled) {
+    background: #B91C1C;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+}
+
 .btn-bulk-cancel {
     background: white;
     color: #64748B;
@@ -7169,6 +8187,90 @@ input[type="password"]::-ms-clear {
     opacity: 0.45;
     cursor: not-allowed;
     box-shadow: none !important;
+}
+
+/* Modal Pelunasan Massal (Bulk Pay) */
+.modal-bulk-pay {
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
+}
+
+.bulk-pay-summary-card {
+    background: linear-gradient(135deg, #0284C7 0%, #0369A1 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.25);
+}
+
+.bulk-pay-summary-label {
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.9;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.bulk-pay-summary-amount {
+    font-size: 26px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+}
+
+.bulk-pay-summary-meta {
+    font-size: 12px;
+    opacity: 0.85;
+    margin-top: 4px;
+}
+
+.bulk-pay-section-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--secondary);
+    margin-bottom: 8px;
+}
+
+.bulk-pay-method-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.bulk-method-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: #FFFFFF;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.bulk-method-option input[type="radio"] {
+    display: none;
+}
+
+.bulk-method-option.active {
+    border-color: #0284C7;
+    background: #F0F9FF;
+    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2);
+}
+
+.bulk-method-icon {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.bulk-method-name {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--secondary);
 }
 
 /* Card Selection Checkbox & Highlight */
@@ -7924,6 +9026,7 @@ input[type="password"]::-ms-clear {
 
 .stock-history-table {
     width: 100%;
+    min-width: 1060px;
     border-collapse: collapse;
     font-size: 12px;
 }
@@ -8001,13 +9104,6 @@ input[type="password"]::-ms-clear {
     background: #F3E8FF;
     color: #7E22CE;
     border: 1px solid #E9D5FF;
-}
-
-/* Production Banner Safe / Nihil State */
-.production-summary-banner.banner-safe {
-    background: linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%);
-    border: 1px solid #BBF7D0;
-    box-shadow: 0 2px 6px rgba(22, 163, 74, 0.08);
 }
 
 /* Portions Collapsible Dropdown */

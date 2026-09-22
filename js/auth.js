@@ -240,16 +240,20 @@ class AuthManager {
         }
     }
 
-    // Update tampilan lencana kasir di header
+    // Update tampilan lencana kasir di header & dropdown
     updateActiveCashierBadge() {
         const badge = document.getElementById('activeCashierBadge');
         const nameEl = document.getElementById('activeCashierName');
+        const dropNameEl = document.getElementById('dropdownCashierName');
         const current = this.getActiveCashier();
         if (nameEl) {
             nameEl.textContent = current;
         }
+        if (dropNameEl) {
+            dropNameEl.textContent = current;
+        }
         if (badge) {
-            badge.title = `Kasir bertugas: ${current}. Klik untuk ganti kasir / kunci.`;
+            badge.title = `Kasir: ${current} (Klik untuk profil & pengaturan)`;
         }
     }
 }

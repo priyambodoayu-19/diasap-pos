@@ -448,33 +448,35 @@ class InventoryManager {
             </div>
 
             ${(itemsNeedSmoking.length > 0 || itemsInTransit.length > 0) ? `
-                <div class="production-summary-banner">
+                <div class="production-summary-banner banner-alert">
                     <div class="prod-banner-header">
                         <div class="prod-banner-title">
-                            <span class="prod-fire-icon">🔥</span>
+                            <span class="prod-banner-icon icon-alert">🔥</span>
                             <div>
-                                <strong style="font-size: 14px;">Rekap Kebutuhan Daging & Produksi Asap</strong>
-                                <div style="font-size: 11px; opacity: 0.85;">Kalkulasi otomatis dari pesanan PO lunas & tagihan sementara</div>
+                                <strong style="font-size: 14px; color: #0F172A;">Rekap Kebutuhan Daging & Produksi Asap</strong>
+                                <div style="font-size: 11.5px; color: #64748B;">Kalkulasi otomatis dari pesanan PO lunas & tagihan sementara</div>
                             </div>
                         </div>
-                        <button type="button" class="btn-banner-copy-mini" onclick="inventoryManager.copyShoppingList()">
+                        <button type="button" class="btn-banner-copy-mini btn-copy-alert" onclick="inventoryManager.copyShoppingList()">
                             📋 Salin Untuk WhatsApp
                         </button>
                     </div>
                     <div class="prod-banner-body">
                         ${itemsNeedSmoking.length > 0 ? `
                             <div class="prod-banner-row">
-                                <span class="prod-banner-tag tag-deficit">🔥 HASIL ASAP DIBUTUHKAN:</span>
+                                <span class="prod-banner-tag tag-deficit">🚨 DEFISIT HASIL ASAP:</span>
                                 <div class="prod-pills-list">
                                     ${itemsNeedSmoking.map(m => `
                                         <span class="prod-pill pill-deficit">
-                                            <strong>${m.name}:</strong> ${Math.abs(Number(m.stock)).toLocaleString('id-ID')} ${m.unit} (${(Math.abs(Number(m.stock)) / 1000).toFixed(2)} kg matang)
+                                            <span class="pill-name">${m.name}:</span>
+                                            <span class="pill-val-deficit">${Math.abs(Number(m.stock)).toLocaleString('id-ID')} ${m.unit}</span>
+                                            <span class="pill-badge-deficit">(${(Math.abs(Number(m.stock)) / 1000).toFixed(2)} kg matang)</span>
                                         </span>
                                     `).join('')}
                                 </div>
                             </div>
-                            <div class="prod-banner-row" style="margin-top: 6px;">
-                                <span class="prod-banner-tag tag-raw">🛒 ESTIMASI MENTAH (SUSUT ~30%) & CEK FREEZER:</span>
+                            <div class="prod-banner-row" style="margin-top: 4px;">
+                                <span class="prod-banner-tag tag-estimate">🛒 ESTIMASI MENTAH (SUSUT ~30%):</span>
                                 <div class="prod-pills-list">
                                     ${itemsNeedSmoking.map(m => {
                                         const deficitGrams = Math.abs(Number(m.stock));
@@ -488,20 +490,26 @@ class InventoryManager {
 
                                         if (freezerStock >= rawGrams) {
                                             return `
-                                                <span class="prod-pill pill-safe">
-                                                    <strong>${rawMatch ? rawMatch.name : m.name + ' Mentah'}:</strong> ✅ Cukup di Freezer! (Ada ${(freezerStock / 1000).toFixed(2)} kg, butuh ~${rawKg} kg)
+                                                <span class="prod-pill pill-freezer-ok">
+                                                    <span class="pill-name">${rawMatch ? rawMatch.name : m.name + ' Mentah'}:</span>
+                                                    <span style="color: #059669; font-weight: 700;">✅ Cukup di Freezer</span>
+                                                    <span class="pill-badge-freezer">(Ada ${(freezerStock / 1000).toFixed(2)} kg, butuh ~${rawKg} kg)</span>
                                                 </span>
                                             `;
                                         } else if (freezerStock > 0) {
                                             return `
-                                                <span class="prod-pill pill-warning">
-                                                    <strong>${rawMatch ? rawMatch.name : m.name + ' Mentah'}:</strong> ⚠️ Ada ${(freezerStock / 1000).toFixed(2)} kg di freezer -> Beli ~${stillNeedKg} kg lagi
+                                                <span class="prod-pill pill-freezer-warn">
+                                                    <span class="pill-name">${rawMatch ? rawMatch.name : m.name + ' Mentah'}:</span>
+                                                    <span style="color: #D97706; font-weight: 700;">⚠️ Ada ${(freezerStock / 1000).toFixed(2)} kg di freezer</span>
+                                                    <span class="pill-badge-deficit">➔ Beli ~${stillNeedKg} kg lagi</span>
                                                 </span>
                                             `;
                                         } else {
                                             return `
-                                                <span class="prod-pill pill-raw">
-                                                    <strong>${rawMatch ? rawMatch.name : m.name + ' Mentah'}:</strong> 🛒 Beli ~${rawKg} kg (${rawGrams.toLocaleString('id-ID')} gr)
+                                                <span class="prod-pill pill-freezer-buy">
+                                                    <span class="pill-name">${rawMatch ? rawMatch.name : m.name + ' Mentah'}:</span>
+                                                    <span style="color: #DC2626; font-weight: 800;">🛒 Beli ~${rawKg} kg</span>
+                                                    <span class="pill-badge-deficit">(${rawGrams.toLocaleString('id-ID')} gr)</span>
                                                 </span>
                                             `;
                                         }
@@ -510,12 +518,43 @@ class InventoryManager {
                             </div>
                         ` : `
                             <div class="prod-banner-row">
-                                <span class="prod-banner-tag tag-safe">✅ STOK READY AMAN:</span>
-                                <span style="font-size: 12px; color: #166534; font-weight: 600;">Semua pesanan lunas saat ini terpenuhi oleh stok ready di toko.</span>
+                                <span class="prod-banner-tag tag-cooked">🔥 DAGING MATANG READY:</span>
+                                <div class="prod-pills-list">
+                                    ${cookedMaterials.map(m => {
+                                        const stock = Math.max(0, Number(m.stock) || 0);
+                                        return `
+                                            <span class="prod-pill pill-cooked">
+                                                <span class="pill-name">${m.name}:</span>
+                                                <span class="pill-val">${stock.toLocaleString('id-ID')} ${m.unit}</span>
+                                                <span class="pill-badge">(${(stock / 1000).toFixed(2)} kg)</span>
+                                            </span>
+                                        `;
+                                    }).join('')}
+                                </div>
                             </div>
                         `}
+
+                        <!-- Baris Stok Mentah di Freezer (Persediaan Raw) -->
+                        <div class="prod-banner-row" style="margin-top: 4px;">
+                            <span class="prod-banner-tag tag-freezer">🧊 MENTAH DI FREEZER:</span>
+                            <div class="prod-pills-list">
+                                ${rawFreezerMaterials.length > 0 ? rawFreezerMaterials.map(m => {
+                                    const stock = Math.max(0, Number(m.stock) || 0);
+                                    return `
+                                        <span class="prod-pill pill-freezer">
+                                            <span class="pill-name">${m.name}:</span>
+                                            <span class="pill-val-freezer">${stock.toLocaleString('id-ID')} ${m.unit}</span>
+                                            <span class="pill-badge-freezer">(${(stock / 1000).toFixed(2)} kg)</span>
+                                        </span>
+                                    `;
+                                }).join('') : `
+                                    <span style="font-size: 11.5px; color: #64748B; font-style: italic;">(Belum ada data stok mentah)</span>
+                                `}
+                            </div>
+                        </div>
+
                         ${itemsInTransit.length > 0 ? `
-                            <div class="prod-banner-row" style="margin-top: 6px;">
+                            <div class="prod-banner-row" style="margin-top: 4px;">
                                 <span class="prod-banner-tag tag-transit">🕒 STOK TRANSIT (BELUM BAYAR):</span>
                                 <div class="prod-pills-list">
                                     ${itemsInTransit.map(m => {
@@ -524,7 +563,9 @@ class InventoryManager {
                                         const rawTrKg = (rawTrGrams / 1000).toFixed(2);
                                         return `
                                             <span class="prod-pill pill-transit">
-                                                <strong>${m.name}:</strong> ${tr.toLocaleString('id-ID')} ${m.unit} <span style="font-size: 11px; opacity: 0.85;">(Beli mentah jika lunas: ~${rawTrKg} kg)</span>
+                                                <span class="pill-name">${m.name}:</span>
+                                                <span style="font-weight: 800; color: #92400E;">${tr.toLocaleString('id-ID')} ${m.unit}</span>
+                                                <span class="pill-badge-transit">(Beli jika lunas: ~${rawTrKg} kg)</span>
                                             </span>
                                         `;
                                     }).join('')}
@@ -536,29 +577,51 @@ class InventoryManager {
             ` : `
                 <div class="production-summary-banner banner-safe">
                     <div class="prod-banner-header">
-                        <div class="prod-banner-title" style="color: #166534;">
-                            <span class="prod-fire-icon" style="background: #DCFCE7; border-color: #86EFAC; color: #16A34A;">✅</span>
+                        <div class="prod-banner-title">
+                            <span class="prod-banner-icon icon-safe">✅</span>
                             <div>
-                                <strong style="font-size: 14px; color: #166534;">Status Kebutuhan Daging & Produksi Asap: AMAN (Nihil)</strong>
-                                <div style="font-size: 11px; color: #15803D; opacity: 0.9;">Semua pesanan lunas saat ini terpenuhi oleh stok ready di toko. Tidak ada defisit asap atau belanja mendesak.</div>
+                                <strong style="font-size: 14px; color: #0F172A;">Status Kebutuhan Daging & Produksi Asap: <span style="color: #059669;">AMAN (Nihil)</span></strong>
+                                <div style="font-size: 11.5px; color: #64748B;">Semua pesanan lunas saat ini terpenuhi oleh stok ready di toko. Tidak ada defisit asap atau belanja mendesak.</div>
                             </div>
                         </div>
-                        <button type="button" class="btn-banner-copy-mini" style="background: #16A34A;" onclick="inventoryManager.copyShoppingList()">
+                        <button type="button" class="btn-banner-copy-mini btn-copy-safe" onclick="inventoryManager.copyShoppingList()">
                             📋 Salin Rekap WhatsApp
                         </button>
                     </div>
                     <div class="prod-banner-body">
+                        <!-- Baris 1: Daging Matang Ready -->
                         <div class="prod-banner-row">
-                            <span class="prod-banner-tag tag-safe">✅ STOK READY AMAN:</span>
+                            <span class="prod-banner-tag tag-cooked">🔥 STOK READY AMAN:</span>
                             <div class="prod-pills-list">
                                 ${cookedMaterials.map(m => {
                                     const stock = Math.max(0, Number(m.stock) || 0);
                                     return `
-                                        <span class="prod-pill pill-safe">
-                                            <strong>${m.name}:</strong> ${stock.toLocaleString('id-ID')} ${m.unit} (${(stock / 1000).toFixed(2)} kg ready)
+                                        <span class="prod-pill pill-cooked">
+                                            <span class="pill-name">${m.name}:</span>
+                                            <span class="pill-val">${stock.toLocaleString('id-ID')} ${m.unit}</span>
+                                            <span class="pill-badge">(${(stock / 1000).toFixed(2)} kg ready)</span>
                                         </span>
                                     `;
                                 }).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Baris 2: Daging Mentah di Freezer -->
+                        <div class="prod-banner-row" style="margin-top: 4px;">
+                            <span class="prod-banner-tag tag-freezer">🧊 MENTAH DI FREEZER:</span>
+                            <div class="prod-pills-list">
+                                ${rawFreezerMaterials.length > 0 ? rawFreezerMaterials.map(m => {
+                                    const stock = Math.max(0, Number(m.stock) || 0);
+                                    return `
+                                        <span class="prod-pill pill-freezer">
+                                            <span class="pill-name">${m.name}:</span>
+                                            <span class="pill-val-freezer">${stock.toLocaleString('id-ID')} ${m.unit}</span>
+                                            <span class="pill-badge-freezer">(${(stock / 1000).toFixed(2)} kg)</span>
+                                        </span>
+                                    `;
+                                }).join('') : `
+                                    <span style="font-size: 11.5px; color: #64748B; font-style: italic;">(Belum ada data stok mentah)</span>
+                                `}
                             </div>
                         </div>
                     </div>
@@ -640,7 +703,7 @@ class InventoryManager {
                                 </div>
 
                                 <div class="stock-metric-card metric-transit ${transit > 0 ? 'has-transit' : ''}">
-                                    <span class="stock-metric-label">Stok Transit</span>
+                                    <span class="stock-metric-label">Transit PO</span>
                                     <div class="stock-metric-val">
                                         <span class="stock-val-num">${transit.toLocaleString('id-ID')}</span>
                                         <span class="stock-val-unit">${mat.unit}</span>
@@ -649,12 +712,12 @@ class InventoryManager {
                                 </div>
 
                                 <div class="stock-metric-card metric-deficit ${harusDiasap > 0 ? 'has-deficit' : ''}">
-                                    <span class="stock-metric-label">🔥 Harus Diasap</span>
+                                    <span class="stock-metric-label">Harus Diasap</span>
                                     <div class="stock-metric-val">
                                         <span class="stock-val-num">${harusDiasap.toLocaleString('id-ID')}</span>
                                         <span class="stock-val-unit">${mat.unit}</span>
                                     </div>
-                                    <span class="stock-metric-sub">${harusDiasap > 0 ? `🛒 Beli: ~${(Math.ceil(harusDiasap / 0.70) / 1000).toFixed(2)} kg mentah` : 'Aman (0 gr)'}</span>
+                                    <span class="stock-metric-sub" title="${harusDiasap > 0 ? `🛒 Beli: ~${(Math.ceil(harusDiasap / 0.70) / 1000).toFixed(2)} kg mentah` : 'Aman (0 gr)'}">${harusDiasap > 0 ? `Beli ~${(Math.ceil(harusDiasap / 0.70) / 1000).toFixed(2)} kg` : 'Aman (0 gr)'}</span>
                                 </div>
                             </div>
 
@@ -726,12 +789,12 @@ class InventoryManager {
                         if (freezerStock >= rawNeededGrams) {
                             shoppingStatusText = '✅ Cukup di Freezer';
                             shoppingStatusClass = 'metric-safe';
-                            shoppingSubText = `Sisa ~${((freezerStock - rawNeededGrams) / 1000).toFixed(2)} kg di freezer`;
+                            shoppingSubText = `Sisa ~${((freezerStock - rawNeededGrams) / 1000).toFixed(2)} kg`;
                         } else {
                             const stillNeed = rawNeededGrams - freezerStock;
                             shoppingStatusText = `🛒 Beli ~${(stillNeed / 1000).toFixed(2)} kg`;
                             shoppingStatusClass = 'metric-deficit has-deficit';
-                            shoppingSubText = freezerStock > 0 ? `Ada ${(freezerStock / 1000).toFixed(2)} kg di freezer` : 'Freezer kosong';
+                            shoppingSubText = freezerStock > 0 ? `Ada ${(freezerStock / 1000).toFixed(2)} kg` : 'Freezer kosong';
                         }
                     }
 
@@ -749,7 +812,7 @@ class InventoryManager {
 
                             <div class="stock-metrics-grid">
                                 <div class="stock-metric-card metric-ready" style="background: #F0F9FF; border-color: #BAE6FD;">
-                                    <span class="stock-metric-label" style="color: #0369A1;">Stok di Freezer</span>
+                                    <span class="stock-metric-label" style="color: #0369A1;">Di Freezer</span>
                                     <div class="stock-metric-val">
                                         <span class="stock-val-num" style="color: #0284C7;">${(freezerStock / 1000).toFixed(2)}</span>
                                         <span class="stock-val-unit">kg</span>
@@ -763,15 +826,15 @@ class InventoryManager {
                                         <span class="stock-val-num" style="color: #B45309;">~${(rawNeededGrams / 1000).toFixed(2)}</span>
                                         <span class="stock-val-unit">kg</span>
                                     </div>
-                                    <span class="stock-metric-sub">${harusDiasap > 0 ? `Penuhi ${harusDiasap.toLocaleString('id-ID')} gr matang` : '0 gr (Stok Cukup)'}</span>
+                                    <span class="stock-metric-sub" title="${harusDiasap > 0 ? `Penuhi ${harusDiasap.toLocaleString('id-ID')} gr matang` : '0 gr (Stok Cukup)'}">${harusDiasap > 0 ? `${harusDiasap.toLocaleString('id-ID')} gr` : 'Stok Cukup'}</span>
                                 </div>
 
                                 <div class="stock-metric-card ${shoppingStatusClass}">
-                                    <span class="stock-metric-label">Status Belanja Pasar</span>
-                                    <div class="stock-metric-val" style="font-size: 14px; font-weight: 800;">
-                                        ${shoppingStatusText}
+                                    <span class="stock-metric-label">Status Belanja</span>
+                                    <div class="stock-metric-val">
+                                        <span class="stock-val-num stock-status-text-val" title="${shoppingStatusText}">${shoppingStatusText}</span>
                                     </div>
-                                    <span class="stock-metric-sub">${shoppingSubText}</span>
+                                    <span class="stock-metric-sub" title="${shoppingSubText}">${shoppingSubText}</span>
                                 </div>
                             </div>
 
@@ -827,7 +890,7 @@ class InventoryManager {
                                 <th>Nama Menu / Produk</th>
                                 <th style="width: 120px;">Kategori</th>
                                 <th style="width: 130px;">Sisa Stok Saat Ini</th>
-                                <th style="width: 260px;">Update Cepat Stok</th>
+                                <th style="width: 320px; white-space: nowrap;">Update Cepat & Atur Stok</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -864,12 +927,12 @@ class InventoryManager {
                                         <td>
                                             <span class="stock-status-pill ${badgeClass}">${badgeText}</span>
                                         </td>
-                                        <td>
-                                            <div style="display: flex; align-items: center; gap: 6px;">
-                                                <button type="button" class="btn-restock-pill" onclick="inventoryManager.adjustDirectStock('${p.id}', 6)">+6</button>
-                                                <button type="button" class="btn-restock-pill" onclick="inventoryManager.adjustDirectStock('${p.id}', 12)">+12</button>
-                                                <button type="button" class="btn-restock-pill" onclick="inventoryManager.adjustDirectStock('${p.id}', 24)">+24</button>
-                                                <button type="button" class="btn-admin-action" style="padding: 4px 8px; font-size: 11px;" onclick="inventoryManager.promptSetDirectStock('${p.id}', ${stock})">Set Nilai</button>
+                                        <td style="white-space: nowrap;">
+                                            <div style="display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">
+                                                <button type="button" class="btn-restock-pill" onclick="inventoryManager.adjustDirectStock('${p.id}', 6)" title="Tambah 6 unit">+6</button>
+                                                <button type="button" class="btn-restock-pill" onclick="inventoryManager.adjustDirectStock('${p.id}', 12)" title="Tambah 12 unit">+12</button>
+                                                <button type="button" class="btn-restock-pill" onclick="inventoryManager.adjustDirectStock('${p.id}', 24)" title="Tambah 24 unit">+24</button>
+                                                <button type="button" class="btn-stock-custom-adjust-mini" onclick="inventoryManager.openCustomAdjustModal('${p.id}', 'set')">✏️ Set Nilai (+ / -)</button>
                                                 <button type="button" class="btn-stock-history-mini" style="padding: 4px 8px; font-size: 11px;" onclick="inventoryManager.openHistoryForMaterial('${p.id}')" title="Lihat riwayat stok ${p.name}">📜 Riwayat</button>
                                             </div>
                                         </td>
@@ -905,9 +968,9 @@ class InventoryManager {
                         <tr>
                             <th style="width: 45px; text-align: center;">#</th>
                             <th>Menu</th>
-                            <th style="width: 140px;">Tipe Kontrol Stok</th>
-                            <th style="width: 220px;">Sumber Bahan / Takaran</th>
-                            <th style="width: 160px;">Porsi Siap Jual</th>
+                            <th style="width: 140px; white-space: nowrap;">Tipe Kontrol Stok</th>
+                            <th style="min-width: 320px; white-space: nowrap;">Sumber Bahan / Takaran</th>
+                            <th style="width: 160px; white-space: nowrap;">Porsi Siap Jual</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -917,7 +980,7 @@ class InventoryManager {
                             const stockType = p.stockType || 'unlimited';
 
                             let typeBadge = '<span class="badge-stock-type type-unlimited">Tanpa Batas</span>';
-                            let detailText = 'Selalu tersedia';
+                            let detailText = '<div class="variant-avail-row" style="color: #64748B;">• Selalu tersedia tanpa pengurangan stok otomatis</div>';
                             let portionDisplay = '<span class="text-success font-bold">Tersedia (Bebas)</span>';
 
                             if (hasVariants) {
@@ -956,7 +1019,7 @@ class InventoryManager {
                                 const matStock = mat ? mat.stock : 0;
                                 const unit = mat ? mat.unit : 'gr';
                                 typeBadge = '<span class="badge-stock-type type-raw">Resep Bahan</span>';
-                                detailText = `Bahan: <strong>${matName}</strong> (${p.rawMaterialAmount} ${unit}/porsi)<br><span style="font-size: 11px; color: #64748B;">Sisa bahan: ${matStock.toLocaleString('id-ID')} ${unit}</span>`;
+                                detailText = `<div class="variant-avail-row">• Bahan: <strong>${matName}</strong> (${p.rawMaterialAmount} ${unit}/porsi) <span class="variant-avail-ing">&bull; Sisa: ${matStock.toLocaleString('id-ID')} ${unit}</span></div>`;
 
                                 if (portions === 0) {
                                     portionDisplay = '<span class="stock-status-pill status-out">❌ Habis (0 porsi)</span>';
@@ -967,7 +1030,7 @@ class InventoryManager {
                                 }
                             } else if (stockType === 'direct') {
                                 typeBadge = '<span class="badge-stock-type type-direct">Barang Jadi</span>';
-                                detailText = `Stok fisik unit produk`;
+                                detailText = `<div class="variant-avail-row">• Stok fisik unit produk</div>`;
                                 if (portions === 0) {
                                     portionDisplay = '<span class="stock-status-pill status-out">❌ Habis (0 unit)</span>';
                                 } else if (portions <= 5) {
@@ -990,7 +1053,7 @@ class InventoryManager {
                                         </div>
                                     </td>
                                     <td>${typeBadge}</td>
-                                    <td style="font-size: 12px;">${detailText}</td>
+                                    <td style="font-size: 12px; white-space: nowrap;">${detailText}</td>
                                     <td>${portionDisplay}</td>
                                 </tr>
                             `;
@@ -1098,7 +1161,22 @@ class InventoryManager {
     }
 
     openCustomAdjustModal(rawMaterialId, defaultMode = 'add') {
-        const mat = this.getRawMaterialById(rawMaterialId);
+        let mat = this.getRawMaterialById(rawMaterialId);
+        let isDirect = false;
+        if (!mat && typeof productManager !== 'undefined') {
+            const p = productManager.getProductById(rawMaterialId);
+            if (p) {
+                mat = {
+                    id: p.id,
+                    name: p.name,
+                    stock: Number(p.directStock) || 0,
+                    unit: 'unit',
+                    minStock: 5,
+                    isDirectProduct: true
+                };
+                isDirect = true;
+            }
+        }
         if (!mat) return;
 
         const modal = document.getElementById('rawMaterialAdjustModal');
@@ -1112,10 +1190,11 @@ class InventoryManager {
         const readyStock = Math.max(0, netStock);
         const harusDiasap = Math.abs(Math.min(0, netStock));
         const transit = (this.transitDemand && this.transitDemand[mat.id]) || 0;
-        const unit = mat.unit || 'gr';
+        const unit = mat.unit || (isDirect ? 'unit' : 'gr');
 
         this.adjustModalState = {
             materialId: mat.id,
+            isDirectProduct: isDirect,
             mode: defaultMode,
             currentStock: netStock,
             unit: unit
@@ -1142,40 +1221,49 @@ class InventoryManager {
 
         const infoBox = document.getElementById('rawAdjustMetricsInfo');
         if (infoBox) {
-            const isMentah = (mat.name || '').toLowerCase().includes('mentah');
-            if (isMentah) {
-                const cookedMatch = this.findMatchingCooked(mat);
-                const matangDefisit = cookedMatch ? Math.abs(Math.min(0, Number(cookedMatch.stock) || 0)) : 0;
-                const butuhMentah = Math.ceil(matangDefisit / 0.70);
+            if (isDirect) {
                 infoBox.innerHTML = `
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 12px; font-size: 11px;">
-                        <div style="background: #F0F9FF; border: 1px solid #BAE6FD; padding: 6px 8px; border-radius: 6px; text-align: center;">
-                            <div style="color: #0369A1; font-weight: 700;">🧊 Di Freezer</div>
-                            <div style="font-weight: 800; font-size: 13px; color: #0284C7;">${readyStock.toLocaleString('id-ID')} ${unit}</div>
-                        </div>
-                        <div style="background: #FFFBEB; border: 1px solid #FDE68A; padding: 6px 8px; border-radius: 6px; text-align: center;">
-                            <div style="color: #92400E; font-weight: 700;">Butuh Diasap</div>
-                            <div style="font-weight: 800; font-size: 13px; color: #B45309;">~${butuhMentah.toLocaleString('id-ID')} ${unit}</div>
-                        </div>
+                    <div style="background: #F0FDF4; border: 1px solid #BBF7D0; padding: 8px 12px; border-radius: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #166534; font-weight: 700; font-size: 12px;">📦 Stok Fisik Barang Jadi Saat Ini:</span>
+                        <strong style="color: #15803D; font-size: 15px;">${readyStock.toLocaleString('id-ID')} ${unit}</strong>
                     </div>
                 `;
             } else {
-                infoBox.innerHTML = `
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; font-size: 11px;">
-                        <div style="background: #F0FDF4; border: 1px solid #BBF7D0; padding: 6px 8px; border-radius: 6px; text-align: center;">
-                            <div style="color: #166534; font-weight: 700;">Ready</div>
-                            <div style="font-weight: 800; font-size: 13px; color: #15803D;">${readyStock.toLocaleString('id-ID')} ${unit}</div>
+                const isMentah = (mat.name || '').toLowerCase().includes('mentah');
+                if (isMentah) {
+                    const cookedMatch = this.findMatchingCooked(mat);
+                    const matangDefisit = cookedMatch ? Math.abs(Math.min(0, Number(cookedMatch.stock) || 0)) : 0;
+                    const butuhMentah = Math.ceil(matangDefisit / 0.70);
+                    infoBox.innerHTML = `
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 12px; font-size: 11px;">
+                            <div style="background: #F0F9FF; border: 1px solid #BAE6FD; padding: 6px 8px; border-radius: 6px; text-align: center;">
+                                <div style="color: #0369A1; font-weight: 700;">🧊 Di Freezer</div>
+                                <div style="font-weight: 800; font-size: 13px; color: #0284C7;">${readyStock.toLocaleString('id-ID')} ${unit}</div>
+                            </div>
+                            <div style="background: #FFFBEB; border: 1px solid #FDE68A; padding: 6px 8px; border-radius: 6px; text-align: center;">
+                                <div style="color: #92400E; font-weight: 700;">Butuh Diasap</div>
+                                <div style="font-weight: 800; font-size: 13px; color: #B45309;">~${butuhMentah.toLocaleString('id-ID')} ${unit}</div>
+                            </div>
                         </div>
-                        <div style="background: #FFFBEB; border: 1px solid #FDE68A; padding: 6px 8px; border-radius: 6px; text-align: center;">
-                            <div style="color: #92400E; font-weight: 700;">Transit</div>
-                            <div style="font-weight: 800; font-size: 13px; color: #B45309;">${transit.toLocaleString('id-ID')} ${unit}</div>
+                    `;
+                } else {
+                    infoBox.innerHTML = `
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; font-size: 11px;">
+                            <div style="background: #F0FDF4; border: 1px solid #BBF7D0; padding: 6px 8px; border-radius: 6px; text-align: center;">
+                                <div style="color: #166534; font-weight: 700;">Ready</div>
+                                <div style="font-weight: 800; font-size: 13px; color: #15803D;">${readyStock.toLocaleString('id-ID')} ${unit}</div>
+                            </div>
+                            <div style="background: #FFFBEB; border: 1px solid #FDE68A; padding: 6px 8px; border-radius: 6px; text-align: center;">
+                                <div style="color: #92400E; font-weight: 700;">Transit</div>
+                                <div style="font-weight: 800; font-size: 13px; color: #B45309;">${transit.toLocaleString('id-ID')} ${unit}</div>
+                            </div>
+                            <div style="background: ${harusDiasap > 0 ? '#FEF2F2' : '#F8FAFC'}; border: 1px solid ${harusDiasap > 0 ? '#FECACA' : '#E2E8F0'}; padding: 6px 8px; border-radius: 6px; text-align: center;">
+                                <div style="color: ${harusDiasap > 0 ? '#991B1B' : '#64748B'}; font-weight: 700;">🔥 Harus Diasap</div>
+                                <div style="font-weight: 800; font-size: 13px; color: ${harusDiasap > 0 ? '#DC2626' : '#64748B'};">${harusDiasap.toLocaleString('id-ID')} ${unit}</div>
+                            </div>
                         </div>
-                        <div style="background: ${harusDiasap > 0 ? '#FEF2F2' : '#F8FAFC'}; border: 1px solid ${harusDiasap > 0 ? '#FECACA' : '#E2E8F0'}; padding: 6px 8px; border-radius: 6px; text-align: center;">
-                            <div style="color: ${harusDiasap > 0 ? '#991B1B' : '#64748B'}; font-weight: 700;">🔥 Harus Diasap</div>
-                            <div style="font-weight: 800; font-size: 13px; color: ${harusDiasap > 0 ? '#DC2626' : '#64748B'};">${harusDiasap.toLocaleString('id-ID')} ${unit}</div>
-                        </div>
-                    </div>
-                `;
+                    `;
+                }
             }
         }
 
@@ -1196,6 +1284,7 @@ class InventoryManager {
         if (!this.adjustModalState) return;
         this.adjustModalState.mode = mode;
         const unit = this.adjustModalState.unit || 'gr';
+        const isDirect = this.adjustModalState.isDirectProduct;
 
         const btnAdd = document.getElementById('btnModeAdd');
         const btnReduce = document.getElementById('btnModeReduce');
@@ -1214,11 +1303,18 @@ class InventoryManager {
         let presets = [];
         if (mode === 'add') {
             if (inputLabel) inputLabel.innerHTML = `Jumlah Penambahan (<span class="raw-unit-label">${unit}</span>) <span class="text-danger">*</span>`;
-            if (helpText) helpText.textContent = 'Masukkan jumlah hasil smoke matang atau daging belanja masuk.';
+            if (helpText) helpText.textContent = isDirect ? 'Masukkan jumlah stok barang jadi yang baru dibeli / masuk toko.' : 'Masukkan jumlah hasil smoke matang atau daging belanja masuk.';
             if (submitBtn) submitBtn.textContent = '➕ Simpan Penambahan (+)';
             if (presetsLabel) presetsLabel.textContent = 'Pilihan Cepat Tambah (+):';
             
-            if (unit === 'gr') {
+            if (isDirect) {
+                presets = [
+                    { label: '+6 unit', val: 6 },
+                    { label: '+12 unit', val: 12 },
+                    { label: '+24 unit', val: 24 },
+                    { label: '+48 unit', val: 48 }
+                ];
+            } else if (unit === 'gr') {
                 presets = [
                     { label: '+250 gr', val: 250 },
                     { label: '+500 gr', val: 500 },
@@ -1244,11 +1340,18 @@ class InventoryManager {
             }
         } else if (mode === 'reduce') {
             if (inputLabel) inputLabel.innerHTML = `Jumlah Pengurangan (<span class="raw-unit-label">${unit}</span>) <span class="text-danger">*</span>`;
-            if (helpText) helpText.textContent = 'Masukkan jumlah daging susut, rusak, sample, atau koreksi berkurang.';
+            if (helpText) helpText.textContent = isDirect ? 'Masukkan jumlah barang rusak / expired / koreksi berkurang.' : 'Masukkan jumlah daging susut, rusak, sample, atau koreksi berkurang.';
             if (submitBtn) submitBtn.textContent = '➖ Simpan Pengurangan (-)';
             if (presetsLabel) presetsLabel.textContent = 'Pilihan Cepat Kurang (-):';
             
-            if (unit === 'gr') {
+            if (isDirect) {
+                presets = [
+                    { label: '-1 unit', val: 1 },
+                    { label: '-6 unit', val: 6 },
+                    { label: '-12 unit', val: 12 },
+                    { label: '-24 unit', val: 24 }
+                ];
+            } else if (unit === 'gr') {
                 presets = [
                     { label: '-100 gr', val: 100 },
                     { label: '-250 gr', val: 250 },
@@ -1275,10 +1378,20 @@ class InventoryManager {
             if (helpText) helpText.textContent = 'Set nilai fisik langsung (hasil stok opname total di toko).';
             if (submitBtn) submitBtn.textContent = '📝 Simpan Stok Total';
             if (presetsLabel) presetsLabel.textContent = 'Pilihan Cepat:';
-            presets = [
-                { label: '0 (Kosongkan)', val: 0 },
-                { label: `Stok Saat Ini (${this.adjustModalState.currentStock.toLocaleString('id-ID')})`, val: this.adjustModalState.currentStock }
-            ];
+            if (isDirect) {
+                presets = [
+                    { label: '0 (Habis)', val: 0 },
+                    { label: '6 unit', val: 6 },
+                    { label: '12 unit', val: 12 },
+                    { label: '24 unit', val: 24 },
+                    { label: '48 unit', val: 48 }
+                ];
+            } else {
+                presets = [
+                    { label: '0 (Kosongkan)', val: 0 },
+                    { label: `Stok Saat Ini (${this.adjustModalState.currentStock.toLocaleString('id-ID')})`, val: this.adjustModalState.currentStock }
+                ];
+            }
         }
 
         if (presetsContainer) {
@@ -1356,7 +1469,7 @@ class InventoryManager {
         e.preventDefault();
         const id = document.getElementById('rawAdjustId').value;
         const name = document.getElementById('rawAdjustName').value.trim();
-        const minStock = parseFloat(document.getElementById('rawAdjustMinStock').value) || 0;
+        const minStock = parseFloat(document.getElementById('rawAdjustMinStock')?.value) || 0;
         const inputAmount = parseFloat(document.getElementById('rawAdjustAmountInput').value);
         const author = document.getElementById('rawAdjustAuthor')?.value.trim() || ((typeof authManager !== 'undefined') ? authManager.getActiveCashier() : 'Kasir');
         const notes = document.getElementById('rawAdjustNotes')?.value.trim() || '';
@@ -1366,11 +1479,57 @@ class InventoryManager {
             return;
         }
 
+        const mode = (this.adjustModalState && this.adjustModalState.mode) || 'add';
+
+        // Handler jika ini produk barang jadi (direct stock)
+        if (this.adjustModalState && this.adjustModalState.isDirectProduct) {
+            const prod = productManager.getProductById(id);
+            if (!prod) return;
+            const current = Number(prod.directStock) || 0;
+            let finalStock = current;
+            if (mode === 'add') {
+                finalStock = current + Math.abs(inputAmount);
+            } else if (mode === 'reduce') {
+                finalStock = Math.max(0, current - Math.abs(inputAmount));
+            } else {
+                finalStock = Math.max(0, inputAmount);
+            }
+            prod.directStock = finalStock;
+            try {
+                await db.saveProduct(prod);
+                const diff = finalStock - current;
+                await db.addStockLog({
+                    materialId: prod.id,
+                    materialName: prod.name,
+                    itemType: 'direct_product',
+                    changeType: mode,
+                    amount: diff,
+                    unit: 'unit',
+                    stockBefore: current,
+                    stockAfter: finalStock,
+                    author: author,
+                    notes: notes || (mode === 'add' ? 'Tambah stok barang jadi' : (mode === 'reduce' ? 'Kurang stok barang jadi' : 'Set total opname barang jadi'))
+                }).catch(err => console.warn('Gagal catat stock log:', err));
+
+                sounds.playSuccess();
+                this.closeCustomAdjustModal();
+                this.renderTabContent();
+                if (typeof productManager !== 'undefined') productManager.render();
+                if (typeof showPosToast === 'function') {
+                    const sign = diff >= 0 ? '+' : '';
+                    showPosToast(`✅ Stok barang jadi "${prod.name}" berhasil diupdate: ${finalStock} unit (${sign}${diff})`, 3000);
+                }
+            } catch (err) {
+                alert('Gagal update stok barang jadi: ' + err.message);
+            }
+            return;
+        }
+
+        // Handler untuk Bahan Baku Master
         const mat = this.getRawMaterialById(id);
         if (!mat) return;
 
         const current = Number(mat.stock) || 0;
-        const mode = (this.adjustModalState && this.adjustModalState.mode) || 'add';
 
         let finalStock = current;
         if (mode === 'add') {
@@ -1661,10 +1820,11 @@ class InventoryManager {
                             <th style="width: 40px; text-align: center;">#</th>
                             <th style="width: 140px; white-space: nowrap;">Waktu & Tanggal</th>
                             <th style="width: 130px; white-space: nowrap;">Petugas / Kasir</th>
-                            <th>Nama Bahan / Barang</th>
+                            <th style="min-width: 190px; white-space: nowrap;">Nama Bahan / Barang</th>
                             <th style="width: 130px; text-align: center;">Jenis Perubahan</th>
                             <th style="width: 120px; text-align: right; white-space: nowrap;">Perubahan (±)</th>
-                            <th style="width: 170px; text-align: right; white-space: nowrap;">Stok (Sebelum ➔ Sesudah)</th>
+                            <th style="width: 110px; text-align: right; white-space: nowrap;">Stok Sebelum</th>
+                            <th style="width: 110px; text-align: right; white-space: nowrap;">Stok Sesudah</th>
                             <th style="min-width: 180px;">Catatan / Keterangan</th>
                         </tr>
                     </thead>
@@ -1691,7 +1851,7 @@ class InventoryManager {
         if (filtered.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="8" style="text-align: center; padding: 40px 20px; color: #64748B;">
+                    <td colspan="9" style="text-align: center; padding: 40px 20px; color: #64748B;">
                         <div style="font-size: 28px; margin-bottom: 8px;">📭</div>
                         <div style="font-weight: 700; font-size: 14px; color: #334155;">Belum Ada Riwayat Perubahan Stok Sesuai Filter</div>
                         <div style="font-size: 12px; margin-top: 4px;">Setiap kali Anda menambah, mengurangi, atau menjual porsi menu, riwayatnya akan otomatis tercatat di sini.</div>
@@ -1715,7 +1875,6 @@ class InventoryManager {
 
             const beforeVal = Number(log.stockBefore) || 0;
             const afterVal = Number(log.stockAfter) || 0;
-            const beforeAfterText = `${beforeVal.toLocaleString('id-ID')} ➔ <strong>${afterVal.toLocaleString('id-ID')}</strong> <small>${unit}</small>`;
 
             let typeBadge = '';
             switch (log.changeType) {
@@ -1754,9 +1913,11 @@ class InventoryManager {
                             👤 <strong>${log.author || 'Kasir'}</strong>
                         </span>
                     </td>
-                    <td>
-                        <div style="font-weight: 700; color: #1E293B; font-size: 13px;">${log.materialName || 'Item'}</div>
-                        <div style="font-size: 11px; color: #64748B;">${itemTypeLabel} • ID: ${log.materialId || '-'}</div>
+                    <td style="white-space: nowrap; min-width: 190px;">
+                        <div style="font-weight: 700; color: #1E293B; font-size: 13px; white-space: nowrap;">${log.materialName || 'Item'}</div>
+                        <div style="font-size: 11px; color: #64748B; white-space: nowrap; margin-top: 2px;">
+                            ${itemTypeLabel} • <span style="font-family: monospace; font-size: 10.5px; background: #F1F5F9; padding: 1px 5px; border-radius: 4px; color: #475569;">ID: ${log.materialId || '-'}</span>
+                        </div>
                     </td>
                     <td style="text-align: center;">
                         ${typeBadge}
@@ -1764,8 +1925,11 @@ class InventoryManager {
                     <td style="text-align: right; font-weight: 800; font-size: 13px; color: ${amtColor}; white-space: nowrap;">
                         ${amtFormatted}
                     </td>
-                    <td style="text-align: right; font-size: 12px; color: #334155; white-space: nowrap;">
-                        ${beforeAfterText}
+                    <td style="text-align: right; font-size: 12.5px; color: #64748B; white-space: nowrap;">
+                        ${beforeVal.toLocaleString('id-ID')} <span style="font-size: 10.5px; color: #94A3B8;">${unit}</span>
+                    </td>
+                    <td style="text-align: right; font-size: 12.5px; font-weight: 700; color: #0F172A; white-space: nowrap;">
+                        ${afterVal.toLocaleString('id-ID')} <span style="font-size: 10.5px; color: #64748B;">${unit}</span>
                     </td>
                     <td style="font-size: 12px; color: #475569;">
                         ${log.notes ? `<span>${log.notes}</span>` : '<span style="color: #94A3B8; font-style: italic;">-</span>'}

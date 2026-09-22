@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
     <!-- Stylesheet POS -->
-    <link rel="stylesheet" href="css/style.css?v=8.4">
+    <link rel="stylesheet" href="css/style.css?v=8.22">
     <!-- Pustaka Eksternal: Excel XLSX Export, Canvas Struk, PDF Generator -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -20,65 +20,64 @@
 
     <div class="app-wrapper">
         <!-- ================= BAGIAN KIRI: MENU SELECTION ================= -->
-        <main class="menu-container" id="menuContainer">
-            <!-- Header Atas -->
+        <main class="menu-container promo-mode" id="menuContainer">
+            <!-- Header Baris Atas: Brand DIASAP di Kiri & Mode Promo Menonjol di Kanan -->
             <header class="top-header">
                 <div class="brand-section">
                     <div class="brand-logo-badge">🔥</div>
                     <div class="brand-text">
-                        <h1>DIASAP POS</h1>
-                        <span>Smoked Meat & Kitchen</span>
+                        <h1>DIASAP</h1>
+                        <span>LEBIH DARI SEKEDAR DAGING</span>
                     </div>
                 </div>
 
-                <div class="header-right-controls">
-                    <!-- Status Database Neon -->
-                    <div class="status-indicator status-offline" id="dbStatusBadge" title="Status Database">
-                        <span id="dbStatusText">Memeriksa DB...</span>
+                <!-- Tombol Switch Mode Promo (Paling Menonjol di Baris Atas) -->
+                <div class="promo-switch-container is-promo-active" id="promoSwitchContainer" title="Tekan F2 atau klik untuk toggle Mode Normal / Promo">
+                    <div class="promo-switch-badge">
+                        <span class="promo-mode-icon" id="promoModeIcon">🔥</span>
+                        <div class="promo-mode-text-wrap">
+                            <span class="promo-mode-sub">MODE HARGA</span>
+                            <span class="promo-mode-main promo-active-text" id="priceModeLabel">PROMO AKTIF!</span>
+                        </div>
                     </div>
+                    <label class="switch" title="Toggle Mode Promo">
+                        <input type="checkbox" id="promoToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <span class="promo-key-hint">F2</span>
+                </div>
+            </header>
 
-                    <!-- Lencana Kasir Aktif -->
-                    <div class="active-cashier-pill" id="activeCashierBadge" onclick="authManager.lockApp()" title="Kasir Aktif. Klik untuk ganti kasir / kunci.">
-                        <span class="cashier-pill-icon">👤</span>
-                        <span class="cashier-pill-name" id="activeCashierName">Ayu</span>
-                    </div>
-
-                    <!-- Tombol Pengaturan Toko -->
-                    <button type="button" class="btn-nav-action btn-settings-nav" onclick="settingsManager.openSettingsModal()" title="Pengaturan Profil Toko, Rekening, QRIS, Struk & Kasir">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                        </svg>
-                        <span>Pengaturan Toko</span>
-                    </button>
-
+            <!-- Baris Bawah: Toolbar Operasional Kasir & Profil Kasir Mini (Ide 2) -->
+            <nav class="pos-action-toolbar" aria-label="Toolbar Operasional Kasir">
+                <div class="toolbar-group toolbar-left-group">
                     <!-- Tombol Transaksi Diproses / Pending -->
                     <button type="button" class="btn-nav-action btn-active-orders-nav" onclick="activeOrdersManager.openModal()" title="Lihat Transaksi Belum Lunas & Antrean PO (F7)">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M9 11l3 3L22 4"></path>
                             <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
                         </svg>
-                        <span>Transaksi Diproses</span>
+                        <span class="btn-nav-text">Transaksi Diproses</span>
                         <span class="active-orders-badge" id="activeOrdersCountBadge" style="display: none;">0</span>
                     </button>
 
                     <!-- Tombol Rekap Penjualan -->
-                    <button type="button" class="btn-nav-action" onclick="openHistoryModal()" title="Lihat Rekap Transaksi & Penjualan (F8)">
+                    <button type="button" class="btn-nav-action btn-history-nav" onclick="openHistoryModal()" title="Lihat Rekap Transaksi & Penjualan (F8)">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="18" y1="20" x2="18" y2="10"></line>
                             <line x1="12" y1="20" x2="12" y2="4"></line>
                             <line x1="6" y1="20" x2="6" y2="14"></line>
                         </svg>
-                        <span>Rekap Penjualan</span>
+                        <span class="btn-nav-text">Rekap Penjualan</span>
                     </button>
 
                     <!-- Tombol Kelola Menu (Admin Panel) -->
                     <button type="button" class="btn-nav-action btn-admin-nav" onclick="adminManager.openAdminModal()" title="Admin Panel: Kelola Menu, Harga, Diskon & HPP">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="3"></circle>
-                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                         </svg>
-                        <span>Kelola Menu</span>
+                        <span class="btn-nav-text">Kelola Menu</span>
                     </button>
 
                     <!-- Tombol Kelola Stock (Bahan Baku Utama & Barang Jadi) -->
@@ -88,29 +87,60 @@
                             <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
                             <line x1="12" y1="22.08" x2="12" y2="12"></line>
                         </svg>
-                        <span>Kelola Stock</span>
+                        <span class="btn-nav-text">Kelola Stock</span>
                     </button>
+                </div>
 
-                    <!-- Tombol Kunci Kasir -->
-                    <button type="button" class="btn-nav-action" onclick="authManager.lockApp()" title="Kunci Kasir (Logout)">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                <!-- Sisi Kanan: Profil Kasir Mini (Ide 2: 1 Titik Ringkas & Tidak Dominan) -->
+                <div class="cashier-profile-dropdown" id="cashierProfileDropdown">
+                    <button type="button" class="btn-cashier-trigger" id="activeCashierBadge" onclick="toggleCashierDropdown(event)" title="Menu Kasir & Sistem">
+                        <span class="cashier-status-dot status-offline" id="cashierStatusDot" title="Status Database"></span>
+                        <span class="cashier-avatar-icon">👤</span>
+                        <span class="cashier-name-text" id="activeCashierName">Ayu</span>
+                        <svg class="cashier-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="6 9 12 15 18 9"></polyline>
                         </svg>
-                        <span>Kunci</span>
                     </button>
 
-                    <!-- Tombol Switch Mode Promo -->
-                    <div class="promo-switch-container" title="Tekan F2 untuk toggle mode promo">
-                        <span class="switch-label">Mode Harga:</span>
-                        <label class="switch">
-                            <input type="checkbox" id="promoToggle">
-                            <span class="slider"></span>
-                        </label>
-                        <span id="priceModeLabel">Normal</span>
+                    <!-- Menu Pop-up / Dropdown -->
+                    <div class="cashier-dropdown-menu" id="cashierDropdownMenu">
+                        <div class="dropdown-header">
+                            <div class="dropdown-user-info">
+                                <div class="dropdown-avatar">👤</div>
+                                <div class="dropdown-user-meta">
+                                    <span class="dropdown-user-name" id="dropdownCashierName">Ayu</span>
+                                    <span class="dropdown-user-role">Kasir Bertugas</span>
+                                </div>
+                            </div>
+                            <div class="status-indicator status-offline" id="dbStatusBadge" title="Status Database">
+                                <span id="dbStatusText">Memeriksa DB...</span>
+                            </div>
+                        </div>
+
+                        <div class="dropdown-divider"></div>
+
+                        <div class="dropdown-actions">
+                            <!-- Pengaturan Toko -->
+                            <button type="button" class="dropdown-item" onclick="settingsManager.openSettingsModal(); closeCashierDropdown();">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                </svg>
+                                <span>Pengaturan Toko</span>
+                            </button>
+
+                            <!-- Kunci Kasir -->
+                            <button type="button" class="dropdown-item dropdown-item-danger" onclick="authManager.lockApp(); closeCashierDropdown();">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                </svg>
+                                <span>Kunci Kasir (Logout)</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </header>
+            </nav>
 
             <!-- Category Selector Bar (Sesuai Referensi Visual) -->
             <section class="category-bar">
@@ -471,7 +501,7 @@
                 <button type="button" class="modal-close-btn" onclick="closeHistoryModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <!-- Filter Periode Riwayat -->
+                <!-- Filter Periode Riwayat & Aksi WhatsApp -->
                 <div class="history-filter-bar">
                     <div class="history-filter-pills">
                         <button type="button" class="history-filter-btn active" data-filter="all" onclick="setHistoryFilter('all')">Semua Transaksi</button>
@@ -484,6 +514,11 @@
                         <input type="date" id="historyStartDate" class="form-control date-picker-input" onchange="renderHistoryData()">
                         <span>s/d</span>
                         <input type="date" id="historyEndDate" class="form-control date-picker-input" onchange="renderHistoryData()">
+                    </div>
+                    <div class="history-filter-actions">
+                        <button type="button" class="btn-copy-history-wa" onclick="copyHistoryForWhatsApp()" title="Salin ringkasan omset & menu terjual untuk dikirim ke grup WhatsApp">
+                            📋 Salin Rekap WA
+                        </button>
                     </div>
                 </div>
 
@@ -605,6 +640,9 @@
                 </div>
             </div>
             <div class="modal-footer">
+                <button type="button" class="btn-nav-action btn-copy-history-wa" onclick="copyHistoryForWhatsApp()" title="Salin laporan omset & menu terjual untuk dikirim ke WhatsApp">
+                    📋 Salin Rekap WA
+                </button>
                 <button type="button" class="btn-nav-action btn-export-excel" onclick="exportHistoryToExcel()">
                     📊 Ekspor ke Excel (.xlsx)
                 </button>
@@ -653,14 +691,25 @@
                         </span>
                     </div>
                     <div class="bulk-right-group">
+                        <!-- Perintah Massal / Bulk Commands (Selesai Diambil Semua, Bayar Semua, Batal Semua) -->
+                        <button type="button" class="btn-bulk-toolbar btn-bulk-pickup" id="btnBulkPickup" onclick="activeOrdersManager.bulkMarkPickedUp()" style="display: none;" title="Tandai seluruh pesanan yang dipilih sebagai Selesai Diambil">
+                            ✅ Selesai Diambil Semua
+                        </button>
+                        <button type="button" class="btn-bulk-toolbar btn-bulk-pay" id="btnBulkPay" onclick="activeOrdersManager.bulkPayPrompt()" style="display: none;" title="Lunasi seluruh tagihan sementara yang dipilih">
+                            💳 Bayar Semua
+                        </button>
+                        <button type="button" class="btn-bulk-toolbar btn-bulk-delete" id="btnBulkDelete" onclick="activeOrdersManager.bulkCancelOrders()" style="display: none;" title="Batalkan & hapus tagihan sementara yang dipilih">
+                            🗑️ Batal Semua
+                        </button>
+
                         <button type="button" class="btn-bulk-toolbar btn-copy-wa" id="btnCopyWa" onclick="activeOrdersManager.copyForWhatsApp()" style="background: #EA580C; color: white; border: 1px solid #C2410C; font-weight: 700; padding: 6px 12px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" title="Salin daftar transaksi aktif untuk dikirim ke grup WhatsApp">
-                            📋 Salin Untuk WhatsApp
+                            📋 Salin WA
                         </button>
                         <button type="button" class="btn-bulk-toolbar btn-bulk-pdf" id="btnBulkPdf" onclick="activeOrdersManager.downloadBulkPdf()" disabled>
-                            📄 Download PDF Resi (58mm)
+                            📄 PDF Resi
                         </button>
                         <button type="button" class="btn-bulk-toolbar btn-bulk-print" id="btnBulkPrint" onclick="activeOrdersManager.printBulkLabels()" disabled>
-                            🖨️ Cetak Bulk (58mm)
+                            🖨️ Cetak Resi
                         </button>
                         <button type="button" class="btn-bulk-toolbar btn-bulk-cancel" id="btnBulkCancel" onclick="activeOrdersManager.clearSelection()" style="display: none;">
                             Batal Pilih
@@ -678,15 +727,81 @@
         </div>
     </div>
 
-    <!-- ================= MODAL: ADMIN PANEL ================= -->
+    <!-- ================= MODAL: PELUNASAN MASSAL (BULK PAY) ================= -->
+    <div class="modal-backdrop" id="bulkPayModal" style="z-index: 1060;">
+        <div class="modal-content modal-sm modal-bulk-pay" style="max-width: 480px;">
+            <div class="modal-header">
+                <div class="active-header-title">
+                    <span class="active-title-badge" style="background: #E0F2FE; color: #0369A1;">💳 PELUNASAN</span>
+                    <div>
+                        <h3 id="bulkPayTitle">Pelunasan Massal</h3>
+                        <p class="active-subtitle" id="bulkPaySubtitle">Selesaikan pembayaran untuk pesanan yang dipilih</p>
+                    </div>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="activeOrdersManager.closeBulkPayModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 16px 20px;">
+                <!-- Total Amount Banner -->
+                <div class="bulk-pay-summary-card">
+                    <span class="bulk-pay-summary-label">Total Tagihan Yang Akan Dilunasi:</span>
+                    <div class="bulk-pay-summary-amount" id="bulkPayTotalAmount">Rp 0</div>
+                    <div class="bulk-pay-summary-meta" id="bulkPayOrdersCount">0 Pesanan Dipilih</div>
+                </div>
+
+                <!-- Pilihan Metode Pembayaran -->
+                <div class="bulk-pay-section" style="margin-top: 14px;">
+                    <label class="bulk-pay-section-label">Pilih Metode Pembayaran:</label>
+                    <div class="bulk-pay-method-grid">
+                        <label class="bulk-method-option active" onclick="activeOrdersManager.selectBulkMethod('cash')">
+                            <input type="radio" name="bulkPayMethod" value="cash" checked>
+                            <span class="bulk-method-icon">💵</span>
+                            <span class="bulk-method-name">Tunai (Cash)</span>
+                        </label>
+                        <label class="bulk-method-option" onclick="activeOrdersManager.selectBulkMethod('qris')">
+                            <input type="radio" name="bulkPayMethod" value="qris">
+                            <span class="bulk-method-icon">📱</span>
+                            <span class="bulk-method-name">QRIS</span>
+                        </label>
+                        <label class="bulk-method-option" onclick="activeOrdersManager.selectBulkMethod('transfer')">
+                            <input type="radio" name="bulkPayMethod" value="transfer">
+                            <span class="bulk-method-icon">🏦</span>
+                            <span class="bulk-method-name">Transfer Bank</span>
+                        </label>
+                        <label class="bulk-method-option" onclick="activeOrdersManager.selectBulkMethod('debit')">
+                            <input type="radio" name="bulkPayMethod" value="debit">
+                            <span class="bulk-method-icon">💳</span>
+                            <span class="bulk-method-name">Kartu Debit</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Opsi Khusus Take Away / PO jika ada -->
+                <div class="bulk-pay-po-option" id="bulkPayPoOption" style="display: none; margin-top: 14px; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px 12px; border-radius: 8px;">
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; color: #334155; cursor: pointer;">
+                        <input type="checkbox" id="bulkPayAutoPickupCheckbox" style="width: 16px; height: 16px;">
+                        <span>Langsung tandai pesanan Take Away (PO) sebagai SUDAH DIAMBIL</span>
+                    </label>
+                    <p style="font-size: 11px; color: #64748B; margin: 4px 0 0 24px;">Jika tidak dicentang, pesanan Take Away akan dipindahkan ke antrean "Menunggu Diambil".</p>
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding: 12px 20px;">
+                <button type="button" class="btn-bulk-toolbar btn-bulk-cancel" onclick="activeOrdersManager.closeBulkPayModal()">Batal</button>
+                <button type="button" class="btn-bulk-toolbar btn-bulk-pay" id="btnConfirmBulkPay" onclick="activeOrdersManager.confirmBulkPay()">
+                    ✅ Konfirmasi Pelunasan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODAL: KELOLA MENU ================= -->
     <div class="modal-backdrop" id="adminModal">
         <div class="modal-content modal-admin">
             <div class="modal-header">
                 <div class="admin-header-title">
-                    <span class="admin-title-badge">⚙️ ADMIN</span>
+                    <span class="admin-title-badge">🍽️ MENU</span>
                     <div>
-                        <h3>Admin Panel & Manajemen Menu</h3>
-                        <p class="admin-subtitle">Kelola harga produk, atur promo/diskon, tambah & hapus menu resto</p>
+                        <h3>Kelola Menu</h3>
+                        <p class="admin-subtitle">Kelola daftar menu, harga normal & promo, varian, serta kategori resto</p>
                     </div>
                 </div>
                 <button type="button" class="modal-close-btn" onclick="adminManager.closeAdminModal()">&times;</button>
@@ -732,7 +847,7 @@
                             <span class="admin-search-icon">🔍</span>
                             <input type="text" id="adminSearchInput" class="admin-search-input" placeholder="Cari nama atau kode menu...">
                         </div>
-                        <div class="admin-cat-pills">
+                        <div class="admin-cat-pills" id="adminCategoryPills">
                             <button type="button" class="admin-cat-btn active" data-category="all">Semua</button>
                             <button type="button" class="admin-cat-btn" data-category="makanan">🍗 Makanan</button>
                             <button type="button" class="admin-cat-btn" data-category="minuman">🍹 Minuman</button>
@@ -754,13 +869,15 @@
                         <thead>
                             <tr>
                                 <th style="width: 36px; text-align: center;">#</th>
-                                <th style="min-width: 160px;">Menu & Kategori</th>
-                                <th style="width: 105px;">Modal (HPP)</th>
-                                <th style="width: 105px;">Harga Jual</th>
-                                <th style="width: 155px;">Promo & Diskon</th>
-                                <th style="width: 125px;">Untung Bersih</th>
-                                <th class="col-desc" style="min-width: 130px;">Deskripsi</th>
-                                <th class="col-actions" style="width: 140px; text-align: right;">Aksi</th>
+                                <th style="min-width: 150px;">Menu</th>
+                                <th style="width: 85px;">SKU</th>
+                                <th style="min-width: 140px; white-space: nowrap;">Kategori</th>
+                                <th style="width: 100px;">Modal (HPP)</th>
+                                <th style="width: 100px;">Harga Jual</th>
+                                <th style="width: 140px;">Promo & Diskon</th>
+                                <th style="width: 120px;">Untung Bersih</th>
+                                <th class="col-desc" style="min-width: 120px;">Deskripsi</th>
+                                <th class="col-actions" style="width: 135px; text-align: right;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="adminTableBody">
@@ -774,7 +891,7 @@
                 <div class="admin-footer-tip">
                     <span>💡 <strong>Tips:</strong> Klik tombol <em>Edit / Diskon</em> pada baris produk untuk mengubah harga normal atau mengatur potongan diskon.</span>
                 </div>
-                <button type="button" class="btn-nav-action" onclick="adminManager.closeAdminModal()">Tutup Admin Panel</button>
+                <button type="button" class="btn-nav-action" onclick="adminManager.closeAdminModal()">Tutup Kelola Menu</button>
             </div>
         </div>
     </div>
@@ -875,7 +992,10 @@
                             <input type="text" id="adminProdName" class="form-control" placeholder="Contoh: PAKET SPECIAL IGA ASAP" required autocomplete="off">
                         </div>
                         <div class="form-group" style="flex: 1.2;">
-                            <label for="adminProdCategory">Kategori <span class="text-danger">*</span></label>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                <label for="adminProdCategory" style="margin-bottom: 0;">Kategori <span class="text-danger">*</span></label>
+                                <button type="button" class="btn-manage-cats" onclick="categoryManager.openCategoryModal()">⚙️ Kelola Kategori</button>
+                            </div>
                             <select id="adminProdCategory" class="form-control">
                                 <option value="makanan">🍗 Makanan / Paket</option>
                                 <option value="minuman">🍹 Minuman</option>
@@ -1056,6 +1176,46 @@
         </div>
     </div>
 
+    <!-- ================= MODAL: KELOLA KATEGORI ================= -->
+    <div class="modal-backdrop" id="categoryManagerModal" style="z-index: 1100;">
+        <div class="modal-content modal-category-manager">
+            <div class="modal-header">
+                <div class="admin-header-title">
+                    <span class="admin-title-badge">🏷️ KATEGORI</span>
+                    <div>
+                        <h3>Kelola Kategori Menu</h3>
+                        <p class="admin-subtitle">Tambah atau hapus kelompok kategori menu resto</p>
+                    </div>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="categoryManager.closeCategoryModal()">&times;</button>
+            </div>
+
+            <div class="modal-body" style="padding: 20px;">
+                <!-- Form Tambah Kategori Baru -->
+                <div class="add-category-box">
+                    <div class="add-cat-title">➕ Tambah Kategori Baru</div>
+                    <div class="add-cat-inputs">
+                        <input type="text" id="newCategoryIconInput" class="form-control" style="width: 55px; text-align: center; font-size: 18px;" placeholder="🍗" value="🍽️" maxlength="4" title="Icon Emoji">
+                        <input type="text" id="newCategoryNameInput" class="form-control" placeholder="Nama Kategori (misal: Cemilan, Paket Hemat)" style="flex: 1;">
+                        <button type="button" class="btn-primary" onclick="categoryManager.submitNewCategory()" style="padding: 8px 18px; white-space: nowrap;">
+                            Simpan
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Daftar Kategori Aktif -->
+                <div class="cat-list-heading">Daftar Kategori Tersedia:</div>
+                <div class="cat-list-wrapper" id="categoryModalList">
+                    <!-- Diisi dinamis oleh categoryManager -->
+                </div>
+            </div>
+
+            <div class="modal-footer" style="display: flex; justify-content: flex-end; padding: 12px 20px;">
+                <button type="button" class="btn-nav-action" onclick="categoryManager.closeCategoryModal()">Selesai & Tutup</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ================= MODAL: KELOLA STOCK (BAHAN BAKU & BARANG JADI) ================= -->
     <div class="modal-backdrop" id="stockModal">
         <div class="modal-content modal-admin">
@@ -1072,18 +1232,10 @@
 
             <!-- Tab Navigasi Stock -->
             <div class="stock-tabs-nav">
-                <button type="button" class="stock-tab-btn active" data-tab="raw" onclick="inventoryManager.setTab('raw')">
-                    🌾 Bahan Baku Utama (Resep Master)
-                </button>
-                <button type="button" class="stock-tab-btn" data-tab="direct" onclick="inventoryManager.setTab('direct')">
-                    🥤 Stok Barang Jadi (Fisik)
-                </button>
-                <button type="button" class="stock-tab-btn" data-tab="menu" onclick="inventoryManager.setTab('menu')">
-                    📋 Tinjauan Kesiapan Jual Menu
-                </button>
-                <button type="button" class="stock-tab-btn" data-tab="history" onclick="inventoryManager.setTab('history')">
-                    📜 Riwayat Perubahan Stok
-                </button>
+                <button type="button" class="stock-tab-btn active" data-tab="raw" onclick="inventoryManager.setTab('raw')"><span class="tab-btn-icon">🌾</span><span class="tab-btn-text">Bahan Baku Utama (Resep Master)</span></button>
+                <button type="button" class="stock-tab-btn" data-tab="direct" onclick="inventoryManager.setTab('direct')"><span class="tab-btn-icon">🥤</span><span class="tab-btn-text">Stok Barang Jadi (Fisik)</span></button>
+                <button type="button" class="stock-tab-btn" data-tab="menu" onclick="inventoryManager.setTab('menu')"><span class="tab-btn-icon">📋</span><span class="tab-btn-text">Tinjauan Kesiapan Jual Menu</span></button>
+                <button type="button" class="stock-tab-btn" data-tab="history" onclick="inventoryManager.setTab('history')"><span class="tab-btn-icon">📜</span><span class="tab-btn-text">Riwayat Perubahan Stok</span></button>
             </div>
 
             <div class="modal-body admin-modal-body" id="stockModalTabContent">
@@ -1609,16 +1761,17 @@
     <div id="bulkPrintArea" class="bulk-print-only-container"></div>
 
     <!-- ================= JAVASCRIPT MODULES ================= -->
-    <script src="js/config.js?v=8.4"></script>
-    <script src="js/sound.js?v=8.4"></script>
-    <script src="js/db.js?v=8.4"></script>
-    <script src="js/settings.js?v=8.4"></script>
-    <script src="js/inventory.js?v=8.4"></script>
-    <script src="js/products.js?v=8.4"></script>
-    <script src="js/cart.js?v=8.4"></script>
-    <script src="js/payment.js?v=8.4"></script>
-    <script src="js/auth.js?v=8.4"></script>
-    <script src="js/admin.js?v=8.4"></script>
-    <script src="js/app.js?v=8.4"></script>
+    <script src="js/config.js?v=8.22"></script>
+    <script src="js/sound.js?v=8.22"></script>
+    <script src="js/db.js?v=8.22"></script>
+    <script src="js/settings.js?v=8.22"></script>
+    <script src="js/categories.js?v=8.22"></script>
+    <script src="js/inventory.js?v=8.22"></script>
+    <script src="js/products.js?v=8.22"></script>
+    <script src="js/cart.js?v=8.22"></script>
+    <script src="js/payment.js?v=8.22"></script>
+    <script src="js/auth.js?v=8.22"></script>
+    <script src="js/admin.js?v=8.22"></script>
+    <script src="js/app.js?v=8.22"></script>
 </body>
 </html>

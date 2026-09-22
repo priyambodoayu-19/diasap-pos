@@ -24,16 +24,24 @@ class ProductManager {
         this.products = [];
         this.currentCategory = 'all';
         this.searchQuery = '';
-        this.isPromoMode = false;
+        this.isPromoMode = true;
     }
 
     async loadProducts() {
         this.products = await db.getProducts();
-        this.updateCategoryCounts();
+        if (typeof categoryManager !== 'undefined') {
+            await categoryManager.init();
+        } else {
+            this.updateCategoryCounts();
+        }
         this.render();
     }
 
     updateCategoryCounts() {
+        if (typeof categoryManager !== 'undefined' && categoryManager.renderPosPills) {
+            categoryManager.renderPosPills();
+            return;
+        }
         if (!Array.isArray(this.products)) return;
         const total = this.products.length;
         const countMakanan = this.products.filter(p => p.category === 'makanan').length;
@@ -58,6 +66,10 @@ class ProductManager {
     setCategory(cat) {
         this.currentCategory = cat;
         this.render();
+    }
+
+    filterByCategory(cat) {
+        this.setCategory(cat);
     }
 
     setSearch(query) {

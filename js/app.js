@@ -24,9 +24,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         await settingsManager.init();
     }
 
-    // 1. Setup Status Koneksi Database
+    // 1. Setup Status Koneksi Database & Dot Indikator Profil
     const dbStatusBadge = document.getElementById('dbStatusBadge');
     const dbStatusText = document.getElementById('dbStatusText');
+    const cashierStatusDot = document.getElementById('cashierStatusDot');
 
     db.onStatusChange((isOnline, msg) => {
         if (dbStatusBadge && dbStatusText) {
@@ -39,6 +40,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 dbStatusText.textContent = 'Mode Lokal';
                 dbStatusBadge.title = msg;
             }
+        }
+        if (cashierStatusDot) {
+            cashierStatusDot.className = 'cashier-status-dot ' + (isOnline ? 'status-online' : 'status-offline');
+            cashierStatusDot.title = isOnline ? 'Neon DB Online (Cloud Aktif)' : 'Mode Lokal (Offline / Terisolasi)';
         }
     });
 
@@ -64,6 +69,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const promoToggle = document.getElementById('promoToggle');
     const priceModeLabel = document.getElementById('priceModeLabel');
     const menuContainer = document.getElementById('menuContainer');
+    const promoSwitchContainer = document.getElementById('promoSwitchContainer');
+    const promoModeIcon = document.getElementById('promoModeIcon');
 
     if (promoToggle) {
         promoToggle.addEventListener('change', function() {
@@ -71,16 +78,34 @@ document.addEventListener('DOMContentLoaded', async () => {
             productManager.setPromoMode(isPromo);
 
             if (isPromo) {
-                priceModeLabel.textContent = 'PROMO AKTIF!';
-                priceModeLabel.classList.add('promo-active-text');
-                menuContainer.classList.add('promo-mode');
+                if (priceModeLabel) {
+                    priceModeLabel.textContent = 'PROMO AKTIF!';
+                    priceModeLabel.classList.add('promo-active-text');
+                }
+                if (promoModeIcon) promoModeIcon.textContent = '🔥';
+                if (promoSwitchContainer) promoSwitchContainer.classList.add('is-promo-active');
+                if (menuContainer) menuContainer.classList.add('promo-mode');
             } else {
-                priceModeLabel.textContent = 'Normal';
-                priceModeLabel.classList.remove('promo-active-text');
-                menuContainer.classList.remove('promo-mode');
+                if (priceModeLabel) {
+                    priceModeLabel.textContent = 'Normal';
+                    priceModeLabel.classList.remove('promo-active-text');
+                }
+                if (promoModeIcon) promoModeIcon.textContent = '🏷️';
+                if (promoSwitchContainer) promoSwitchContainer.classList.remove('is-promo-active');
+                if (menuContainer) menuContainer.classList.remove('promo-mode');
             }
             sounds.playBeep();
         });
+
+        // Klik area badge promo switch untuk toggle langsung
+        if (promoSwitchContainer) {
+            promoSwitchContainer.addEventListener('click', function(e) {
+                if (e.target.tagName !== 'INPUT' && !e.target.closest('.switch')) {
+                    promoToggle.checked = !promoToggle.checked;
+                    promoToggle.dispatchEvent(new Event('change'));
+                }
+            });
+        }
     }
 
     // 5. Filter Kategori
@@ -365,6 +390,40 @@ async function renderHistoryData() {
         if (qrisTotalEl) qrisTotalEl.textContent = formatRupiah(qrisRevenue);
         if (transferTotalEl) transferTotalEl.textContent = formatRupiah(transferRevenue);
 
+        // Hitung Ringkasan Menu Terjual pada periode ini (untuk laporan WhatsApp)
+        const itemSalesMap = {};
+        orders.forEach(o => {
+            if (o.isVoid || o.status === 'unpaid') return;
+            (o.items || []).forEach(i => {
+                let name = i.name || i.baseName || 'Item';
+                if (i.baseName && i.variantName && !name.includes(i.variantName)) {
+                    name = `${i.baseName} (${i.variantName})`;
+                }
+                itemSalesMap[name] = (itemSalesMap[name] || 0) + (Number(i.qty) || 1);
+            });
+        });
+        const sortedItems = Object.entries(itemSalesMap).sort((a, b) => b[1] - a[1]);
+
+        // Simpan data kalkulasi periode ini agar dapat disalin ke WhatsApp
+        window.lastHistorySummary = {
+            filterType: currentHistoryFilter,
+            startDate: document.getElementById('historyStartDate')?.value,
+            endDate: document.getElementById('historyEndDate')?.value,
+            totalRevenue,
+            totalDeliveryFee,
+            totalFoodRevenue,
+            totalCogs,
+            totalProfit,
+            overallMargin,
+            activeOrdersCount,
+            voidOrdersCount,
+            avgOrder,
+            cashRevenue,
+            qrisRevenue,
+            transferRevenue,
+            sortedItems
+        };
+
         // Render Grafik Sederhana Penjualan (Hanya transaksi lunas/selesai)
         renderHistoryChart(orders);
 
@@ -378,6 +437,83 @@ async function renderHistoryData() {
         if (tableBody) {
             tableBody.innerHTML = `<tr><td colspan="12" style="text-align: center; padding: 24px; color: #DC2626;">Gagal memuat data riwayat: ${err.message}.</td></tr>`;
         }
+    }
+}
+
+// Salin Rekap Penjualan, Keuangan & Menu Terlaris ke WhatsApp (Opsi 2 Lengkap)
+function copyHistoryForWhatsApp() {
+    const summary = window.lastHistorySummary;
+    if (!summary || summary.activeOrdersCount === 0) {
+        alert('Tidak ada data transaksi sukses pada periode ini untuk disalin.');
+        return;
+    }
+
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':');
+
+    let periodLabel = 'Semua Transaksi';
+    if (summary.filterType === 'today') periodLabel = `Hari Ini (${dateStr})`;
+    else if (summary.filterType === 'week') periodLabel = '7 Hari Terakhir';
+    else if (summary.filterType === 'month') {
+        const monthName = now.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+        periodLabel = `Bulan Ini (${monthName})`;
+    } else if (summary.filterType === 'custom') {
+        periodLabel = `${summary.startDate || '-'} s/d ${summary.endDate || '-'}`;
+    }
+
+    const lines = [
+        '📊 *REKAP PENJUALAN - DIASAP*',
+        `📅 Periode: *${periodLabel}*`,
+        `⏰ Update: ${dateStr}, ${timeStr}`,
+        '━━━━━━━━━━━━━━━━━━━━',
+        '',
+        '💰 *RINGKASAN OMSET & PROFIT:*',
+        `• Total Omset: *${formatRupiah(summary.totalRevenue)}*`,
+        `• Titipan Ongkir: ${formatRupiah(summary.totalDeliveryFee)} (Kurir/Ojol)`,
+        `• Omset Makanan: *${formatRupiah(summary.totalFoodRevenue)}*`,
+        `• Total Modal (HPP): ${formatRupiah(summary.totalCogs)}`,
+        `• *Untung Bersih: ${formatRupiah(summary.totalProfit)}* (Margin ${summary.overallMargin}%)`,
+        '',
+        '💳 *RINCIAN KAS & METODE:*',
+        `• 💵 Tunai (Kas Laci): ${formatRupiah(summary.cashRevenue)}`,
+        `• 📱 QRIS: ${formatRupiah(summary.qrisRevenue)}`,
+        `• 🏦 Transfer Bank: ${formatRupiah(summary.transferRevenue)}`,
+        '',
+        '📈 *STATISTIK TRANSAKSI:*',
+        `• Transaksi Sukses: ${summary.activeOrdersCount} pesanan`,
+        summary.voidOrdersCount > 0 ? `• Transaksi Void/Batal: ${summary.voidOrdersCount} pesanan` : null,
+        `• Rata-rata Nilai Order: ${formatRupiah(summary.avgOrder)} / transaksi`,
+        '',
+        '🍗 *MENU TERJUAL:*'
+    ].filter(Boolean);
+
+    if (summary.sortedItems && summary.sortedItems.length > 0) {
+        summary.sortedItems.forEach(([name, qty]) => {
+            lines.push(`• ${qty}x ${name}`);
+        });
+    } else {
+        lines.push('• (Belum ada catatan item)');
+    }
+
+    lines.push('');
+    lines.push('━━━━━━━━━━━━━━━━━━━━');
+    lines.push('_DIASAP Smokehouse POS_');
+
+    const text = lines.join('\n');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+            if (typeof sounds !== 'undefined') sounds.playSuccess();
+            if (typeof showPosToast === 'function') {
+                showPosToast('📋 Rekap Penjualan WhatsApp berhasil disalin!', 3000);
+            } else {
+                alert('📋 Rekap Penjualan WhatsApp berhasil disalin ke clipboard!\nSilakan paste ke grup WhatsApp.');
+            }
+        }).catch(() => {
+            prompt('Salin teks rekap berikut:', text);
+        });
+    } else {
+        prompt('Salin teks rekap berikut:', text);
     }
 }
 
@@ -1517,6 +1653,7 @@ class ActiveOrdersManager {
                 </div>
             `;
         }
+        this.updateBulkToolbar();
     }
 
     // Toggle pemilihan kartu/baris order
@@ -1737,6 +1874,10 @@ class ActiveOrdersManager {
         const btnCancel = document.getElementById('btnBulkCancel');
         const allCb = document.getElementById('bulkSelectAllCheckbox');
 
+        const btnPickup = document.getElementById('btnBulkPickup');
+        const btnPay = document.getElementById('btnBulkPay');
+        const btnDelete = document.getElementById('btnBulkDelete');
+
         if (totalEl) totalEl.textContent = total;
         if (countEl) countEl.textContent = count;
         if (unprintedEl) unprintedEl.textContent = unprintedCount;
@@ -1746,6 +1887,30 @@ class ActiveOrdersManager {
         if (btnCancel) btnCancel.style.display = count > 0 ? 'inline-flex' : 'none';
         if (btnPdf) btnPdf.disabled = count === 0;
         if (btnPrint) btnPrint.disabled = count === 0;
+
+        // Atur Perintah Massal sesuai tab yang sedang aktif
+        if (this.currentTab === 'po') {
+            if (btnPickup) {
+                btnPickup.style.display = 'inline-flex';
+                btnPickup.disabled = (total === 0);
+                btnPickup.innerHTML = count > 0 ? `✅ Selesai Diambil (${count})` : `✅ Selesai Diambil Semua`;
+            }
+            if (btnPay) btnPay.style.display = 'none';
+            if (btnDelete) btnDelete.style.display = 'none';
+        } else {
+            // Tab Unpaid (Tagihan Sementara Belum Lunas)
+            if (btnPickup) btnPickup.style.display = 'none';
+            if (btnPay) {
+                btnPay.style.display = 'inline-flex';
+                btnPay.disabled = (total === 0);
+                btnPay.innerHTML = count > 0 ? `💳 Bayar (${count})` : `💳 Bayar Semua`;
+            }
+            if (btnDelete) {
+                btnDelete.style.display = 'inline-flex';
+                btnDelete.disabled = (total === 0);
+                btnDelete.innerHTML = count > 0 ? `🗑️ Batal (${count})` : `🗑️ Batal Semua`;
+            }
+        }
 
         if (allCb) {
             allCb.checked = (total > 0 && count >= total);
@@ -2078,7 +2243,219 @@ class ActiveOrdersManager {
             }
         }
     }
+
+    // =========================================================================
+    // BULK COMMANDS: SELESAI DIAMBIL SEMUA, BAYAR SEMUA, BATAL SEMUA
+    // =========================================================================
+
+    // 1. Bulk Mark Picked Up (Selesai Diambil Semua)
+    async bulkMarkPickedUp() {
+        let targets = Array.from(this.selectedInvoices);
+        if (targets.length === 0) {
+            if (this.visibleOrders.length === 0) {
+                alert('Tidak ada pesanan antrean PO yang dapat ditandai selesai.');
+                return;
+            }
+            targets = this.visibleOrders.map(o => o.invoiceNo);
+        }
+
+        const count = targets.length;
+        if (!confirm(`Tandai ${count} pesanan PO yang dipilih sebagai SUDAH DIAMBIL / SELESAI?`)) {
+            return;
+        }
+
+        try {
+            for (const inv of targets) {
+                await db.updateOrderStatus(inv, 'completed', { pickedUpAt: new Date().toISOString() });
+            }
+            if (typeof sounds !== 'undefined') sounds.playSuccess();
+            if (typeof showPosToast === 'function') {
+                showPosToast(`✅ ${count} pesanan PO berhasil ditandai selesai diambil!`, 3000);
+            }
+            this.selectedInvoices.clear();
+            await this.render();
+            await this.refreshBadge();
+            const historyModal = document.getElementById('historyModal');
+            if (historyModal && historyModal.classList.contains('active')) {
+                await renderHistoryData();
+            }
+        } catch (err) {
+            console.error('Gagal bulk mark picked up:', err);
+            alert('Terjadi kesalahan saat memproses pesanan: ' + err.message);
+        }
+    }
+
+    // 2. Bulk Cancel Orders (Batal Semua)
+    async bulkCancelOrders() {
+        let targets = Array.from(this.selectedInvoices);
+        if (targets.length === 0) {
+            if (this.visibleOrders.length === 0) {
+                alert('Tidak ada tagihan sementara yang dapat dibatalkan.');
+                return;
+            }
+            targets = this.visibleOrders.map(o => o.invoiceNo);
+        }
+
+        const count = targets.length;
+        if (!confirm(`⚠️ PERINGATAN:\nYakin ingin membatalkan & menghapus ${count} tagihan sementara yang dipilih?\nData yang dihapus tidak dapat dikembalikan.`)) {
+            return;
+        }
+
+        try {
+            for (const inv of targets) {
+                await db.deletePendingOrder(inv);
+            }
+            if (typeof sounds !== 'undefined') sounds.playSuccess();
+            if (typeof showPosToast === 'function') {
+                showPosToast(`🗑️ ${count} tagihan sementara berhasil dibatalkan dan dihapus!`, 3000);
+            }
+            this.selectedInvoices.clear();
+            await this.render();
+            await this.refreshBadge();
+            const historyModal = document.getElementById('historyModal');
+            if (historyModal && historyModal.classList.contains('active')) {
+                await renderHistoryData();
+            }
+        } catch (err) {
+            console.error('Gagal bulk cancel orders:', err);
+            alert('Terjadi kesalahan saat membatalkan tagihan: ' + err.message);
+        }
+    }
+
+    // 3. Bulk Pay (Bayar Semua) - Buka Modal Pelunasan Massal
+    bulkPayPrompt() {
+        let targets = Array.from(this.selectedInvoices);
+        if (targets.length === 0) {
+            if (this.visibleOrders.length === 0) {
+                alert('Tidak ada tagihan sementara yang dapat dilunasi.');
+                return;
+            }
+            targets = this.visibleOrders.map(o => o.invoiceNo);
+        }
+
+        const ordersToPay = this.visibleOrders.filter(o => targets.includes(o.invoiceNo) && o.status === 'unpaid');
+        if (ordersToPay.length === 0) {
+            alert('Tidak ada tagihan yang belum lunas di antara pesanan yang dipilih.');
+            return;
+        }
+
+        this.pendingBulkPayOrders = ordersToPay;
+        this.selectedBulkMethod = 'cash';
+
+        const totalAmount = ordersToPay.reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
+        const hasTakeAway = ordersToPay.some(o => o.orderType === 'take_away');
+
+        const modal = document.getElementById('bulkPayModal');
+        const totalEl = document.getElementById('bulkPayTotalAmount');
+        const countEl = document.getElementById('bulkPayOrdersCount');
+        const poOpt = document.getElementById('bulkPayPoOption');
+
+        if (totalEl) totalEl.textContent = formatRupiah(totalAmount);
+        if (countEl) countEl.textContent = `${ordersToPay.length} Pesanan Dipilih`;
+        if (poOpt) poOpt.style.display = hasTakeAway ? 'block' : 'none';
+
+        this.selectBulkMethod('cash');
+
+        if (modal) modal.classList.add('active');
+    }
+
+    selectBulkMethod(method) {
+        this.selectedBulkMethod = method;
+        document.querySelectorAll('.bulk-method-option').forEach(el => {
+            const input = el.querySelector('input');
+            if (input && input.value === method) {
+                el.classList.add('active');
+                input.checked = true;
+            } else {
+                el.classList.remove('active');
+            }
+        });
+    }
+
+    closeBulkPayModal() {
+        const modal = document.getElementById('bulkPayModal');
+        if (modal) modal.classList.remove('active');
+        this.pendingBulkPayOrders = null;
+    }
+
+    async confirmBulkPay() {
+        if (!this.pendingBulkPayOrders || this.pendingBulkPayOrders.length === 0) return;
+        const orders = this.pendingBulkPayOrders;
+        const method = this.selectedBulkMethod || 'cash';
+        const autoPickup = document.getElementById('bulkPayAutoPickupCheckbox')?.checked || false;
+        const totalAmount = orders.reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
+
+        try {
+            for (const order of orders) {
+                const isDineIn = order.orderType === 'dine_in';
+                const shouldComplete = isDineIn || autoPickup;
+                const newStatus = shouldComplete ? 'completed' : 'paid';
+                const extraData = {
+                    paymentMethod: method,
+                    paidAt: new Date().toISOString(),
+                    cashReceived: Number(order.totalAmount) || 0,
+                    changeAmount: 0
+                };
+                if (shouldComplete) {
+                    extraData.pickedUpAt = new Date().toISOString();
+                }
+                await db.updateOrderStatus(order.invoiceNo, newStatus, extraData);
+            }
+
+            if (typeof sounds !== 'undefined') sounds.playSuccess();
+            if (typeof showPosToast === 'function') {
+                showPosToast(`✅ Berhasil melunasi ${orders.length} pesanan (${formatRupiah(totalAmount)}) via ${method.toUpperCase()}!`, 3500);
+            }
+
+            this.closeBulkPayModal();
+            this.selectedInvoices.clear();
+            await this.render();
+            await this.refreshBadge();
+            const historyModal = document.getElementById('historyModal');
+            if (historyModal && historyModal.classList.contains('active')) {
+                await renderHistoryData();
+            }
+        } catch (err) {
+            console.error('Gagal confirm bulk pay:', err);
+            alert('Terjadi kesalahan saat melunasi pesanan: ' + err.message);
+        }
+    }
 }
 
 window.activeOrdersManager = new ActiveOrdersManager();
 const activeOrdersManager = window.activeOrdersManager;
+
+/* ==========================================================================
+   DROPDOWN PROFIL KASIR & UTILITAS SISTEM (IDE 2)
+   ========================================================================== */
+function toggleCashierDropdown(e) {
+    if (e) e.stopPropagation();
+    const dropdown = document.getElementById('cashierProfileDropdown');
+    if (dropdown) {
+        dropdown.classList.toggle('is-open');
+    }
+}
+
+function closeCashierDropdown() {
+    const dropdown = document.getElementById('cashierProfileDropdown');
+    if (dropdown) {
+        dropdown.classList.remove('is-open');
+    }
+}
+
+// Tutup dropdown otomatis jika user klik di luar
+document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('cashierProfileDropdown');
+    if (dropdown && dropdown.classList.contains('is-open')) {
+        if (!dropdown.contains(e.target)) {
+            dropdown.classList.remove('is-open');
+        }
+    }
+});
+
+// Tutup dropdown jika tombol Esc ditekan
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeCashierDropdown();
+    }
+});
