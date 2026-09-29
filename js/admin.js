@@ -230,9 +230,9 @@ class AdminManager {
         const drinkEl = document.getElementById('adminStatDrink');
 
         if (totalEl) totalEl.textContent = `${total} Menu`;
-        if (promoEl) promoEl.textContent = `${promoCount} Menu Promo`;
-        if (foodEl) foodEl.textContent = `${foodCount} Makanan`;
-        if (drinkEl) drinkEl.textContent = `${drinkCount} Minuman`;
+        if (promoEl) promoEl.textContent = `${promoCount} Promo`;
+        if (foodEl) foodEl.textContent = `${foodCount}`;
+        if (drinkEl) drinkEl.textContent = `${drinkCount}`;
     }
 
     renderTable() {
@@ -252,10 +252,9 @@ class AdminManager {
         if (filtered.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="10" style="text-align: center; padding: 36px 20px; color: #94A3B8;">
-                        <div style="font-size: 32px; margin-bottom: 8px;">🔍</div>
-                        <div style="font-weight: 700; font-size: 15px; color: #64748B;">Tidak ada menu yang sesuai</div>
-                        <div style="font-size: 13px;">Coba ubah kata kunci pencarian atau kategori filter.</div>
+                    <td colspan="9" style="text-align: center; padding: 36px 20px; color: #94A3B8;">
+                        <div style="font-weight: 700; font-size: 14px; color: #64748B; margin-bottom: 4px;">Tidak ada menu yang sesuai</div>
+                        <div style="font-size: 12px; color: #94A3B8;">Coba ubah kata kunci pencarian atau kategori filter.</div>
                     </td>
                 </tr>
             `;
@@ -353,9 +352,6 @@ class AdminManager {
                                 ${currentMargin}%
                             </span>
                         </div>
-                    </td>
-                    <td class="col-desc">
-                        <div class="admin-prod-desc-cell" title="${p.desc || '-'}">${p.desc || '-'}</div>
                     </td>
                     <td class="col-actions" style="text-align: right;">
                         <div class="admin-action-btns">

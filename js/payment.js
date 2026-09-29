@@ -5,12 +5,27 @@
  * dan fitur bagikan (share) struk ke perangkat / WhatsApp
  */
 
+// Helper konversi Data URL (Base64) ke File secara sinkron (menjaga transient user activation di iOS Safari)
+function dataURLtoFile(dataurl, filename) {
+    const arr = dataurl.split(',');
+    const mime = (arr[0].match(/:(.*?);/) || [])[1] || 'image/png';
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
+}
+
 class PaymentManager {
     constructor() {
         this.paymentMethod = 'cash'; // 'cash', 'qris', 'transfer'
         this.cashAmount = 0;
         this.lastCompletedOrder = null;
         this.currentViewingOrder = null;
+        this.currentViewingBillOrder = null;
+        this.galleryPreviewData = null;
     }
 
     setPaymentMethod(method) {
@@ -25,17 +40,38 @@ class PaymentManager {
 
         const cashGroup = document.getElementById('cashInputGroup');
         const quickCash = document.getElementById('quickCashGroup');
+        const changeDisplay = document.getElementById('changeDisplay');
         const qrisInfo = document.getElementById('qrisInfoGroup');
         const transferInfo = document.getElementById('transferInfoGroup');
 
         if (method === 'cash') {
-            if (cashGroup) cashGroup.style.display = 'block';
-            if (quickCash) quickCash.style.display = 'flex';
+            if (cashGroup) {
+                cashGroup.style.display = 'block';
+                cashGroup.classList.remove('hidden-by-method');
+            }
+            if (quickCash) {
+                quickCash.style.display = 'grid';
+                quickCash.classList.remove('hidden-by-method');
+            }
+            if (changeDisplay) {
+                changeDisplay.style.display = 'flex';
+                changeDisplay.classList.remove('hidden-by-method');
+            }
             if (qrisInfo) qrisInfo.style.display = 'none';
             if (transferInfo) transferInfo.style.display = 'none';
         } else if (method === 'qris') {
-            if (cashGroup) cashGroup.style.display = 'none';
-            if (quickCash) quickCash.style.display = 'none';
+            if (cashGroup) {
+                cashGroup.style.display = 'none';
+                cashGroup.classList.add('hidden-by-method');
+            }
+            if (quickCash) {
+                quickCash.style.display = 'none';
+                quickCash.classList.add('hidden-by-method');
+            }
+            if (changeDisplay) {
+                changeDisplay.style.display = 'none';
+                changeDisplay.classList.add('hidden-by-method');
+            }
             if (transferInfo) transferInfo.style.display = 'none';
             if (qrisInfo) {
                 qrisInfo.style.display = 'block';
@@ -44,8 +80,18 @@ class PaymentManager {
                 if (qrisTotalEl) qrisTotalEl.textContent = formatRupiah(grandTotal);
             }
         } else { // transfer
-            if (cashGroup) cashGroup.style.display = 'none';
-            if (quickCash) quickCash.style.display = 'none';
+            if (cashGroup) {
+                cashGroup.style.display = 'none';
+                cashGroup.classList.add('hidden-by-method');
+            }
+            if (quickCash) {
+                quickCash.style.display = 'none';
+                quickCash.classList.add('hidden-by-method');
+            }
+            if (changeDisplay) {
+                changeDisplay.style.display = 'none';
+                changeDisplay.classList.add('hidden-by-method');
+            }
             if (qrisInfo) qrisInfo.style.display = 'none';
             if (transferInfo) {
                 transferInfo.style.display = 'block';
@@ -244,6 +290,74 @@ class PaymentManager {
         }
     }
 
+    // Simpan pesanan ke daftar pesanan diproses dan langsung tampilkan/cetak bill sementara
+    async saveAndPrintBill() {
+        if (!cartManager || cartManager.cart.length === 0) {
+            sounds.playWarning();
+            alert('Keranjang pesanan masih kosong! Silakan pilih menu terlebih dahulu sebelum simpan & cetak bill.');
+            return;
+        }
+
+        const subtotal = cartManager.getSubtotal();
+        const grandTotal = cartManager.getGrandTotal();
+        const finalDiscountAmount = cartManager.getFinalDiscountAmount();
+        const finalDiscountNote = cartManager.finalDiscount.note || '';
+
+        const customerName = (document.getElementById('customerNameInput')?.value || '').trim() || 'Pelanggan / Meja';
+        const notes = (document.getElementById('orderNotesInput')?.value || '').trim();
+        const poDetails = cartManager.getPoDetails();
+        const invoiceNo = cartManager.editingPendingInvoiceNo || generateInvoiceNumber();
+        const activeCashier = (typeof authManager !== 'undefined') ? authManager.getActiveCashier() : 'Kasir';
+
+        const orderData = {
+            invoiceNo: invoiceNo,
+            customerName: customerName,
+            orderType: cartManager.orderType,
+            paymentMethod: this.paymentMethod || 'cash',
+            subtotalAmount: subtotal,
+            finalDiscountAmount: finalDiscountAmount,
+            finalDiscountNote: finalDiscountNote,
+            totalAmount: grandTotal,
+            cashReceived: 0,
+            changeAmount: 0,
+            notes: notes,
+            cashierName: activeCashier,
+            status: 'unpaid',
+            pickupDate: poDetails.pickupDate,
+            pickupTime: poDetails.pickupTime,
+            pickupMethod: poDetails.pickupMethod,
+            pickupAddress: poDetails.pickupAddress,
+            deliveryFee: poDetails.deliveryFee || 0,
+            createdAt: new Date().toISOString()
+        };
+
+        const items = cartManager.cart.map(item => ({ ...item }));
+        orderData.items = items;
+
+        try {
+            const savedOrder = await db.saveOrder(orderData, items);
+            sounds.playSuccess();
+
+            // Potong stok transit dari daging matang ready / barang jadi
+            if (typeof inventoryManager !== 'undefined') {
+                await inventoryManager.deductOrderStock(items, savedOrder || orderData);
+            }
+
+            // Tampilkan modal bill untuk dicetak kasir atau diberikan ke pelanggan
+            this.showBillModal(orderData, items);
+
+            // Bersihkan keranjang kasir karena pesanan sudah tercatat di antrean "Transaksi Diproses"
+            cartManager.clearCart(true);
+
+            if (typeof activeOrdersManager !== 'undefined') {
+                await activeOrdersManager.refreshBadge();
+            }
+        } catch (err) {
+            console.error('Gagal menyimpan tagihan sementara:', err);
+            alert('Gagal menyimpan tagihan sementara: ' + err.message);
+        }
+    }
+
     // Simpan pesanan sebagai Tagihan Sementara (Unpaid / Open Bill)
     async savePendingOrder() {
         const subtotal = cartManager.getSubtotal();
@@ -288,8 +402,14 @@ class PaymentManager {
         const items = cartManager.cart.map(item => ({ ...item }));
 
         try {
-            await db.saveOrder(orderData, items);
+            const savedOrder = await db.saveOrder(orderData, items);
             sounds.playSuccess();
+
+            // Potong stok transit dari daging matang ready / barang jadi
+            if (typeof inventoryManager !== 'undefined') {
+                await inventoryManager.deductOrderStock(items, savedOrder || orderData);
+            }
+
             alert(`✅ Tagihan Sementara Tersimpan!\nNo. Tagihan: ${invoiceNo}\nPelanggan: ${customerName}\n\nAnda dapat melanjutkan pembayaran atau mengeditnya kapan saja melalui tombol 'Transaksi Diproses' di navbar atas.`);
 
             this.closeBillModal();
@@ -483,8 +603,8 @@ class PaymentManager {
         window.print();
     }
 
-    // Simpan struk sebagai gambar PNG
-    async saveReceiptAsImage() {
+    // Simpan / Bagikan struk sebagai Foto (Langsung Masuk Galeri Foto HP atau Native Share Sheet)
+    async shareOrSaveReceiptPhoto() {
         const receiptEl = document.getElementById('thermalReceiptPaper');
         if (!receiptEl) return;
 
@@ -492,7 +612,7 @@ class PaymentManager {
         const filename = `Struk_DIASAP_${order?.invoiceNo || 'transaksi'}.png`;
 
         if (typeof html2canvas === 'undefined') {
-            alert('Pustaka html2canvas sedang dimuat, silakan coba sesaat lagi.');
+            alert('Pustaka gambar sedang dimuat, silakan coba sesaat lagi.');
             return;
         }
 
@@ -503,23 +623,49 @@ class PaymentManager {
                 useCORS: true
             });
 
+            const dataUrl = canvas.toDataURL('image/png');
+            const file = dataURLtoFile(dataUrl, filename);
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        title: `Struk DIASAP - ${order?.invoiceNo || ''}`,
+                        text: `Struk pembayaran ${order?.invoiceNo || ''} (${formatRupiah(order?.totalAmount || 0)})`,
+                        files: [file]
+                    });
+                    return;
+                } catch (shareErr) {
+                    if (shareErr.name === 'AbortError') return;
+                    console.warn('Native share error, fallback to direct download:', shareErr);
+                }
+            }
+
             const link = document.createElement('a');
             link.download = filename;
-            link.href = canvas.toDataURL('image/png');
+            link.href = dataUrl;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
 
             if (typeof adminManager !== 'undefined' && adminManager.showToast) {
-                adminManager.showToast('Gambar struk berhasil diunduh!');
+                adminManager.showToast('Foto struk berhasil disimpan!');
             }
         } catch (err) {
-            console.error('Gagal simpan gambar struk:', err);
-            alert('Gagal menyimpan gambar struk: ' + err.message);
+            console.error('Gagal simpan/bagikan struk:', err);
+            alert('Gagal memproses foto struk: ' + err.message);
         }
     }
 
-    // Simpan struk sebagai file PDF
+    // Alias untuk kompatibilitas tombol lama
+    async saveReceiptAsImage() {
+        return this.shareOrSaveReceiptPhoto();
+    }
+
+    async shareReceipt() {
+        return this.shareOrSaveReceiptPhoto();
+    }
+
+    // Simpan struk sebagai file PDF (pilihan alternatif)
     async saveReceiptAsPDF() {
         const receiptEl = document.getElementById('thermalReceiptPaper');
         if (!receiptEl) return;
@@ -561,66 +707,32 @@ class PaymentManager {
             }
         } catch (err) {
             console.error('Gagal generate PDF:', err);
-            // Fallback: cetak biasa
             window.print();
         }
     }
 
-    // Bagikan struk (Native Web Share Sheet untuk HP/WA)
-    async shareReceipt() {
-        const receiptEl = document.getElementById('thermalReceiptPaper');
-        if (!receiptEl) return;
-
-        const order = this.currentViewingOrder;
-        const filename = `Struk_DIASAP_${order?.invoiceNo || 'transaksi'}.png`;
-
-        if (typeof html2canvas === 'undefined') {
-            alert('Pustaka renderer sedang dimuat, silakan coba sesaat lagi.');
-            return;
-        }
-
+    generateReceiptTextSummary(order) {
         try {
-            const canvas = await html2canvas(receiptEl, {
-                scale: 2,
-                backgroundColor: '#ffffff',
-                useCORS: true
+            if (!order) order = this.currentViewingOrder;
+            if (!order) return 'Struk Pembayaran DIASAP';
+            let text = `*STRUK PEMBAYARAN DIASAP*\n`;
+            text += `No. Faktur: ${order.invoiceNo || '-'}\n`;
+            text += `Pelanggan: ${order.customerName || 'Pelanggan'}\n`;
+            text += `Tanggal: ${order.date ? new Date(order.date).toLocaleString('id-ID') : new Date().toLocaleString('id-ID')}\n`;
+            text += `--------------------------------\n`;
+            (order.items || []).forEach(item => {
+                text += `${item.name} x${item.quantity} = ${formatRupiah((item.price || 0) * item.quantity)}\n`;
             });
-
-            canvas.toBlob(async (blob) => {
-                if (!blob) {
-                    this.saveReceiptAsImage();
-                    return;
-                }
-
-                const file = new File([blob], filename, { type: 'image/png' });
-
-                // Cek apakah browser mendukung Web Share API dengan file (misal di Chrome Android / Safari iOS)
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    try {
-                        await navigator.share({
-                            title: `Struk DIASAP - ${order?.invoiceNo || ''}`,
-                            text: `Struk pembayaran ${order?.invoiceNo || ''} sebesar ${formatRupiah(order?.totalAmount || 0)}`,
-                            files: [file]
-                        });
-                        return;
-                    } catch (shareErr) {
-                        if (shareErr.name === 'AbortError') return; // User cancel share
-                    }
-                }
-
-                // Fallback: unduh gambar langsung dan beri notifikasi
-                const link = document.createElement('a');
-                link.download = filename;
-                link.href = URL.createObjectURL(blob);
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-
-                alert('Gambar struk telah diunduh ke perangkat Anda. Anda dapat langsung mengirimkannya lewat WhatsApp atau aplikasi lainnya.');
-            }, 'image/png');
-        } catch (err) {
-            console.error('Gagal share struk:', err);
-            this.saveReceiptAsImage();
+            text += `--------------------------------\n`;
+            if (order.discount > 0) text += `Diskon: -${formatRupiah(order.discount)}\n`;
+            if (order.shippingCost > 0) text += `Ongkir: ${formatRupiah(order.shippingCost)}\n`;
+            text += `*TOTAL: ${formatRupiah(order.totalAmount || 0)}*\n`;
+            text += `Metode: ${order.paymentMethod || 'Tunai'}\n`;
+            text += `Status: ${order.paymentStatus === 'paid' ? 'LUNAS' : 'BELUM LUNAS'}\n\n`;
+            text += `Terima kasih telah berbelanja di DIASAP! 🙏`;
+            return text;
+        } catch (e) {
+            return `Struk DIASAP - Total: ${formatRupiah(order?.totalAmount || 0)}`;
         }
     }
 
@@ -632,8 +744,9 @@ class PaymentManager {
 
     // ================= MODAL BILL / TAGIHAN SEMENTARA (LANGKAH 1 RESTORAN) =================
 
-    showBillModal() {
-        if (!cartManager || cartManager.cart.length === 0) {
+    showBillModal(order = null, items = null) {
+        const orderItems = items || (order && order.items) || (cartManager ? cartManager.cart : []);
+        if (!order && (!cartManager || cartManager.cart.length === 0)) {
             sounds.playWarning();
             alert('Keranjang pesanan masih kosong! Silakan pilih menu terlebih dahulu sebelum mencetak bill.');
             return;
@@ -643,6 +756,8 @@ class PaymentManager {
         const content = document.getElementById('billPrintArea');
         if (!modal || !content) return;
 
+        this.currentViewingBillOrder = order;
+
         const settings = (typeof settingsManager !== 'undefined' && settingsManager.settings)
             ? settingsManager.settings
             : CONFIG;
@@ -651,17 +766,26 @@ class PaymentManager {
         const storeTagline = settings.storeTagline || 'Smoked Meat & Kitchen';
         const storeAddress = settings.storeAddress || CONFIG.STORE_ADDRESS || '';
         const storePhone = settings.storePhone || CONFIG.STORE_PHONE || '';
-        const activeCashier = (typeof authManager !== 'undefined') ? authManager.getActiveCashier() : 'Kasir';
-        const customerName = (document.getElementById('customerNameInput')?.value || '').trim() || 'Pelanggan / Meja';
-        const notes = (document.getElementById('orderNotesInput')?.value || '').trim();
-        const orderTypeLabel = cartManager.orderType === 'dine_in' ? 'Dine In (Makan di Tempat)' : 'Take Away (Bungkus)';
+        const activeCashier = order?.cashierName || ((typeof authManager !== 'undefined') ? authManager.getActiveCashier() : 'Kasir');
+        const customerName = order?.customerName || ((document.getElementById('customerNameInput')?.value || '').trim() || 'Pelanggan / Meja');
+        const notes = order?.notes || ((document.getElementById('orderNotesInput')?.value || '').trim());
+        const orderType = order?.orderType || (cartManager ? cartManager.orderType : 'dine_in');
+        const orderTypeLabel = orderType === 'dine_in' ? 'Dine In (Makan di Tempat)' : 'Take Away (Bungkus)';
 
-        const subtotal = cartManager.getSubtotal();
-        const finalDiscount = cartManager.getFinalDiscountAmount();
-        const finalDiscountNote = cartManager.finalDiscount.note ? ` (${cartManager.finalDiscount.note})` : '';
-        const grandTotal = cartManager.getGrandTotal();
-        const poDetails = cartManager.getPoDetails();
-        const billNo = cartManager.editingPendingInvoiceNo || ('BILL-' + Date.now().toString().slice(-6));
+        const subtotal = order ? Number(order.subtotalAmount || 0) : cartManager.getSubtotal();
+        const finalDiscount = order ? Number(order.finalDiscountAmount || 0) : cartManager.getFinalDiscountAmount();
+        const finalDiscountNote = (order?.finalDiscountNote || cartManager?.finalDiscount?.note) ? ` (${order?.finalDiscountNote || cartManager.finalDiscount.note})` : '';
+        const grandTotal = order ? Number(order.totalAmount || 0) : cartManager.getGrandTotal();
+        const poDetails = order ? {
+            pickupDate: order.pickupDate,
+            pickupTime: order.pickupTime,
+            pickupMethod: order.pickupMethod,
+            pickupAddress: order.pickupAddress,
+            deliveryFee: Number(order.deliveryFee) || 0
+        } : cartManager.getPoDetails();
+        const deliveryFee = poDetails.deliveryFee || 0;
+        const billNo = order?.invoiceNo || cartManager.editingPendingInvoiceNo || ('BILL-' + Date.now().toString().slice(-6));
+        const orderDate = order?.createdAt || new Date().toISOString();
 
         // Data Pembayaran Toko: Bank & QRIS
         const rawBankName = (settings.bankName || CONFIG.DEFAULT_SETTINGS?.bankName || '').trim();
@@ -694,7 +818,7 @@ class PaymentManager {
                 </div>
                 <div class="receipt-info-row">
                     <span>Waktu:</span>
-                    <span>${formatDateTime(new Date().toISOString())}</span>
+                    <span>${formatDateTime(orderDate)}</span>
                 </div>
                 <div class="receipt-info-row">
                     <span>Kasir:</span>
@@ -708,7 +832,7 @@ class PaymentManager {
                     <span>Layanan:</span>
                     <span>${orderTypeLabel}</span>
                 </div>
-                ${cartManager.orderType === 'take_away' ? `
+                ${orderType === 'take_away' ? `
                     <div class="receipt-info-row" style="color: #B45309; font-weight: 700;">
                         <span>Jadwal Ambil:</span>
                         <span>${poDetails.pickupDate || '-'} ${poDetails.pickupTime ? `(${poDetails.pickupTime})` : ''}</span>
@@ -734,7 +858,7 @@ class PaymentManager {
                 <div class="receipt-divider">--------------------------------</div>
 
                 <div class="receipt-items">
-                    ${cartManager.cart.map(item => {
+                    ${orderItems.map(item => {
                         const normalPrice = Number(item.normalPriceLocked || item.priceNormal || item.priceLocked) || item.priceLocked;
                         const hasPromoDiscount = item.isPromo && normalPrice > item.priceLocked;
                         const itemSavings = (normalPrice - item.priceLocked) * item.qty;
@@ -763,7 +887,7 @@ class PaymentManager {
                 <div class="receipt-divider">================================</div>
 
                 ${(() => {
-                    const totalPromoSavings = cartManager.cart.reduce((sum, item) => {
+                    const totalPromoSavings = orderItems.reduce((sum, item) => {
                         const normal = Number(item.normalPriceLocked || item.priceNormal || item.priceLocked) || item.priceLocked;
                         return sum + (item.isPromo && normal > item.priceLocked ? (normal - item.priceLocked) * item.qty : 0);
                     }, 0);
@@ -775,7 +899,7 @@ class PaymentManager {
                     ` : '';
                 })()}
 
-                ${(finalDiscount > 0 || (cartManager.deliveryFee > 0)) ? `
+                ${(finalDiscount > 0 || (deliveryFee > 0)) ? `
                     <div class="receipt-info-row" style="margin-bottom: 3px;">
                         <span>Subtotal Pesanan:</span>
                         <span>${formatRupiah(subtotal)}</span>
@@ -787,10 +911,10 @@ class PaymentManager {
                         <span>-${formatRupiah(finalDiscount)}</span>
                     </div>
                 ` : ''}
-                ${(cartManager.deliveryFee > 0) ? `
+                ${(deliveryFee > 0) ? `
                     <div class="receipt-info-row" style="margin-bottom: 3px; color: #0284C7; font-weight: bold;">
                         <span>🛵 Biaya Kurir / Ongkir:</span>
-                        <span>+${formatRupiah(cartManager.deliveryFee)}</span>
+                        <span>+${formatRupiah(deliveryFee)}</span>
                     </div>
                 ` : ''}
 
@@ -856,6 +980,7 @@ class PaymentManager {
     closeBillModal() {
         const modal = document.getElementById('billModal');
         if (modal) modal.classList.remove('active');
+        this.currentViewingBillOrder = null;
     }
 
     printBill() {
@@ -863,6 +988,9 @@ class PaymentManager {
     }
 
     proceedToPayment() {
+        if (this.currentViewingBillOrder) {
+            cartManager.loadOrderToCart(this.currentViewingBillOrder);
+        }
         this.closeBillModal();
         const paymentTabs = document.querySelector('.payment-methods-tabs');
         if (paymentTabs) {
@@ -874,14 +1002,15 @@ class PaymentManager {
         }
     }
 
-    async saveBillAsImage() {
+    // Simpan / Bagikan lembar tagihan sebagai Foto (Langsung Masuk Galeri Foto HP atau Native Share Sheet)
+    async shareOrSaveBillPhoto() {
         const billEl = document.getElementById('thermalBillPaper');
         if (!billEl) return;
 
         const filename = `Bill_DIASAP_${Date.now().toString().slice(-6)}.png`;
 
         if (typeof html2canvas === 'undefined') {
-            alert('Pustaka renderer sedang dimuat, silakan coba sesaat lagi.');
+            alert('Pustaka gambar sedang dimuat, silakan coba sesaat lagi.');
             return;
         }
 
@@ -893,74 +1022,80 @@ class PaymentManager {
                 allowTaint: true
             });
 
+            const dataUrl = canvas.toDataURL('image/png');
+            const file = dataURLtoFile(dataUrl, filename);
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        title: `Lembar Tagihan DIASAP`,
+                        text: `Lembar tagihan pesanan DIASAP sebesar ${formatRupiah(cartManager?.getGrandTotal() || 0)}`,
+                        files: [file]
+                    });
+                    return;
+                } catch (shareErr) {
+                    if (shareErr.name === 'AbortError') return;
+                    console.warn('Share file gagal:', shareErr);
+                }
+            }
+
+            // Fallback (Desktop atau jika share sheet tidak ada): Langsung unduh gambar PNG
             const link = document.createElement('a');
             link.download = filename;
-            link.href = canvas.toDataURL('image/png');
+            link.href = dataUrl;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
 
             if (typeof adminManager !== 'undefined' && adminManager.showToast) {
-                adminManager.showToast('Gambar bill berhasil disimpan!');
+                adminManager.showToast('Foto tagihan berhasil disimpan!');
             }
         } catch (err) {
-            console.error('Gagal simpan gambar bill:', err);
-            alert('Gagal menyimpan gambar bill: ' + err.message);
+            console.error('Gagal simpan/bagikan bill:', err);
+            alert('Gagal memproses foto tagihan: ' + err.message);
         }
     }
 
+    // Alias untuk kompatibilitas tombol lama
+    async saveBillAsImage() {
+        return this.shareOrSaveBillPhoto();
+    }
+
     async shareBill() {
-        const billEl = document.getElementById('thermalBillPaper');
-        if (!billEl) return;
+        return this.shareOrSaveBillPhoto();
+    }
 
-        const filename = `Bill_DIASAP_${Date.now().toString().slice(-6)}.png`;
-
-        if (typeof html2canvas === 'undefined') {
-            alert('Pustaka renderer sedang dimuat, silakan coba sesaat lagi.');
-            return;
-        }
-
+    generateBillTextSummary() {
         try {
-            const canvas = await html2canvas(billEl, {
-                scale: 2,
-                backgroundColor: '#ffffff',
-                useCORS: true,
-                allowTaint: true
+            const items = (typeof cartManager !== 'undefined' && cartManager.items) ? cartManager.items : [];
+            const subtotal = (typeof cartManager !== 'undefined' && cartManager.getSubtotal) ? cartManager.getSubtotal() : 0;
+            const discount = (typeof cartManager !== 'undefined' && cartManager.discount) ? cartManager.discount : 0;
+            const shipping = (typeof cartManager !== 'undefined' && cartManager.shippingCost) ? cartManager.shippingCost : 0;
+            const grandTotal = (typeof cartManager !== 'undefined' && cartManager.getGrandTotal) ? cartManager.getGrandTotal() : 0;
+            const orderType = document.getElementById('orderTypeSelect')?.value || 'dine-in';
+            const customerName = document.getElementById('poCustomerName')?.value || document.getElementById('customerNameInput')?.value || 'Pelanggan';
+
+            let typeLabel = 'Makan di Tempat';
+            if (orderType === 'takeaway') typeLabel = 'Bungkus (Takeaway)';
+            if (orderType === 'po') typeLabel = 'Pre-Order (PO)';
+
+            let text = `*LEMBAR TAGIHAN DIASAP*\n`;
+            text += `Pelanggan: ${customerName}\n`;
+            text += `Tipe: ${typeLabel}\n`;
+            text += `Tanggal: ${new Date().toLocaleString('id-ID')}\n`;
+            text += `--------------------------------\n`;
+            items.forEach(item => {
+                const itemTotal = (item.price || 0) * (item.quantity || 1);
+                text += `${item.name} x${item.quantity} = ${formatRupiah(itemTotal)}\n`;
             });
-
-            canvas.toBlob(async (blob) => {
-                if (!blob) {
-                    this.saveBillAsImage();
-                    return;
-                }
-
-                const file = new File([blob], filename, { type: 'image/png' });
-
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    try {
-                        await navigator.share({
-                            title: `Bill Tagihan DIASAP`,
-                            text: `Lembar tagihan pesanan DIASAP sebesar ${formatRupiah(cartManager?.getGrandTotal() || 0)}`,
-                            files: [file]
-                        });
-                        return;
-                    } catch (shareErr) {
-                        if (shareErr.name === 'AbortError') return;
-                    }
-                }
-
-                const link = document.createElement('a');
-                link.download = filename;
-                link.href = URL.createObjectURL(blob);
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-
-                alert('Gambar bill telah diunduh ke perangkat Anda. Anda dapat langsung mengirimkannya lewat WhatsApp ke pelanggan.');
-            }, 'image/png');
-        } catch (err) {
-            console.error('Gagal share bill:', err);
-            this.saveBillAsImage();
+            text += `--------------------------------\n`;
+            if (discount > 0) text += `Diskon: -${formatRupiah(discount)}\n`;
+            if (shipping > 0) text += `Ongkir: ${formatRupiah(shipping)}\n`;
+            text += `*TOTAL: ${formatRupiah(grandTotal)}*\n\n`;
+            text += `Terima kasih atas pesanan Anda di DIASAP! 🙏`;
+            return text;
+        } catch (e) {
+            return `Lembar Tagihan DIASAP - Total: ${formatRupiah(cartManager?.getGrandTotal() || 0)}`;
         }
     }
 }

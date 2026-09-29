@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>DIASAP POS - Kasir & Manajemen Penjualan</title>
     <link id="appFavicon" rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔥</text></svg>">
     <!-- Google Fonts: Urbanist (Sesuai Referensi Visual) -->
@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
     <!-- Stylesheet POS -->
-    <link rel="stylesheet" href="css/style.css?v=8.22">
+    <link rel="stylesheet" href="css/style.css?v=8.48">
     <!-- Pustaka Eksternal: Excel XLSX Export, Canvas Struk, PDF Generator -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -142,8 +142,8 @@
                 </div>
             </nav>
 
-            <!-- Category Selector Bar (Sesuai Referensi Visual) -->
-            <section class="category-bar">
+            <!-- Category & Search Bar (Satu Baris: Kategori di Kiri, Search Thumbnail di Kanan) -->
+            <section class="category-search-bar-row">
                 <div class="category-pills" id="categoryPills">
                     <button type="button" class="cat-pill active" data-category="all">
                         <div class="cat-pill-icon-wrap">
@@ -182,16 +182,24 @@
                         </div>
                     </button>
                 </div>
-            </section>
 
-            <!-- Search Bar (Sesuai Referensi Visual) -->
-            <section class="search-bar-section">
-                <div class="search-box">
-                    <svg class="search-icon-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                    </svg>
-                    <input type="text" id="searchMenuInput" placeholder="Cari menu makanan, minuman, atau paket...">
+                <!-- Search Widget: Thumbnail Icon di HP, Compact Box di Desktop -->
+                <div class="search-widget" id="searchWidget">
+                    <button type="button" class="btn-search-thumbnail" id="btnSearchThumb" onclick="toggleMobileSearch(event)" title="Cari Menu">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </button>
+                    <div class="search-box-expandable" id="searchBoxExpandable">
+                        <svg class="search-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input type="text" id="searchMenuInput" placeholder="Cari nama menu...">
+                        <button type="button" class="btn-search-clear" id="btnSearchClear" onclick="clearSearchMenu(event)" title="Hapus teks" style="display: none;">✕</button>
+                        <button type="button" class="btn-search-close-mobile" id="btnSearchCloseMobile" onclick="closeMobileSearch(event)" title="Tutup">✕</button>
+                    </div>
                 </div>
             </section>
 
@@ -216,6 +224,15 @@
                     </svg>
                 </div>
             </div>
+
+            <!-- Floating Button: Kembali ke Menu (Khusus Mobile saat kasir berada di area Pesanan) -->
+            <button type="button" class="btn-back-to-menu-float" id="btnBackToMenuFloat" onclick="cartManager.scrollToMenu()" style="display: none;" title="Kembali Pilih Menu">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="19" x2="12" y2="5"></line>
+                    <polyline points="5 12 12 5 19 12"></polyline>
+                </svg>
+                <span>Kembali ke Menu</span>
+            </button>
         </main>
 
         <!-- ================= BAGIAN KANAN: CART & CHECKOUT ================= -->
@@ -226,28 +243,21 @@
                     <h2 class="cart-title">Pesanan Saat Ini</h2>
                     <span class="cart-count-badge" id="cartItemCount">0 item</span>
                 </div>
-                <button type="button" class="btn-clear-cart" id="clearCartBtn" onclick="cartManager.clearCart()" style="display: none;">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    </svg>
-                    <span>Kosongkan</span>
-                </button>
             </div>
 
             <!-- Tipe Pesanan & Nama Pelanggan -->
             <div class="order-meta-box">
                 <div class="order-type-switch">
-                    <button type="button" class="order-type-btn active" data-type="dine_in">🍽️ Dine In (Makan Sini)</button>
-                    <button type="button" class="order-type-btn" data-type="take_away">🛍️ Take Away (Bungkus)</button>
+                    <button type="button" class="order-type-btn active" data-type="dine_in">🍽️ Dine In</button>
+                    <button type="button" class="order-type-btn" data-type="take_away">🛍️ Take Away</button>
                 </div>
                 <div class="customer-input-row">
                     <input type="text" id="customerNameInput" class="customer-input" placeholder="Nama Pelanggan / No. Meja">
-                    <input type="text" id="orderNotesInput" class="customer-input" placeholder="Catatan (misal: pedas, es dipisah)">
+                    <input type="text" id="orderNotesInput" class="customer-input" placeholder="Catatan">
                 </div>
                 <!-- Form Detail PO (Pre-Order / Take Away) -->
                 <div class="po-pickup-box" id="poPickupDetailsBox" style="display: none;">
-                    <div class="po-box-title">📦 Jadwal & Pengambilan Pre-Order (PO):</div>
+                    <div class="po-box-title">📦 Jadwal Ambil Order (PO):</div>
                     <div class="po-datetime-row">
                         <div class="po-field-group">
                             <label for="poPickupDate">Tgl Ambil:</label>
@@ -259,9 +269,8 @@
                         </div>
                     </div>
                     <div class="po-method-pills">
-                        <button type="button" class="po-method-btn active" data-method="self_pickup" onclick="cartManager.setPoPickupMethod('self_pickup')">🏪 Ambil di Toko</button>
-                        <button type="button" class="po-method-btn" data-method="ojol" onclick="cartManager.setPoPickupMethod('ojol')">🛵 Ojol / Kurir</button>
-                        <button type="button" class="po-method-btn" data-method="delivery" onclick="cartManager.setPoPickupMethod('delivery')">🚚 Diantar Toko</button>
+                        <button type="button" class="po-method-btn active" data-method="self_pickup" onclick="cartManager.setPoPickupMethod('self_pickup')">Pick Up</button>
+                        <button type="button" class="po-method-btn" data-method="delivery" onclick="cartManager.setPoPickupMethod('delivery')">Antar</button>
                     </div>
                     <!-- Pilihan Ojol / Kurir (muncul saat metode 'ojol') -->
                     <div class="po-courier-row" id="poCourierWrapper" style="display: none;">
@@ -294,7 +303,7 @@
             <!-- Section Pembayaran -->
             <div class="payment-section">
                 <!-- Baris Subtotal -->
-                <div class="subtotal-row">
+                <div class="subtotal-row" style="display: none;">
                     <span>Subtotal:</span>
                     <span id="cartSubtotalDisplay">Rp 0</span>
                 </div>
@@ -302,15 +311,15 @@
                 <!-- Kontrol Diskon Final Kasir -->
                 <div class="final-discount-section" id="finalDiscountGroup">
                     <div class="discount-toggle-header">
-                        <span class="disc-label">🏷️ Diskon Tambahan Kasir:</span>
+                        <span class="disc-label">🏷️ Diskon Tambahan:</span>
                         <div class="disc-mode-switch">
                             <button type="button" class="btn-disc-mode active" data-mode="nominal">Rp</button>
                             <button type="button" class="btn-disc-mode" data-mode="percent">%</button>
                         </div>
                     </div>
                     <div class="discount-inputs-row">
-                        <input type="number" id="finalDiscountValue" class="form-control disc-val-input" placeholder="Diskon (Rp) misal: 5000" min="0" step="1">
-                        <input type="text" id="finalDiscountNote" class="form-control disc-note-input" placeholder="Catatan (misal: Ultah / Khusus)">
+                        <input type="number" id="finalDiscountValue" class="form-control disc-val-input" placeholder="Diskon (Rp)" min="0" step="1">
+                        <input type="text" id="finalDiscountNote" class="form-control disc-note-input" placeholder="Catatan">
                     </div>
                 </div>
 
@@ -338,9 +347,9 @@
                     <span id="grandTotal">Rp 0</span>
                 </div>
 
-                <!-- Tombol Cetak Bill Sementara & Simpan Tagihan (Belum Lunas) -->
+                <!-- Tombol Simpan & Cetak Bill Sementara (Belum Lunas) -->
                 <div class="bill-action-row">
-                    <button type="button" class="btn-print-bill" id="btnPrintBill" onclick="paymentManager.showBillModal()" title="Cetak atau tampilkan bill sementara untuk dicek pelanggan sebelum bayar">
+                    <button type="button" class="btn-save-print-bill" id="btnSaveAndPrintBill" onclick="paymentManager.saveAndPrintBill()" title="Simpan sebagai pesanan diproses dan cetak/lihat lembar bill sementara">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                             <polyline points="14 2 14 8 20 8"></polyline>
@@ -348,15 +357,7 @@
                             <line x1="16" y1="17" x2="8" y2="17"></line>
                             <polyline points="10 9 9 9 8 9"></polyline>
                         </svg>
-                        <span>🧾 Cetak Bill</span>
-                    </button>
-                    <button type="button" class="btn-save-pending-bill" id="btnSavePendingBill" onclick="paymentManager.savePendingOrder()" title="Simpan sebagai tagihan belum lunas (kasir siap layani antrean lain)">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                            <polyline points="7 3 7 8 15 8"></polyline>
-                        </svg>
-                        <span>💾 Simpan Tagihan</span>
+                        <span>Simpan & Cetak Bill</span>
                     </button>
                 </div>
 
@@ -375,10 +376,10 @@
 
                 <!-- Tombol Uang Cepat (Quick Cash) -->
                 <div class="quick-cash-row" id="quickCashGroup">
-                    <button type="button" class="btn-quick-cash" data-val="exact">Uang Pas</button>
-                    <button type="button" class="btn-quick-cash" data-val="50000">Rp 50.000</button>
-                    <button type="button" class="btn-quick-cash" data-val="100000">Rp 100.000</button>
-                    <button type="button" class="btn-quick-cash" data-val="200000">Rp 200.000</button>
+                    <button type="button" class="btn-quick-cash" data-val="exact">Pas</button>
+                    <button type="button" class="btn-quick-cash" data-val="50000">50K</button>
+                    <button type="button" class="btn-quick-cash" data-val="100000">100K</button>
+                    <button type="button" class="btn-quick-cash" data-val="200000">200K</button>
                 </div>
 
                 <!-- Input Nominal Tunai -->
@@ -431,7 +432,7 @@
     </div>
 
     <!-- ================= MODAL: STRUK PEMBAYARAN THERMAL ================= -->
-    <div class="modal-backdrop" id="receiptModal">
+    <div class="modal-backdrop" id="receiptModal" style="z-index: 1250;">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Struk Pembayaran</h3>
@@ -443,15 +444,9 @@
                 </div>
             </div>
             <div class="modal-footer receipt-actions-footer">
-                <button type="button" class="btn-nav-action" onclick="paymentManager.closeReceiptModal()">Tutup</button>
-                <button type="button" class="btn-nav-action btn-receipt-share" onclick="paymentManager.shareReceipt()" title="Kirim struk / bagikan via WhatsApp atau simpan">
-                    📲 Bagikan Struk
-                </button>
-                <button type="button" class="btn-nav-action btn-receipt-save" onclick="paymentManager.saveReceiptAsImage()" title="Simpan struk sebagai gambar PNG">
-                    🖼️ Simpan Gambar
-                </button>
-                <button type="button" class="btn-nav-action btn-receipt-pdf" onclick="paymentManager.saveReceiptAsPDF()" title="Simpan struk sebagai file PDF">
-                    📄 Unduh PDF
+                <button type="button" class="btn-nav-action btn-modal-close-danger" onclick="paymentManager.closeReceiptModal()">Tutup</button>
+                <button type="button" class="btn-nav-action btn-receipt-share" onclick="paymentManager.shareOrSaveReceiptPhoto()" title="Simpan foto struk ke galeri atau bagikan ke WhatsApp">
+                    📲 Simpan / Bagikan Foto
                 </button>
                 <button type="button" class="btn-nav-action btn-receipt-print" onclick="paymentManager.printReceipt()" title="Cetak struk ke printer thermal kasir">
                     🖨️ Cetak Struk
@@ -461,7 +456,7 @@
     </div>
 
     <!-- ================= MODAL: BILL / TAGIHAN SEMENTARA (LANGKAH 1 RESTORAN) ================= -->
-    <div class="modal-backdrop" id="billModal">
+    <div class="modal-backdrop" id="billModal" style="z-index: 1250;">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>🧾 Lembar Tagihan Sementara (Bill Meja)</h3>
@@ -473,21 +468,15 @@
                 </div>
             </div>
             <div class="modal-footer receipt-actions-footer">
-                <button type="button" class="btn-nav-action" onclick="paymentManager.closeBillModal()">Tutup</button>
-                <button type="button" class="btn-nav-action btn-receipt-share" onclick="paymentManager.shareBill()" title="Kirim tagihan bill ini ke WhatsApp pelanggan">
-                    📲 Kirim WA / Bagikan
-                </button>
-                <button type="button" class="btn-nav-action btn-receipt-save" onclick="paymentManager.saveBillAsImage()" title="Simpan lembar bill sebagai file gambar">
-                    🖼️ Simpan Gambar
+                <button type="button" class="btn-nav-action btn-modal-close-danger" onclick="paymentManager.closeBillModal()">Tutup</button>
+                <button type="button" class="btn-nav-action btn-receipt-share" onclick="paymentManager.shareOrSaveBillPhoto()" title="Simpan foto tagihan ke galeri atau bagikan ke WhatsApp">
+                    📲 Simpan / Bagikan Foto
                 </button>
                 <button type="button" class="btn-nav-action btn-receipt-print" onclick="paymentManager.printBill()" title="Cetak bill sementara ke printer kasir">
                     🖨️ Cetak Bill
                 </button>
-                <button type="button" class="btn-nav-action btn-save-bill-pending" onclick="paymentManager.savePendingOrder()" title="Simpan sebagai Tagihan Sementara untuk dilunasi nanti">
-                    💾 Simpan Tagihan
-                </button>
                 <button type="button" class="btn-nav-action btn-primary-submit" onclick="paymentManager.proceedToPayment()" style="margin-left: auto;" title="Lanjut ke proses pembayaran kasir">
-                    ➡️ Lanjut Pembayaran
+                    ➡️ Bayar Sekarang
                 </button>
             </div>
         </div>
@@ -497,7 +486,12 @@
     <div class="modal-backdrop" id="historyModal">
         <div class="modal-content modal-wide">
             <div class="modal-header">
-                <h3>📊 Rekap Penjualan & Riwayat Transaksi</h3>
+                <div class="active-header-title">
+                    <div>
+                        <h3>Rekap Penjualan</h3>
+                        <p class="active-subtitle">Laporan omset, profit, dan riwayat transaksi</p>
+                    </div>
+                </div>
                 <button type="button" class="modal-close-btn" onclick="closeHistoryModal()">&times;</button>
             </div>
             <div class="modal-body">
@@ -506,9 +500,9 @@
                     <div class="history-filter-pills">
                         <button type="button" class="history-filter-btn active" data-filter="all" onclick="setHistoryFilter('all')">Semua Transaksi</button>
                         <button type="button" class="history-filter-btn" data-filter="today" onclick="setHistoryFilter('today')">Hari Ini</button>
-                        <button type="button" class="history-filter-btn" data-filter="week" onclick="setHistoryFilter('week')">7 Hari Terakhir</button>
+                        <button type="button" class="history-filter-btn" data-filter="week" onclick="setHistoryFilter('week')">7 Hari</button>
                         <button type="button" class="history-filter-btn" data-filter="month" onclick="setHistoryFilter('month')">Bulan Ini</button>
-                        <button type="button" class="history-filter-btn" data-filter="custom" onclick="setHistoryFilter('custom')">📅 Kustom Rentang</button>
+                        <button type="button" class="history-filter-btn" data-filter="custom" onclick="setHistoryFilter('custom')">Kustom Rentang</button>
                     </div>
                     <div class="history-custom-date" id="historyCustomDateRange" style="display: none;">
                         <input type="date" id="historyStartDate" class="form-control date-picker-input" onchange="renderHistoryData()">
@@ -517,7 +511,8 @@
                     </div>
                     <div class="history-filter-actions">
                         <button type="button" class="btn-copy-history-wa" onclick="copyHistoryForWhatsApp()" title="Salin ringkasan omset & menu terjual untuk dikirim ke grup WhatsApp">
-                            📋 Salin Rekap WA
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span>Salin Rekap WA</span>
                         </button>
                     </div>
                 </div>
@@ -525,52 +520,45 @@
                 <!-- Grafik Tren Omset & Untung Bersih (Pure SVG) -->
                 <div id="historyChartContainer" class="history-chart-wrapper"></div>
 
-                <!-- Summary Cards -->
-                <div class="rekap-cards-grid">
-                    <div class="rekap-card">
-                        <div class="rekap-label">Total Omset</div>
-                        <div class="rekap-val rekap-val-highlight" id="rekapTotalRevenue">Rp 0</div>
+                <!-- Summary Ringkas: 3 Kartu Utama (KPI) -->
+                <div class="rekap-kpi-grid">
+                    <div class="rekap-kpi-card kpi-revenue">
+                        <div class="rekap-kpi-label">Total Omset</div>
+                        <div class="rekap-kpi-val" id="rekapTotalRevenue">Rp 0</div>
+                        <div class="rekap-kpi-sub">Omset Makanan: <strong id="rekapFoodRevenue">Rp 0</strong></div>
                     </div>
-                    <div class="rekap-card rekap-card-delivery">
-                        <div class="rekap-label">🛵 Titipan Ongkir</div>
-                        <div class="rekap-val" id="rekapDeliveryFeeTotal" style="color: #0284C7;">Rp 0</div>
-                        <div class="rekap-subtext" style="font-size: 11px; color: #64748B; margin-top: 2px;">(Bukan laba toko)</div>
-                    </div>
-                    <div class="rekap-card">
-                        <div class="rekap-label">Omset Setelah Ongkir</div>
-                        <div class="rekap-val" id="rekapFoodRevenue" style="color: #059669;">Rp 0</div>
-                        <div class="rekap-subtext" style="font-size: 11px; color: #64748B; margin-top: 2px;">(Omset murni makanan)</div>
-                    </div>
-                    <div class="rekap-card">
-                        <div class="rekap-label">Total Modal (HPP)</div>
-                        <div class="rekap-val rekap-val-cogs" id="rekapTotalCogs">Rp 0</div>
-                    </div>
-                    <div class="rekap-card">
-                        <div class="rekap-label">Untung Bersih (Profit)</div>
-                        <div class="rekap-val rekap-val-profit" id="rekapTotalProfit">
+                    <div class="rekap-kpi-card kpi-profit">
+                        <div class="rekap-kpi-label">Untung Bersih (Profit)</div>
+                        <div class="rekap-kpi-val" id="rekapTotalProfit">
                             <span id="rekapProfitNominal">Rp 0</span>
                             <span class="margin-pill positive" id="rekapProfitMargin">0%</span>
                         </div>
+                        <div class="rekap-kpi-sub">Modal (HPP): <strong id="rekapTotalCogs">Rp 0</strong></div>
                     </div>
-                    <div class="rekap-card">
-                        <div class="rekap-label">Total Transaksi</div>
-                        <div class="rekap-val" id="rekapTotalOrders">0 Transaksi</div>
+                    <div class="rekap-kpi-card kpi-orders">
+                        <div class="rekap-kpi-label">Total Transaksi</div>
+                        <div class="rekap-kpi-val" id="rekapTotalOrders">0 Sukses</div>
+                        <div class="rekap-kpi-sub">Rata-rata: <strong id="rekapAvgOrder">Rp 0</strong></div>
                     </div>
-                    <div class="rekap-card">
-                        <div class="rekap-label">Rata-rata Order</div>
-                        <div class="rekap-val" id="rekapAvgOrder">Rp 0</div>
+                </div>
+
+                <!-- Baris Rincian Kas & Ongkir -->
+                <div class="rekap-breakdown-bar">
+                    <div class="rekap-breakdown-item">
+                        <span class="breakdown-label">Tunai:</span>
+                        <strong class="breakdown-val" id="rekapCashTotal">Rp 0</strong>
                     </div>
-                    <div class="rekap-card">
-                        <div class="rekap-label">Pendapatan Tunai</div>
-                        <div class="rekap-val" id="rekapCashTotal">Rp 0</div>
+                    <div class="rekap-breakdown-item">
+                        <span class="breakdown-label">QRIS:</span>
+                        <strong class="breakdown-val" id="rekapQrisTotal">Rp 0</strong>
                     </div>
-                    <div class="rekap-card">
-                        <div class="rekap-label">Pendapatan QRIS</div>
-                        <div class="rekap-val" id="rekapQrisTotal">Rp 0</div>
+                    <div class="rekap-breakdown-item">
+                        <span class="breakdown-label">Transfer:</span>
+                        <strong class="breakdown-val" id="rekapTransferTotal">Rp 0</strong>
                     </div>
-                    <div class="rekap-card">
-                        <div class="rekap-label">Pendapatan Transfer</div>
-                        <div class="rekap-val" id="rekapTransferTotal" style="color: #7C3AED;">Rp 0</div>
+                    <div class="rekap-breakdown-item">
+                        <span class="breakdown-label">Titipan Ongkir:</span>
+                        <strong class="breakdown-val" id="rekapDeliveryFeeTotal" style="color: #0284C7;">Rp 0</strong>
                     </div>
                 </div>
 
@@ -578,33 +566,34 @@
                 <div class="history-table-toolbar">
                     <div class="hist-tool-left">
                         <div class="hist-search-wrap">
-                            <input type="text" id="historySearchInput" class="hist-search-input" placeholder="🔍 Cari Invoice / Nama Pelanggan / Menu..." oninput="applyHistoryTableFilters()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="hist-search-svg"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            <input type="text" id="historySearchInput" class="hist-search-input" placeholder="Cari invoice, pelanggan, menu..." oninput="applyHistoryTableFilters()">
                         </div>
                         <div class="hist-select-wrap">
                             <select id="filterHistoryStatus" class="hist-filter-select" onchange="applyHistoryTableFilters()">
                                 <option value="all">Semua Status</option>
-                                <option value="completed">✅ Selesai (Semua)</option>
-                                <option value="sent">🛵 Sudah Kirim (Delivery/Ojol)</option>
-                                <option value="picked">🏪 Sudah Diambil (Pickup)</option>
-                                <option value="pending_po">📦 Menunggu Pickup (PO)</option>
-                                <option value="unpaid">🕒 Belum Bayar (Gantung)</option>
-                                <option value="void">⚠️ Void (Dibatalkan)</option>
+                                <option value="completed">Selesai</option>
+                                <option value="sent">Sudah Kirim (Delivery)</option>
+                                <option value="picked">Sudah Diambil (Pickup)</option>
+                                <option value="pending_po">Menunggu Pickup (PO)</option>
+                                <option value="unpaid">Belum Bayar</option>
+                                <option value="void">Void (Dibatalkan)</option>
                             </select>
                         </div>
                         <div class="hist-select-wrap">
                             <select id="filterHistoryPayment" class="hist-filter-select" onchange="applyHistoryTableFilters()">
-                                <option value="all">Semua Metode Bayar</option>
-                                <option value="transfer">🏦 Transfer Bank</option>
-                                <option value="qris">📱 QRIS</option>
-                                <option value="cash">💵 Tunai (Cash)</option>
-                                <option value="unpaid">🕒 Belum Bayar</option>
+                                <option value="all">Semua Metode</option>
+                                <option value="cash">Tunai (Cash)</option>
+                                <option value="qris">QRIS</option>
+                                <option value="transfer">Transfer Bank</option>
+                                <option value="unpaid">Belum Bayar</option>
                             </select>
                         </div>
                     </div>
                     <div class="hist-tool-right">
-                        <label class="hist-checkbox-label" title="Centang untuk menyembunyikan transaksi yang dibatalkan / void">
+                        <label class="hist-checkbox-label" title="Sembunyikan transaksi void/dibatalkan">
                             <input type="checkbox" id="filterExcludeVoid" onchange="applyHistoryTableFilters()" checked>
-                            <span>🚫 Exclude Void</span>
+                            <span>Exclude Void</span>
                         </label>
                         <span class="hist-filter-count-badge" id="historyFilterCountBadge">
                             0 transaksi
@@ -628,7 +617,7 @@
                                 <th class="col-th-revenue">Total Omset</th>
                                 <th class="col-th-ongkir" style="text-align: right; white-space: nowrap;">Ongkir</th>
                                 <th class="col-th-profit">Untung Bersih</th>
-                                <th class="col-th-actions" style="text-align: center; min-width: 225px;">Status & Aksi</th>
+                                <th class="col-th-actions" style="text-align: center; min-width: 200px;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="historyTableBody">
@@ -640,13 +629,11 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn-nav-action btn-copy-history-wa" onclick="copyHistoryForWhatsApp()" title="Salin laporan omset & menu terjual untuk dikirim ke WhatsApp">
-                    📋 Salin Rekap WA
-                </button>
+                <button type="button" class="btn-nav-action btn-modal-close-danger" onclick="closeHistoryModal()">Tutup</button>
                 <button type="button" class="btn-nav-action btn-export-excel" onclick="exportHistoryToExcel()">
-                    📊 Ekspor ke Excel (.xlsx)
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    <span>Ekspor Excel (.xlsx)</span>
                 </button>
-                <button type="button" class="btn-nav-action" onclick="closeHistoryModal()">Tutup</button>
             </div>
         </div>
     </div>
@@ -656,10 +643,9 @@
         <div class="modal-content modal-wide modal-active-orders">
             <div class="modal-header">
                 <div class="active-header-title">
-                    <span class="active-title-badge">⚡ AKTIF</span>
                     <div>
-                        <h3>Transaksi Diproses & Antrean PO</h3>
-                        <p class="active-subtitle">Kelola tagihan sementara yang belum lunas dan pesanan Pre-Order (PO) yang menunggu diambil</p>
+                        <h3>Transaksi Diproses</h3>
+                        <p class="active-subtitle">Tagihan belum lunas & antrean PO</p>
                     </div>
                 </div>
                 <button type="button" class="modal-close-btn" onclick="activeOrdersManager.closeModal()">&times;</button>
@@ -667,11 +653,11 @@
             <div class="modal-body">
                 <div class="active-tabs-nav">
                     <button type="button" class="active-tab-btn active" data-tab="unpaid" onclick="activeOrdersManager.setTab('unpaid')">
-                        <span>🧾 Tagihan Sementara (Belum Bayar)</span>
+                        <span>🧾 Belum Bayar</span>
                         <span class="active-tab-count" id="countPendingBills">0</span>
                     </button>
                     <button type="button" class="active-tab-btn" data-tab="po" onclick="activeOrdersManager.setTab('po')">
-                        <span>📦 Menunggu Diambil (PO Lunas)</span>
+                        <span>📦 Siap Ambil</span>
                         <span class="active-tab-count" id="countPendingPickups">0</span>
                     </button>
                 </div>
@@ -681,38 +667,46 @@
                     <div class="bulk-left-group">
                         <label class="bulk-select-all-label">
                             <input type="checkbox" id="bulkSelectAllCheckbox" onchange="activeOrdersManager.toggleSelectAll(this.checked)">
-                            <span>Pilih Semua (<span id="bulkTotalVisibleCount">0</span>)</span>
+                            <span>Semua (<span id="bulkTotalVisibleCount">0</span>)</span>
                         </label>
-                        <button type="button" class="btn-bulk-toolbar btn-bulk-unprinted" id="btnSelectUnprinted" onclick="activeOrdersManager.selectUnprintedOnly()" style="display: none; background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; font-weight: 700; border-radius: 6px; padding: 5px 10px; font-size: 12px; cursor: pointer;">
-                            ⚡ Pilih Belum Cetak (<span id="bulkUnprintedCount">0</span>)
+                        <button type="button" class="btn-bulk-toolbar btn-bulk-unprinted" id="btnSelectUnprinted" onclick="activeOrdersManager.selectUnprintedOnly()" style="display: none;" title="Pilih Semua yang Belum Cetak Resi">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                            <span class="bulk-btn-text">Belum Cetak </span>(<span id="bulkUnprintedCount">0</span>)
                         </button>
                         <span class="bulk-badge-selected" id="bulkBadgeSelected" style="display: none;">
                             <span id="bulkCountSelected">0</span> dipilih
                         </span>
                     </div>
                     <div class="bulk-right-group">
-                        <!-- Perintah Massal / Bulk Commands (Selesai Diambil Semua, Bayar Semua, Batal Semua) -->
+                        <!-- Perintah Massal / Bulk Commands -->
                         <button type="button" class="btn-bulk-toolbar btn-bulk-pickup" id="btnBulkPickup" onclick="activeOrdersManager.bulkMarkPickedUp()" style="display: none;" title="Tandai seluruh pesanan yang dipilih sebagai Selesai Diambil">
-                            ✅ Selesai Diambil Semua
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            <span class="bulk-btn-text"> Selesai Diambil Semua</span>
                         </button>
                         <button type="button" class="btn-bulk-toolbar btn-bulk-pay" id="btnBulkPay" onclick="activeOrdersManager.bulkPayPrompt()" style="display: none;" title="Lunasi seluruh tagihan sementara yang dipilih">
-                            💳 Bayar Semua
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                            <span class="bulk-btn-text"> Bayar Semua</span>
                         </button>
                         <button type="button" class="btn-bulk-toolbar btn-bulk-delete" id="btnBulkDelete" onclick="activeOrdersManager.bulkCancelOrders()" style="display: none;" title="Batalkan & hapus tagihan sementara yang dipilih">
-                            🗑️ Batal Semua
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            <span class="bulk-btn-text"> Batal Semua</span>
                         </button>
 
-                        <button type="button" class="btn-bulk-toolbar btn-copy-wa" id="btnCopyWa" onclick="activeOrdersManager.copyForWhatsApp()" style="background: #EA580C; color: white; border: 1px solid #C2410C; font-weight: 700; padding: 6px 12px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" title="Salin daftar transaksi aktif untuk dikirim ke grup WhatsApp">
-                            📋 Salin WA
+                        <button type="button" class="btn-bulk-toolbar btn-copy-wa" id="btnCopyWa" onclick="activeOrdersManager.copyForWhatsApp()" title="Salin daftar transaksi aktif untuk dikirim ke grup WhatsApp">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span class="bulk-btn-text"> Salin WA</span>
                         </button>
-                        <button type="button" class="btn-bulk-toolbar btn-bulk-pdf" id="btnBulkPdf" onclick="activeOrdersManager.downloadBulkPdf()" disabled>
-                            📄 PDF Resi
+                        <button type="button" class="btn-bulk-toolbar btn-bulk-pdf" id="btnBulkPdf" onclick="activeOrdersManager.downloadBulkPdf()" disabled title="Unduh PDF Resi Massal">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                            <span class="bulk-btn-text"> PDF Resi</span>
                         </button>
-                        <button type="button" class="btn-bulk-toolbar btn-bulk-print" id="btnBulkPrint" onclick="activeOrdersManager.printBulkLabels()" disabled>
-                            🖨️ Cetak Resi
+                        <button type="button" class="btn-bulk-toolbar btn-bulk-print" id="btnBulkPrint" onclick="activeOrdersManager.printBulkLabels()" disabled title="Cetak Resi Thermal 58mm Massal">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                            <span class="bulk-btn-text"> Cetak Resi</span>
                         </button>
-                        <button type="button" class="btn-bulk-toolbar btn-bulk-cancel" id="btnBulkCancel" onclick="activeOrdersManager.clearSelection()" style="display: none;">
-                            Batal Pilih
+                        <button type="button" class="btn-bulk-toolbar btn-bulk-cancel" id="btnBulkCancel" onclick="activeOrdersManager.clearSelection()" style="display: none;" title="Batalkan Pilihan">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            <span class="bulk-btn-text"> Batal</span>
                         </button>
                     </div>
                 </div>
@@ -722,7 +716,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn-nav-action" onclick="activeOrdersManager.closeModal()">Tutup</button>
+                <button type="button" class="btn-nav-action btn-modal-close-danger" onclick="activeOrdersManager.closeModal()">Tutup</button>
             </div>
         </div>
     </div>
@@ -785,7 +779,7 @@
                 </div>
             </div>
             <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding: 12px 20px;">
-                <button type="button" class="btn-bulk-toolbar btn-bulk-cancel" onclick="activeOrdersManager.closeBulkPayModal()">Batal</button>
+                <button type="button" class="btn-bulk-toolbar btn-bulk-cancel btn-modal-close-danger" onclick="activeOrdersManager.closeBulkPayModal()">Batal</button>
                 <button type="button" class="btn-bulk-toolbar btn-bulk-pay" id="btnConfirmBulkPay" onclick="activeOrdersManager.confirmBulkPay()">
                     ✅ Konfirmasi Pelunasan
                 </button>
@@ -797,46 +791,33 @@
     <div class="modal-backdrop" id="adminModal">
         <div class="modal-content modal-admin">
             <div class="modal-header">
-                <div class="admin-header-title">
-                    <span class="admin-title-badge">🍽️ MENU</span>
+                <div class="active-header-title">
                     <div>
                         <h3>Kelola Menu</h3>
-                        <p class="admin-subtitle">Kelola daftar menu, harga normal & promo, varian, serta kategori resto</p>
+                        <p class="active-subtitle">Daftar produk, harga promo, resep gramasi, dan varian</p>
                     </div>
                 </div>
                 <button type="button" class="modal-close-btn" onclick="adminManager.closeAdminModal()">&times;</button>
             </div>
 
             <div class="modal-body admin-modal-body">
-                <!-- Statistik Ringkas -->
-                <div class="admin-stats-row">
-                    <div class="admin-stat-card">
-                        <div class="admin-stat-icon">📋</div>
-                        <div>
-                            <div class="admin-stat-label">Total Menu</div>
-                            <div class="admin-stat-val" id="adminStatTotal">0 Menu</div>
-                        </div>
+                <!-- Statistik Ringkas (Horizontal Strip) -->
+                <div class="admin-stats-strip">
+                    <div class="admin-stat-item">
+                        <span class="stat-item-label">Total Menu:</span>
+                        <strong class="stat-item-val" id="adminStatTotal">0 Menu</strong>
                     </div>
-                    <div class="admin-stat-card">
-                        <div class="admin-stat-icon">🔥</div>
-                        <div>
-                            <div class="admin-stat-label">Sedang Promo</div>
-                            <div class="admin-stat-val" id="adminStatPromo" style="color: var(--promo);">0 Promo</div>
-                        </div>
+                    <div class="admin-stat-item">
+                        <span class="stat-item-label">Sedang Promo:</span>
+                        <strong class="stat-item-val stat-promo-val" id="adminStatPromo">0 Promo</strong>
                     </div>
-                    <div class="admin-stat-card">
-                        <div class="admin-stat-icon">🍗</div>
-                        <div>
-                            <div class="admin-stat-label">Makanan</div>
-                            <div class="admin-stat-val" id="adminStatFood">0</div>
-                        </div>
+                    <div class="admin-stat-item">
+                        <span class="stat-item-label">Makanan:</span>
+                        <strong class="stat-item-val" id="adminStatFood">0</strong>
                     </div>
-                    <div class="admin-stat-card">
-                        <div class="admin-stat-icon">🍹</div>
-                        <div>
-                            <div class="admin-stat-label">Minuman</div>
-                            <div class="admin-stat-val" id="adminStatDrink">0</div>
-                        </div>
+                    <div class="admin-stat-item">
+                        <span class="stat-item-label">Minuman & Lainnya:</span>
+                        <strong class="stat-item-val" id="adminStatDrink">0</strong>
                     </div>
                 </div>
 
@@ -844,22 +825,22 @@
                 <div class="admin-toolbar">
                     <div class="admin-toolbar-left">
                         <div class="admin-search-wrap">
-                            <span class="admin-search-icon">🔍</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="admin-search-svg"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                             <input type="text" id="adminSearchInput" class="admin-search-input" placeholder="Cari nama atau kode menu...">
                         </div>
                         <div class="admin-cat-pills" id="adminCategoryPills">
                             <button type="button" class="admin-cat-btn active" data-category="all">Semua</button>
-                            <button type="button" class="admin-cat-btn" data-category="makanan">🍗 Makanan</button>
-                            <button type="button" class="admin-cat-btn" data-category="minuman">🍹 Minuman</button>
-                            <button type="button" class="admin-cat-btn" data-category="tambahan">🍚 Tambahan</button>
+                            <button type="button" class="admin-cat-btn" data-category="makanan">Makanan</button>
+                            <button type="button" class="admin-cat-btn" data-category="minuman">Minuman</button>
+                            <button type="button" class="admin-cat-btn" data-category="tambahan">Tambahan</button>
                         </div>
                     </div>
                     <button type="button" class="btn-admin-add-new" onclick="adminManager.openAddModal()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
-                        <span>Tambah Produk Baru</span>
+                        <span>Tambah Produk</span>
                     </button>
                 </div>
 
@@ -869,14 +850,13 @@
                         <thead>
                             <tr>
                                 <th style="width: 36px; text-align: center;">#</th>
-                                <th style="min-width: 150px;">Menu</th>
-                                <th style="width: 85px;">SKU</th>
-                                <th style="min-width: 140px; white-space: nowrap;">Kategori</th>
+                                <th style="min-width: 160px;">Menu</th>
+                                <th style="width: 80px;">SKU</th>
+                                <th style="min-width: 120px; white-space: nowrap;">Kategori</th>
                                 <th style="width: 100px;">Modal (HPP)</th>
-                                <th style="width: 100px;">Harga Jual</th>
-                                <th style="width: 140px;">Promo & Diskon</th>
-                                <th style="width: 120px;">Untung Bersih</th>
-                                <th class="col-desc" style="min-width: 120px;">Deskripsi</th>
+                                <th style="width: 105px;">Harga Jual</th>
+                                <th style="width: 130px;">Promo & Diskon</th>
+                                <th style="width: 110px;">Untung Bersih</th>
                                 <th class="col-actions" style="width: 135px; text-align: right;">Aksi</th>
                             </tr>
                         </thead>
@@ -888,10 +868,7 @@
             </div>
 
             <div class="modal-footer admin-modal-footer">
-                <div class="admin-footer-tip">
-                    <span>💡 <strong>Tips:</strong> Klik tombol <em>Edit / Diskon</em> pada baris produk untuk mengubah harga normal atau mengatur potongan diskon.</span>
-                </div>
-                <button type="button" class="btn-nav-action" onclick="adminManager.closeAdminModal()">Tutup Kelola Menu</button>
+                <button type="button" class="btn-nav-action btn-modal-close-danger" onclick="adminManager.closeAdminModal()">Tutup</button>
             </div>
         </div>
     </div>
@@ -900,7 +877,7 @@
     <div class="modal-backdrop" id="adminProductModal" style="z-index: 1050;">
         <div class="modal-content modal-product-edit">
             <div class="modal-header">
-                <h3 id="adminProductModalTitle">➕ Tambah Menu Produk Baru</h3>
+                <h3 id="adminProductModalTitle">Tambah Menu Baru</h3>
                 <button type="button" class="modal-close-btn" onclick="adminManager.closeProductModal()">&times;</button>
             </div>
 
@@ -1156,17 +1133,18 @@
                 </div>
 
                 <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
-                    <!-- Tombol Hapus Menu Saat Edit -->
-                    <button type="button" class="btn-admin-action btn-admin-delete" id="adminBtnDeleteProduct" style="display: none;" onclick="adminManager.handleDeleteCurrentProduct()" title="Hapus menu ini dari database">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        </svg>
-                        <span>🗑️ Hapus Menu Ini</span>
-                    </button>
+                    <button type="button" class="btn-nav-action btn-modal-close-danger" onclick="adminManager.closeProductModal()">Batal</button>
 
                     <div style="display: flex; gap: 8px; margin-left: auto;">
-                        <button type="button" class="btn-nav-action" onclick="adminManager.closeProductModal()">Batal</button>
+                        <!-- Tombol Hapus Menu Saat Edit -->
+                        <button type="button" class="btn-admin-action btn-admin-delete" id="adminBtnDeleteProduct" style="display: none;" onclick="adminManager.handleDeleteCurrentProduct()" title="Hapus menu ini dari database">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                            <span>🗑️ Hapus Menu Ini</span>
+                        </button>
+
                         <button type="submit" class="btn-nav-action btn-primary-submit" id="adminBtnSaveProduct">
                             Simpan Produk
                         </button>
@@ -1211,7 +1189,7 @@
             </div>
 
             <div class="modal-footer" style="display: flex; justify-content: flex-end; padding: 12px 20px;">
-                <button type="button" class="btn-nav-action" onclick="categoryManager.closeCategoryModal()">Selesai & Tutup</button>
+                <button type="button" class="btn-nav-action btn-modal-close-danger" onclick="categoryManager.closeCategoryModal()">Tutup</button>
             </div>
         </div>
     </div>
@@ -1220,22 +1198,21 @@
     <div class="modal-backdrop" id="stockModal">
         <div class="modal-content modal-admin">
             <div class="modal-header">
-                <div class="admin-header-title">
-                    <span class="admin-title-badge" style="background: #EBF5FB; color: #2980B9;">📦 STOCK</span>
+                <div class="active-header-title">
                     <div>
-                        <h3>Kelola Stock & Ketersediaan Bahan Baku</h3>
-                        <p class="admin-subtitle">Kontrol stok bahan baku utama (resep gramasi), stok barang jadi, dan cek ketersediaan porsi menu kasir</p>
+                        <h3>Kelola Stok</h3>
+                        <p class="active-subtitle">Bahan baku resep, stok barang jadi, dan ketersediaan menu</p>
                     </div>
                 </div>
                 <button type="button" class="modal-close-btn" onclick="inventoryManager.closeStockModal()">&times;</button>
             </div>
 
-            <!-- Tab Navigasi Stock -->
+            <!-- Tab Navigasi Stock Ringkas -->
             <div class="stock-tabs-nav">
-                <button type="button" class="stock-tab-btn active" data-tab="raw" onclick="inventoryManager.setTab('raw')"><span class="tab-btn-icon">🌾</span><span class="tab-btn-text">Bahan Baku Utama (Resep Master)</span></button>
-                <button type="button" class="stock-tab-btn" data-tab="direct" onclick="inventoryManager.setTab('direct')"><span class="tab-btn-icon">🥤</span><span class="tab-btn-text">Stok Barang Jadi (Fisik)</span></button>
-                <button type="button" class="stock-tab-btn" data-tab="menu" onclick="inventoryManager.setTab('menu')"><span class="tab-btn-icon">📋</span><span class="tab-btn-text">Tinjauan Kesiapan Jual Menu</span></button>
-                <button type="button" class="stock-tab-btn" data-tab="history" onclick="inventoryManager.setTab('history')"><span class="tab-btn-icon">📜</span><span class="tab-btn-text">Riwayat Perubahan Stok</span></button>
+                <button type="button" class="stock-tab-btn active" data-tab="raw" onclick="inventoryManager.setTab('raw')">Bahan Baku (Resep)</button>
+                <button type="button" class="stock-tab-btn" data-tab="direct" onclick="inventoryManager.setTab('direct')">Barang Jadi</button>
+                <button type="button" class="stock-tab-btn" data-tab="menu" onclick="inventoryManager.setTab('menu')">Kesiapan Menu</button>
+                <button type="button" class="stock-tab-btn" data-tab="history" onclick="inventoryManager.setTab('history')">Riwayat Stok</button>
             </div>
 
             <div class="modal-body admin-modal-body" id="stockModalTabContent">
@@ -1243,10 +1220,7 @@
             </div>
 
             <div class="modal-footer admin-modal-footer">
-                <div class="admin-footer-tip">
-                    <span>💡 <strong>Tips:</strong> Setiap transaksi di kasir otomatis memotong stok bahan baku sesuai takaran porsi yang Anda tentukan di Kelola Menu.</span>
-                </div>
-                <button type="button" class="btn-nav-action" onclick="inventoryManager.closeStockModal()">Tutup</button>
+                <button type="button" class="btn-nav-action btn-modal-close-danger" onclick="inventoryManager.closeStockModal()">Tutup</button>
             </div>
         </div>
     </div>
@@ -1255,7 +1229,7 @@
     <div class="modal-backdrop" id="rawMaterialAddModal" style="z-index: 1060;">
         <div class="modal-content" style="max-width: 480px;">
             <div class="modal-header">
-                <h3>🌾 Tambah Bahan Baku Master Baru</h3>
+                <h3>Tambah Bahan Baku Baru</h3>
                 <button type="button" class="modal-close-btn" onclick="inventoryManager.closeAddRawMaterialModal()">&times;</button>
             </div>
             <form id="formAddRawMaterial" onsubmit="inventoryManager.handleSaveNewRawMaterial(event)">
@@ -1292,7 +1266,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn-nav-action" onclick="inventoryManager.closeAddRawMaterialModal()">Batal</button>
+                    <button type="button" class="btn-nav-action btn-modal-close-danger" onclick="inventoryManager.closeAddRawMaterialModal()">Batal</button>
                     <button type="submit" class="btn-nav-action btn-primary-submit">Simpan Bahan Baku</button>
                 </div>
             </form>
@@ -1392,7 +1366,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn-nav-action" onclick="inventoryManager.closeCustomAdjustModal()">Batal</button>
+                    <button type="button" class="btn-nav-action btn-modal-close-danger" onclick="inventoryManager.closeCustomAdjustModal()">Batal</button>
                     <button type="submit" class="btn-nav-action btn-primary-submit" id="btnSubmitAdjust">Simpan Perubahan Stok</button>
                 </div>
             </form>
@@ -1461,7 +1435,7 @@
                 </div>
 
                 <div class="modal-footer void-modal-footer">
-                    <button type="button" class="btn-nav-action" onclick="closeVoidModal()">Batal</button>
+                    <button type="button" class="btn-nav-action btn-modal-close-danger" onclick="closeVoidModal()">Batal</button>
                     <button type="submit" class="btn-nav-action btn-danger-submit" id="btnSubmitVoid">
                         <span>⚠️ Konfirmasi VOID</span>
                     </button>
@@ -1506,7 +1480,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn-nav-action" onclick="variantSelectManager.close()">Batal</button>
+                <button type="button" class="btn-nav-action btn-modal-close-danger" onclick="variantSelectManager.close()">Batal</button>
                 <button type="button" class="btn-nav-action btn-primary-submit" onclick="variantSelectManager.confirmAddToCart()">
                     + Tambah ke Pesanan
                 </button>
@@ -1673,7 +1647,7 @@
                 </div>
 
                 <div class="modal-footer settings-modal-footer">
-                    <button type="button" class="btn-nav-action" onclick="settingsManager.closeSettingsModal()">Tutup</button>
+                    <button type="button" class="btn-nav-action btn-modal-close-danger" onclick="settingsManager.closeSettingsModal()">Tutup</button>
                     <button type="submit" class="btn-nav-action btn-primary-submit" id="settingBtnSave">
                         Simpan Pengaturan Toko
                     </button>
@@ -1698,7 +1672,7 @@
                 <div style="font-size: 12px; color: #64748B; margin-top: 10px;">Arahkan kamera / scan dari aplikasi m-Banking atau E-Wallet pelanggan</div>
             </div>
             <div class="modal-footer" style="border: none; justify-content: center; padding-top: 6px;">
-                <button type="button" class="btn-nav-action" style="min-width: 130px; font-weight: 700;" onclick="settingsManager.closeQrisZoomModal()">Tutup</button>
+                <button type="button" class="btn-nav-action btn-modal-close-danger" style="min-width: 130px; font-weight: 700;" onclick="settingsManager.closeQrisZoomModal()">Tutup</button>
             </div>
         </div>
     </div>
@@ -1763,15 +1737,15 @@
     <!-- ================= JAVASCRIPT MODULES ================= -->
     <script src="js/config.js?v=8.22"></script>
     <script src="js/sound.js?v=8.22"></script>
-    <script src="js/db.js?v=8.22"></script>
+    <script src="js/db.js?v=8.47"></script>
     <script src="js/settings.js?v=8.22"></script>
     <script src="js/categories.js?v=8.22"></script>
-    <script src="js/inventory.js?v=8.22"></script>
+    <script src="js/inventory.js?v=8.47"></script>
     <script src="js/products.js?v=8.22"></script>
     <script src="js/cart.js?v=8.22"></script>
-    <script src="js/payment.js?v=8.22"></script>
+    <script src="js/payment.js?v=8.47"></script>
     <script src="js/auth.js?v=8.22"></script>
-    <script src="js/admin.js?v=8.22"></script>
-    <script src="js/app.js?v=8.22"></script>
+    <script src="js/admin.js?v=8.47"></script>
+    <script src="js/app.js?v=8.47"></script>
 </body>
 </html>

@@ -368,6 +368,15 @@ class DatabaseService {
         // 1. Simpan ke Local Storage terlebih dahulu untuk kecepatan & jaminan data
         let orders = this.getLocalOrders();
         const existingIdx = orders.findIndex(o => o.invoiceNo === orderData.invoiceNo);
+
+        // Jika mengedit tagihan yang sudah ada, kembalikan stok lama sebelum dikurangi item baru
+        if (existingIdx >= 0 && orders[existingIdx].items && orders[existingIdx].items.length > 0) {
+            try {
+                await this.restoreStockForOrder(orders[existingIdx].items, orders[existingIdx]);
+            } catch (e) {
+                console.warn('Gagal restore stock saat edit order:', e);
+            }
+        }
         
         const defaultStatus = orderData.orderType === 'dine_in' ? 'completed' : 'paid';
         const targetStatus = orderData.status || (existingIdx >= 0 && orders[existingIdx].status ? orders[existingIdx].status : defaultStatus);
@@ -535,8 +544,28 @@ class DatabaseService {
     // Hapus pesanan pending yang belum dibayar jika dibatalkan pelanggan
     async deletePendingOrder(invoiceNo) {
         let orders = this.getLocalOrders();
-        const order = orders.find(o => o.invoiceNo === invoiceNo);
+        let order = orders.find(o => o.invoiceNo === invoiceNo);
+        if (!order) {
+            try {
+                const active = await this.getActiveOrders();
+                order = active.find(o => o.invoiceNo === invoiceNo);
+            } catch (e) {}
+        }
+
         if (order) {
+            // Kembalikan stok bahan & barang jadi yang sebelumnya dipotong oleh tagihan transit
+            if (order.items && order.items.length > 0) {
+                try {
+                    await this.restoreStockForOrder(order.items, {
+                        ...order,
+                        voidReason: 'Tagihan transit dibatalkan / dihapus',
+                        voidBy: (typeof authManager !== 'undefined') ? authManager.getActiveCashier() : 'Kasir'
+                    });
+                } catch (e) {
+                    console.warn('Gagal restore stock saat deletePendingOrder:', e);
+                }
+            }
+
             orders = orders.filter(o => o.invoiceNo !== invoiceNo);
             localStorage.setItem(this.storageKeyOrders, JSON.stringify(orders));
 
@@ -899,6 +928,21 @@ class DatabaseService {
             }
         }
         localStorage.setItem(this.storageKeyProducts, JSON.stringify(products));
+
+        // Refresh state di memory
+        if (typeof inventoryManager !== 'undefined') {
+            try {
+                await inventoryManager.loadRawMaterials();
+                await inventoryManager.calculateStockDemands();
+                inventoryManager.renderTabContent();
+            } catch (e) {}
+        }
+        if (typeof productManager !== 'undefined') {
+            try {
+                await productManager.loadProducts();
+                productManager.render();
+            } catch (e) {}
+        }
     }
 
     // Kembalikan stok bahan & barang jadi saat transaksi di-void / dibatalkan
@@ -997,11 +1041,17 @@ class DatabaseService {
 
         // Refresh state di memory
         if (typeof inventoryManager !== 'undefined') {
-            await inventoryManager.loadRawMaterials();
+            try {
+                await inventoryManager.loadRawMaterials();
+                await inventoryManager.calculateStockDemands();
+                inventoryManager.renderTabContent();
+            } catch (e) {}
         }
         if (typeof productManager !== 'undefined') {
-            await productManager.loadProducts();
-            productManager.render();
+            try {
+                await productManager.loadProducts();
+                productManager.render();
+            } catch (e) {}
         }
     }
 

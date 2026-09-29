@@ -428,170 +428,120 @@ class InventoryManager {
             <div class="stock-tab-header">
                 <div>
                     <h4 style="font-size: 15px; font-weight: 800; color: var(--secondary); margin-bottom: 2px;">
-                        🌾 Manajemen Stok & PO Smokehouse
+                        Manajemen Bahan Baku & Stok
                     </h4>
                     <p style="font-size: 12px; color: #64748B;">
-                        Pantau stok daging matang di toko, stok transit (tagihan sementara), serta persediaan daging mentah di freezer.
+                        Stok daging matang siap potong, transit tagihan sementara, dan persediaan mentah di freezer.
                     </p>
                 </div>
                 <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                    <button type="button" class="btn-stock-history-nav" onclick="inventoryManager.setTab('history')">
-                        📜 Lihat Riwayat Stok
-                    </button>
                     <button type="button" class="btn-copy-shopping-list" onclick="inventoryManager.copyShoppingList()">
-                        📋 Salin Rekap Belanja Daging
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        <span>Salin Rekap Belanja</span>
                     </button>
-                    <button type="button" class="btn-admin-add-new" style="padding: 7px 14px; font-size: 13px;" onclick="inventoryManager.openAddRawMaterialModal()">
-                        + Tambah Bahan Baku
+                    <button type="button" class="btn-admin-add-new" style="height: 36px; padding: 0 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; box-sizing: border-box;" onclick="inventoryManager.openAddRawMaterialModal()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        <span>Tambah Bahan</span>
                     </button>
                 </div>
             </div>
 
-            ${(itemsNeedSmoking.length > 0 || itemsInTransit.length > 0) ? `
+            ${itemsNeedSmoking.length > 0 ? `
                 <div class="production-summary-banner banner-alert">
                     <div class="prod-banner-header">
                         <div class="prod-banner-title">
-                            <span class="prod-banner-icon icon-alert">🔥</span>
+                            <span class="prod-banner-icon icon-alert">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                            </span>
                             <div>
                                 <strong style="font-size: 14px; color: #0F172A;">Rekap Kebutuhan Daging & Produksi Asap</strong>
-                                <div style="font-size: 11.5px; color: #64748B;">Kalkulasi otomatis dari pesanan PO lunas & tagihan sementara</div>
+                                <div style="font-size: 11.5px; color: #64748B;">Kalkulasi otomatis dari pesanan PO lunas & tagihan</div>
                             </div>
                         </div>
                         <button type="button" class="btn-banner-copy-mini btn-copy-alert" onclick="inventoryManager.copyShoppingList()">
-                            📋 Salin Untuk WhatsApp
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span>Salin ke WhatsApp</span>
                         </button>
                     </div>
                     <div class="prod-banner-body">
-                        ${itemsNeedSmoking.length > 0 ? `
-                            <div class="prod-banner-row">
-                                <span class="prod-banner-tag tag-deficit">🚨 DEFISIT HASIL ASAP:</span>
-                                <div class="prod-pills-list">
-                                    ${itemsNeedSmoking.map(m => `
-                                        <span class="prod-pill pill-deficit">
-                                            <span class="pill-name">${m.name}:</span>
-                                            <span class="pill-val-deficit">${Math.abs(Number(m.stock)).toLocaleString('id-ID')} ${m.unit}</span>
-                                            <span class="pill-badge-deficit">(${(Math.abs(Number(m.stock)) / 1000).toFixed(2)} kg matang)</span>
-                                        </span>
-                                    `).join('')}
-                                </div>
-                            </div>
-                            <div class="prod-banner-row" style="margin-top: 4px;">
-                                <span class="prod-banner-tag tag-estimate">🛒 ESTIMASI MENTAH (SUSUT ~30%):</span>
-                                <div class="prod-pills-list">
-                                    ${itemsNeedSmoking.map(m => {
-                                        const deficitGrams = Math.abs(Number(m.stock));
-                                        const rawGrams = Math.ceil(deficitGrams / 0.70);
-                                        const rawKg = (rawGrams / 1000).toFixed(2);
-                                        
-                                        const rawMatch = this.findMatchingRaw(m);
-                                        const freezerStock = rawMatch ? Math.max(0, Number(rawMatch.stock) || 0) : 0;
-                                        const stillNeedGrams = Math.max(0, rawGrams - freezerStock);
-                                        const stillNeedKg = (stillNeedGrams / 1000).toFixed(2);
-
-                                        if (freezerStock >= rawGrams) {
-                                            return `
-                                                <span class="prod-pill pill-freezer-ok">
-                                                    <span class="pill-name">${rawMatch ? rawMatch.name : m.name + ' Mentah'}:</span>
-                                                    <span style="color: #059669; font-weight: 700;">✅ Cukup di Freezer</span>
-                                                    <span class="pill-badge-freezer">(Ada ${(freezerStock / 1000).toFixed(2)} kg, butuh ~${rawKg} kg)</span>
-                                                </span>
-                                            `;
-                                        } else if (freezerStock > 0) {
-                                            return `
-                                                <span class="prod-pill pill-freezer-warn">
-                                                    <span class="pill-name">${rawMatch ? rawMatch.name : m.name + ' Mentah'}:</span>
-                                                    <span style="color: #D97706; font-weight: 700;">⚠️ Ada ${(freezerStock / 1000).toFixed(2)} kg di freezer</span>
-                                                    <span class="pill-badge-deficit">➔ Beli ~${stillNeedKg} kg lagi</span>
-                                                </span>
-                                            `;
-                                        } else {
-                                            return `
-                                                <span class="prod-pill pill-freezer-buy">
-                                                    <span class="pill-name">${rawMatch ? rawMatch.name : m.name + ' Mentah'}:</span>
-                                                    <span style="color: #DC2626; font-weight: 800;">🛒 Beli ~${rawKg} kg</span>
-                                                    <span class="pill-badge-deficit">(${rawGrams.toLocaleString('id-ID')} gr)</span>
-                                                </span>
-                                            `;
-                                        }
-                                    }).join('')}
-                                </div>
-                            </div>
-                        ` : `
-                            <div class="prod-banner-row">
-                                <span class="prod-banner-tag tag-cooked">🔥 DAGING MATANG READY:</span>
-                                <div class="prod-pills-list">
-                                    ${cookedMaterials.map(m => {
-                                        const stock = Math.max(0, Number(m.stock) || 0);
-                                        return `
-                                            <span class="prod-pill pill-cooked">
-                                                <span class="pill-name">${m.name}:</span>
-                                                <span class="pill-val">${stock.toLocaleString('id-ID')} ${m.unit}</span>
-                                                <span class="pill-badge">(${(stock / 1000).toFixed(2)} kg)</span>
-                                            </span>
-                                        `;
-                                    }).join('')}
-                                </div>
-                            </div>
-                        `}
-
-                        <!-- Baris Stok Mentah di Freezer (Persediaan Raw) -->
-                        <div class="prod-banner-row" style="margin-top: 4px;">
-                            <span class="prod-banner-tag tag-freezer">🧊 MENTAH DI FREEZER:</span>
+                        <!-- Baris 1: Defisit Hasil Smoke Matang -->
+                        <div class="prod-banner-row">
+                            <span class="prod-banner-tag tag-deficit">DEFISIT HASIL ASAP:</span>
                             <div class="prod-pills-list">
-                                ${rawFreezerMaterials.length > 0 ? rawFreezerMaterials.map(m => {
-                                    const stock = Math.max(0, Number(m.stock) || 0);
-                                    return `
-                                        <span class="prod-pill pill-freezer">
-                                            <span class="pill-name">${m.name}:</span>
-                                            <span class="pill-val-freezer">${stock.toLocaleString('id-ID')} ${m.unit}</span>
-                                            <span class="pill-badge-freezer">(${(stock / 1000).toFixed(2)} kg)</span>
-                                        </span>
-                                    `;
-                                }).join('') : `
-                                    <span style="font-size: 11.5px; color: #64748B; font-style: italic;">(Belum ada data stok mentah)</span>
-                                `}
+                                ${itemsNeedSmoking.map(m => `
+                                    <span class="prod-pill pill-deficit">
+                                        <span class="pill-name">${m.name}:</span>
+                                        <span class="pill-val-deficit">${Math.abs(Number(m.stock)).toLocaleString('id-ID')} ${m.unit}</span>
+                                        <span class="pill-badge-deficit">(${(Math.abs(Number(m.stock)) / 1000).toFixed(2)} kg matang)</span>
+                                    </span>
+                                `).join('')}
                             </div>
                         </div>
 
-                        ${itemsInTransit.length > 0 ? `
-                            <div class="prod-banner-row" style="margin-top: 4px;">
-                                <span class="prod-banner-tag tag-transit">🕒 STOK TRANSIT (BELUM BAYAR):</span>
-                                <div class="prod-pills-list">
-                                    ${itemsInTransit.map(m => {
-                                        const tr = (this.transitDemand[m.id] || 0);
-                                        const rawTrGrams = Math.ceil(tr / 0.70);
-                                        const rawTrKg = (rawTrGrams / 1000).toFixed(2);
+                        <!-- Baris 2: Estimasi Mentah & Cek Freezer -->
+                        <div class="prod-banner-row" style="margin-top: 6px;">
+                            <span class="prod-banner-tag tag-estimate">ESTIMASI MENTAH (SUSUT ~30%):</span>
+                            <div class="prod-pills-list">
+                                ${itemsNeedSmoking.map(m => {
+                                    const deficitGrams = Math.abs(Number(m.stock));
+                                    const rawGrams = Math.ceil(deficitGrams / 0.70);
+                                    const rawKg = (rawGrams / 1000).toFixed(2);
+                                    
+                                    const rawMatch = this.findMatchingRaw(m);
+                                    const freezerStock = rawMatch ? Math.max(0, Number(rawMatch.stock) || 0) : 0;
+                                    const stillNeedGrams = Math.max(0, rawGrams - freezerStock);
+                                    const stillNeedKg = (stillNeedGrams / 1000).toFixed(2);
+
+                                    if (freezerStock >= rawGrams) {
                                         return `
-                                            <span class="prod-pill pill-transit">
-                                                <span class="pill-name">${m.name}:</span>
-                                                <span style="font-weight: 800; color: #92400E;">${tr.toLocaleString('id-ID')} ${m.unit}</span>
-                                                <span class="pill-badge-transit">(Beli jika lunas: ~${rawTrKg} kg)</span>
+                                            <span class="prod-pill pill-freezer-ok">
+                                                <span class="pill-name">${rawMatch ? rawMatch.name : m.name + ' Mentah'}:</span>
+                                                <span style="color: #059669; font-weight: 700;">✅ Cukup di Freezer!</span>
+                                                <span class="pill-badge-freezer">(Ada ${(freezerStock / 1000).toFixed(2)} kg, butuh ~${rawKg} kg)</span>
                                             </span>
                                         `;
-                                    }).join('')}
-                                </div>
+                                    } else if (freezerStock > 0) {
+                                        return `
+                                            <span class="prod-pill pill-freezer-warn">
+                                                <span class="pill-name">${rawMatch ? rawMatch.name : m.name + ' Mentah'}:</span>
+                                                <span style="color: #D97706; font-weight: 700;">⚠️ Ada ${(freezerStock / 1000).toFixed(2)} kg di freezer</span>
+                                                <span class="pill-badge-deficit">➔ Beli ~${stillNeedKg} kg lagi</span>
+                                            </span>
+                                        `;
+                                    } else {
+                                        return `
+                                            <span class="prod-pill pill-freezer-buy">
+                                                <span class="pill-name">${rawMatch ? rawMatch.name : m.name + ' Mentah'}:</span>
+                                                <span style="color: #DC2626; font-weight: 800;">🛒 Beli ~${rawKg} kg</span>
+                                                <span class="pill-badge-deficit">(${rawGrams.toLocaleString('id-ID')} gr)</span>
+                                            </span>
+                                        `;
+                                    }
+                                }).join('')}
                             </div>
-                        ` : ''}
+                        </div>
                     </div>
                 </div>
             ` : `
                 <div class="production-summary-banner banner-safe">
                     <div class="prod-banner-header">
                         <div class="prod-banner-title">
-                            <span class="prod-banner-icon icon-safe">✅</span>
+                            <span class="prod-banner-icon icon-safe">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            </span>
                             <div>
-                                <strong style="font-size: 14px; color: #0F172A;">Status Kebutuhan Daging & Produksi Asap: <span style="color: #059669;">AMAN (Nihil)</span></strong>
-                                <div style="font-size: 11.5px; color: #64748B;">Semua pesanan lunas saat ini terpenuhi oleh stok ready di toko. Tidak ada defisit asap atau belanja mendesak.</div>
+                                <strong style="font-size: 14px; color: #0F172A;">Status Kebutuhan Daging & Produksi Asap: <span style="color: #059669;">AMAN</span></strong>
+                                <div style="font-size: 11.5px; color: #64748B;">Semua pesanan lunas saat ini terpenuhi oleh stok ready di toko.</div>
                             </div>
                         </div>
                         <button type="button" class="btn-banner-copy-mini btn-copy-safe" onclick="inventoryManager.copyShoppingList()">
-                            📋 Salin Rekap WhatsApp
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span>Salin ke WhatsApp</span>
                         </button>
                     </div>
                     <div class="prod-banner-body">
-                        <!-- Baris 1: Daging Matang Ready -->
                         <div class="prod-banner-row">
-                            <span class="prod-banner-tag tag-cooked">🔥 STOK READY AMAN:</span>
+                            <span class="prod-banner-tag tag-cooked">STOK READY AMAN:</span>
                             <div class="prod-pills-list">
                                 ${cookedMaterials.map(m => {
                                     const stock = Math.max(0, Number(m.stock) || 0);
@@ -605,32 +555,13 @@ class InventoryManager {
                                 }).join('')}
                             </div>
                         </div>
-
-                        <!-- Baris 2: Daging Mentah di Freezer -->
-                        <div class="prod-banner-row" style="margin-top: 4px;">
-                            <span class="prod-banner-tag tag-freezer">🧊 MENTAH DI FREEZER:</span>
-                            <div class="prod-pills-list">
-                                ${rawFreezerMaterials.length > 0 ? rawFreezerMaterials.map(m => {
-                                    const stock = Math.max(0, Number(m.stock) || 0);
-                                    return `
-                                        <span class="prod-pill pill-freezer">
-                                            <span class="pill-name">${m.name}:</span>
-                                            <span class="pill-val-freezer">${stock.toLocaleString('id-ID')} ${m.unit}</span>
-                                            <span class="pill-badge-freezer">(${(stock / 1000).toFixed(2)} kg)</span>
-                                        </span>
-                                    `;
-                                }).join('') : `
-                                    <span style="font-size: 11.5px; color: #64748B; font-style: italic;">(Belum ada data stok mentah)</span>
-                                `}
-                            </div>
-                        </div>
                     </div>
                 </div>
             `}
 
             <!-- SECTION 1: DAGING ASAP MATANG -->
             <div class="stock-section-title-wrap">
-                <h5 class="stock-section-title">🔥 Daging Asap Matang (Siap Saji / Resep Menu Kasir)</h5>
+                <h5 class="stock-section-title">Daging Asap Matang (Resep Menu Siap Saji)</h5>
                 <span class="stock-section-desc">Stok daging matang yang siap dipotong untuk pesanan pelanggan. Mengalami defisit jika ada PO masuk.</span>
             </div>
 
@@ -669,16 +600,16 @@ class InventoryManager {
                     });
 
                     let statusClass = 'status-safe';
-                    let statusLabel = '✅ Stok Ready Aman';
+                    let statusLabel = 'Stok Ready Aman';
                     if (harusDiasap > 0) {
                         statusClass = 'status-deficit';
-                        statusLabel = `🔥 Harus Diasap (${harusDiasap.toLocaleString('id-ID')} ${mat.unit})`;
+                        statusLabel = `Harus Diasap (${harusDiasap.toLocaleString('id-ID')} ${mat.unit})`;
                     } else if (readyStock <= 0) {
                         statusClass = 'status-out';
-                        statusLabel = '❌ Stok Ready Habis';
+                        statusLabel = 'Stok Ready Habis';
                     } else if (readyStock <= minStock) {
                         statusClass = 'status-low';
-                        statusLabel = '⚠️ Stok Menipis';
+                        statusLabel = 'Stok Menipis';
                     }
 
                     return `
@@ -708,7 +639,7 @@ class InventoryManager {
                                         <span class="stock-val-num">${transit.toLocaleString('id-ID')}</span>
                                         <span class="stock-val-unit">${mat.unit}</span>
                                     </div>
-                                    <span class="stock-metric-sub">🕒 Belum Bayar</span>
+                                    <span class="stock-metric-sub">Belum Bayar</span>
                                 </div>
 
                                 <div class="stock-metric-card metric-deficit ${harusDiasap > 0 ? 'has-deficit' : ''}">
@@ -717,14 +648,14 @@ class InventoryManager {
                                         <span class="stock-val-num">${harusDiasap.toLocaleString('id-ID')}</span>
                                         <span class="stock-val-unit">${mat.unit}</span>
                                     </div>
-                                    <span class="stock-metric-sub" title="${harusDiasap > 0 ? `🛒 Beli: ~${(Math.ceil(harusDiasap / 0.70) / 1000).toFixed(2)} kg mentah` : 'Aman (0 gr)'}">${harusDiasap > 0 ? `Beli ~${(Math.ceil(harusDiasap / 0.70) / 1000).toFixed(2)} kg` : 'Aman (0 gr)'}</span>
+                                    <span class="stock-metric-sub" title="${harusDiasap > 0 ? `Beli: ~${(Math.ceil(harusDiasap / 0.70) / 1000).toFixed(2)} kg mentah` : 'Aman (0 gr)'}">${harusDiasap > 0 ? `Beli ~${(Math.ceil(harusDiasap / 0.70) / 1000).toFixed(2)} kg` : 'Aman (0 gr)'}</span>
                                 </div>
                             </div>
 
                             <details class="portions-details-accordion">
                                 <summary class="portions-summary-btn">
                                     <span class="portions-summary-left">
-                                        📊 <strong>Estimasi Porsi Menu Ready</strong> (${usages.length} menu)
+                                        <strong>Estimasi Porsi Menu Ready</strong> (${usages.length} menu)
                                     </span>
                                     <span class="portions-chevron-icon">▼</span>
                                 </summary>
@@ -751,13 +682,15 @@ class InventoryManager {
                             <div class="raw-mat-actions" style="margin-top: 12px;">
                                 <div class="raw-mat-btn-row">
                                     <button type="button" class="btn-stock-custom-adjust" onclick="inventoryManager.openCustomAdjustModal('${mat.id}')">
-                                        ✏️ Atur / Masuk Stok (+ / -)
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                        <span>Atur Stok</span>
                                     </button>
                                     <button type="button" class="btn-stock-history-mini" onclick="inventoryManager.openHistoryForMaterial('${mat.id}')" title="Lihat riwayat mutasi stok ${mat.name}">
-                                        📜 Riwayat
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3"></path><circle cx="12" cy="12" r="9"></circle></svg>
+                                        <span>Riwayat</span>
                                     </button>
                                     <button type="button" class="btn-stock-delete" onclick="inventoryManager.handleDeleteRawMaterial('${mat.id}')" title="Hapus bahan baku">
-                                        🗑️
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                                     </button>
                                 </div>
                             </div>
@@ -768,7 +701,7 @@ class InventoryManager {
 
             <!-- SECTION 2: DAGING MENTAH FREEZER -->
             <div class="stock-section-title-wrap" style="margin-top: 24px;">
-                <h5 class="stock-section-title">🥩 Persediaan Daging Mentah (Freezer / Chiller)</h5>
+                <h5 class="stock-section-title">Persediaan Daging Mentah (Freezer / Chiller)</h5>
                 <span class="stock-section-desc">Catatan persediaan fisik daging mentah di freezer. Tambah stok saat belanja dari pasar / supplier.</span>
             </div>
 
@@ -781,18 +714,18 @@ class InventoryManager {
                     const harusDiasap = cookedMatch ? Math.abs(Math.min(0, Number(cookedMatch.stock) || 0)) : 0;
                     const rawNeededGrams = Math.ceil(harusDiasap / 0.70);
                     
-                    let shoppingStatusText = '✅ Stok Aman';
+                    let shoppingStatusText = 'Stok Aman';
                     let shoppingStatusClass = 'metric-safe';
                     let shoppingSubText = 'Tidak ada defisit PO';
                     
                     if (harusDiasap > 0) {
                         if (freezerStock >= rawNeededGrams) {
-                            shoppingStatusText = '✅ Cukup di Freezer';
+                            shoppingStatusText = 'Cukup di Freezer';
                             shoppingStatusClass = 'metric-safe';
                             shoppingSubText = `Sisa ~${((freezerStock - rawNeededGrams) / 1000).toFixed(2)} kg`;
                         } else {
                             const stillNeed = rawNeededGrams - freezerStock;
-                            shoppingStatusText = `🛒 Beli ~${(stillNeed / 1000).toFixed(2)} kg`;
+                            shoppingStatusText = `Beli ~${(stillNeed / 1000).toFixed(2)} kg`;
                             shoppingStatusClass = 'metric-deficit has-deficit';
                             shoppingSubText = freezerStock > 0 ? `Ada ${(freezerStock / 1000).toFixed(2)} kg` : 'Freezer kosong';
                         }
@@ -802,11 +735,11 @@ class InventoryManager {
                         <div class="raw-material-card card-raw-meat">
                             <div class="raw-mat-top">
                                 <div>
-                                    <div class="raw-mat-name" style="color: #0369A1;">🥩 ${mat.name}</div>
+                                    <div class="raw-mat-name" style="color: #0369A1;">${mat.name}</div>
                                     <span class="raw-mat-id">ID: ${mat.id} • Daging Mentah Freezer</span>
                                 </div>
                                 <span class="stock-status-pill ${freezerStock <= 0 ? 'status-out' : (freezerStock <= minStock ? 'status-low' : 'status-safe')}">
-                                    ${freezerStock <= 0 ? '❌ Kosong' : (freezerStock <= minStock ? '⚠️ Menipis' : '✅ Ada di Freezer')}
+                                    ${freezerStock <= 0 ? 'Kosong' : (freezerStock <= minStock ? 'Menipis' : 'Ada di Freezer')}
                                 </span>
                             </div>
 
@@ -841,13 +774,15 @@ class InventoryManager {
                             <div class="raw-mat-actions" style="margin-top: 14px;">
                                 <div class="raw-mat-btn-row">
                                     <button type="button" class="btn-stock-custom-adjust" onclick="inventoryManager.openCustomAdjustModal('${mat.id}')">
-                                        ✏️ Atur / Opname Mentah (+ / -)
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                        <span>Atur Stok</span>
                                     </button>
                                     <button type="button" class="btn-stock-history-mini" onclick="inventoryManager.openHistoryForMaterial('${mat.id}')" title="Lihat riwayat mutasi stok ${mat.name}">
-                                        📜 Riwayat
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3"></path><circle cx="12" cy="12" r="9"></circle></svg>
+                                        <span>Riwayat</span>
                                     </button>
                                     <button type="button" class="btn-stock-delete" onclick="inventoryManager.handleDeleteRawMaterial('${mat.id}')" title="Hapus bahan mentah">
-                                        🗑️
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                                     </button>
                                 </div>
                             </div>
@@ -867,7 +802,7 @@ class InventoryManager {
             <div class="stock-tab-header">
                 <div>
                     <h4 style="font-size: 15px; font-weight: 800; color: var(--secondary); margin-bottom: 2px;">
-                        📦 Stok Barang Jadi (Direct Stock)
+                        Stok Barang Jadi (Direct Stock)
                     </h4>
                     <p style="font-size: 12px; color: #64748B;">
                         Stok untuk produk kemasan/barang jadi yang dibeli per pcs/unit (contoh: Air Mineral botol).
@@ -877,8 +812,7 @@ class InventoryManager {
 
             ${directProducts.length === 0 ? `
                 <div style="text-align: center; padding: 40px; color: #94A3B8;">
-                    <div style="font-size: 32px; margin-bottom: 8px;">🥤</div>
-                    <div style="font-weight: 700;">Belum ada menu dengan tipe "Stok Barang Jadi"</div>
+                    <div style="font-weight: 700; font-size: 14px; color: #64748B;">Belum ada menu dengan tipe "Stok Barang Jadi"</div>
                     <div style="font-size: 12px; margin-top: 4px;">Anda dapat mengatur tipe stok produk melalui menu <strong>Kelola Menu</strong>.</div>
                 </div>
             ` : `
@@ -914,7 +848,6 @@ class InventoryManager {
                                         <td style="text-align: center; font-weight: 700; color: #64748B;">${idx + 1}</td>
                                         <td>
                                             <div class="admin-prod-identity">
-                                                <span class="admin-prod-emoji">${p.emoji || '🥤'}</span>
                                                 <div>
                                                     <div class="admin-prod-name">${p.name}</div>
                                                     <div class="admin-prod-code">Kode: <strong>${p.id}</strong></div>
@@ -932,8 +865,14 @@ class InventoryManager {
                                                 <button type="button" class="btn-restock-pill" onclick="inventoryManager.adjustDirectStock('${p.id}', 6)" title="Tambah 6 unit">+6</button>
                                                 <button type="button" class="btn-restock-pill" onclick="inventoryManager.adjustDirectStock('${p.id}', 12)" title="Tambah 12 unit">+12</button>
                                                 <button type="button" class="btn-restock-pill" onclick="inventoryManager.adjustDirectStock('${p.id}', 24)" title="Tambah 24 unit">+24</button>
-                                                <button type="button" class="btn-stock-custom-adjust-mini" onclick="inventoryManager.openCustomAdjustModal('${p.id}', 'set')">✏️ Set Nilai (+ / -)</button>
-                                                <button type="button" class="btn-stock-history-mini" style="padding: 4px 8px; font-size: 11px;" onclick="inventoryManager.openHistoryForMaterial('${p.id}')" title="Lihat riwayat stok ${p.name}">📜 Riwayat</button>
+                                                <button type="button" class="btn-stock-custom-adjust-mini" onclick="inventoryManager.openCustomAdjustModal('${p.id}', 'set')">
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                                    <span>Atur</span>
+                                                </button>
+                                                <button type="button" class="btn-stock-history-mini" style="padding: 4px 8px; font-size: 11px;" onclick="inventoryManager.openHistoryForMaterial('${p.id}')" title="Lihat riwayat stok ${p.name}">
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3"></path><circle cx="12" cy="12" r="9"></circle></svg>
+                                                    <span>Riwayat</span>
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -954,7 +893,7 @@ class InventoryManager {
             <div class="stock-tab-header">
                 <div>
                     <h4 style="font-size: 15px; font-weight: 800; color: var(--secondary); margin-bottom: 2px;">
-                        📋 Tinjauan Kesiapan Jual Seluruh Menu
+                        Tinjauan Kesiapan Jual Menu
                     </h4>
                     <p style="font-size: 12px; color: #64748B;">
                         Status ketersediaan porsi menu kasir dihitung secara otomatis berdasarkan sisa bahan baku atau stok langsung.
@@ -984,7 +923,7 @@ class InventoryManager {
                             let portionDisplay = '<span class="text-success font-bold">Tersedia (Bebas)</span>';
 
                             if (hasVariants) {
-                                typeBadge = '<span class="badge-stock-type type-variant">✨ Multi-Varian</span>';
+                                typeBadge = '<span class="badge-stock-type type-variant">Multi-Varian</span>';
                                 const varBreakdown = p.variants.map(v => {
                                     const vPortions = this.getVariantPortions(v);
                                     const ingTexts = (v.ingredients || []).map(ing => {
@@ -1007,11 +946,11 @@ class InventoryManager {
                                 detailText = `<div class="variant-avail-list">${varBreakdown}</div>`;
 
                                 if (portions === 0) {
-                                    portionDisplay = '<span class="stock-status-pill status-out">❌ Semua Habis</span>';
+                                    portionDisplay = '<span class="stock-status-pill status-out">Semua Habis</span>';
                                 } else if (portions <= 5) {
-                                    portionDisplay = `<span class="stock-status-pill status-low">⚠️ Sisa <strong>${portions}</strong> porsi total</span>`;
+                                    portionDisplay = `<span class="stock-status-pill status-low">Sisa <strong>${portions}</strong> porsi total</span>`;
                                 } else {
-                                    portionDisplay = `<span class="stock-status-pill status-safe">✅ <strong>${portions}</strong> porsi total</span>`;
+                                    portionDisplay = `<span class="stock-status-pill status-safe"><strong>${portions}</strong> porsi total</span>`;
                                 }
                             } else if (stockType === 'raw_material') {
                                 const mat = this.getRawMaterialById(p.rawMaterialId);
@@ -1022,21 +961,21 @@ class InventoryManager {
                                 detailText = `<div class="variant-avail-row">• Bahan: <strong>${matName}</strong> (${p.rawMaterialAmount} ${unit}/porsi) <span class="variant-avail-ing">&bull; Sisa: ${matStock.toLocaleString('id-ID')} ${unit}</span></div>`;
 
                                 if (portions === 0) {
-                                    portionDisplay = '<span class="stock-status-pill status-out">❌ Habis (0 porsi)</span>';
+                                    portionDisplay = '<span class="stock-status-pill status-out">Habis (0 porsi)</span>';
                                 } else if (portions <= 5) {
-                                    portionDisplay = `<span class="stock-status-pill status-low">⚠️ Sisa <strong>${portions}</strong> porsi</span>`;
+                                    portionDisplay = `<span class="stock-status-pill status-low">Sisa <strong>${portions}</strong> porsi</span>`;
                                 } else {
-                                    portionDisplay = `<span class="stock-status-pill status-safe">✅ Sisa <strong>${portions}</strong> porsi</span>`;
+                                    portionDisplay = `<span class="stock-status-pill status-safe">Sisa <strong>${portions}</strong> porsi</span>`;
                                 }
                             } else if (stockType === 'direct') {
                                 typeBadge = '<span class="badge-stock-type type-direct">Barang Jadi</span>';
                                 detailText = `<div class="variant-avail-row">• Stok fisik unit produk</div>`;
                                 if (portions === 0) {
-                                    portionDisplay = '<span class="stock-status-pill status-out">❌ Habis (0 unit)</span>';
+                                    portionDisplay = '<span class="stock-status-pill status-out">Habis (0 unit)</span>';
                                 } else if (portions <= 5) {
-                                    portionDisplay = `<span class="stock-status-pill status-low">⚠️ Sisa <strong>${portions}</strong> unit</span>`;
+                                    portionDisplay = `<span class="stock-status-pill status-low">Sisa <strong>${portions}</strong> unit</span>`;
                                 } else {
-                                    portionDisplay = `<span class="stock-status-pill status-safe">✅ Sisa <strong>${portions}</strong> unit</span>`;
+                                    portionDisplay = `<span class="stock-status-pill status-safe">Sisa <strong>${portions}</strong> unit</span>`;
                                 }
                             }
 
@@ -1710,7 +1649,7 @@ class InventoryManager {
             <div class="stock-tab-header">
                 <div>
                     <h4 style="font-size: 15px; font-weight: 800; color: var(--secondary); margin-bottom: 2px;">
-                        📜 Riwayat Perubahan & Mutasi Stok
+                        Riwayat Perubahan & Mutasi Stok
                     </h4>
                     <p style="font-size: 12px; color: #64748B;">
                         Catatan audit transparan: siapa yang menginput stok, kapan, berapa banyak penambahan/pengurangan, dan stok akhir.
@@ -1718,7 +1657,7 @@ class InventoryManager {
                 </div>
                 <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                     <button type="button" class="btn-stock-history-nav" onclick="inventoryManager.refreshStockHistory()">
-                        🔄 Segarkan Data
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Segarkan Data
                     </button>
                 </div>
             </div>
@@ -1726,13 +1665,13 @@ class InventoryManager {
             <!-- Kartu Ringkasan Riwayat -->
             <div class="stock-history-summary-cards">
                 <div class="stock-history-card">
-                    <div class="stock-hist-card-label">📊 Total Catatan Mutasi</div>
+                    <div class="stock-hist-card-label">Total Catatan Mutasi</div>
                     <div class="stock-hist-card-val">${totalLogs} Log</div>
                     <div class="stock-hist-card-sub">Tersinkronisasi otomatis dengan database</div>
                 </div>
 
                 <div class="stock-history-card card-hist-add">
-                    <div class="stock-hist-card-label" style="color: #166534;">➕ Terakhir Ditambah / Restock</div>
+                    <div class="stock-hist-card-label" style="color: #166534;">Terakhir Ditambah / Restock</div>
                     <div class="stock-hist-card-val" style="color: #15803D;">
                         ${lastAdd ? `+${Number(lastAdd.amount).toLocaleString('id-ID')} ${lastAdd.unit || 'gr'}` : '-'}
                     </div>
@@ -1742,7 +1681,7 @@ class InventoryManager {
                 </div>
 
                 <div class="stock-history-card card-hist-reduce">
-                    <div class="stock-hist-card-label" style="color: #991B1B;">➖ Terakhir Berkurang / Terjual</div>
+                    <div class="stock-hist-card-label" style="color: #991B1B;">Terakhir Berkurang / Terjual</div>
                     <div class="stock-hist-card-val" style="color: #DC2626;">
                         ${lastReduce ? `${Number(lastReduce.amount).toLocaleString('id-ID')} ${lastReduce.unit || 'gr'}` : '-'}
                     </div>
@@ -1757,15 +1696,15 @@ class InventoryManager {
                 <div class="stock-hist-tool-left">
                     <div class="stock-hist-search-wrap">
                         <input type="text" id="stockHistSearchInput" class="stock-hist-search-input" 
-                            placeholder="🔍 Cari nama bahan / kasir / catatan..." 
+                            placeholder="Cari nama bahan / kasir / catatan..." 
                             value="${this.historySearchTerm || ''}"
                             oninput="inventoryManager.handleHistorySearchInput(this.value)">
                     </div>
 
                     <div class="stock-hist-select-wrap">
                         <select id="stockHistFilterMat" class="stock-hist-filter-select" onchange="inventoryManager.handleHistoryFilterMaterial(this.value)">
-                            <option value="all">🌾 Semua Bahan & Produk</option>
-                            <optgroup label="🌾 Bahan Baku Utama (Resep Master)">
+                            <option value="all">Semua Bahan & Produk</option>
+                            <optgroup label="Bahan Baku Utama (Resep Master)">
                                 ${this.rawMaterials.map(m => `
                                     <option value="${m.id}" ${this.historyFilterMaterial === m.id ? 'selected' : ''}>
                                         ${m.name} (${m.unit})
@@ -1773,7 +1712,7 @@ class InventoryManager {
                                 `).join('')}
                             </optgroup>
                             ${directProducts.length > 0 ? `
-                                <optgroup label="🥤 Stok Barang Jadi (Fisik)">
+                                <optgroup label="Stok Barang Jadi (Fisik)">
                                     ${directProducts.map(p => `
                                         <option value="${p.id}" ${this.historyFilterMaterial === p.id ? 'selected' : ''}>
                                             ${p.name} (pcs)
@@ -1786,21 +1725,21 @@ class InventoryManager {
 
                     <div class="stock-hist-select-wrap">
                         <select id="stockHistFilterType" class="stock-hist-filter-select" onchange="inventoryManager.handleHistoryFilterType(this.value)">
-                            <option value="all" ${this.historyFilterType === 'all' ? 'selected' : ''}>📋 Semua Operasi</option>
-                            <option value="add" ${this.historyFilterType === 'add' ? 'selected' : ''}>➕ Tambah Stok (Add / Restock)</option>
-                            <option value="reduce" ${this.historyFilterType === 'reduce' ? 'selected' : ''}>➖ Kurangi Stok (Manual)</option>
-                            <option value="set" ${this.historyFilterType === 'set' ? 'selected' : ''}>📝 Set Total (Opname)</option>
-                            <option value="order_deduct" ${this.historyFilterType === 'order_deduct' ? 'selected' : ''}>🛒 Penjualan Kasir (Order Deduct)</option>
-                            <option value="void_restore" ${this.historyFilterType === 'void_restore' ? 'selected' : ''}>↩️ Pengembalian Void</option>
+                            <option value="all" ${this.historyFilterType === 'all' ? 'selected' : ''}>Semua Operasi</option>
+                            <option value="add" ${this.historyFilterType === 'add' ? 'selected' : ''}>Tambah Stok (Restock)</option>
+                            <option value="reduce" ${this.historyFilterType === 'reduce' ? 'selected' : ''}>Kurangi Stok (Manual)</option>
+                            <option value="set" ${this.historyFilterType === 'set' ? 'selected' : ''}>Set Total (Opname)</option>
+                            <option value="order_deduct" ${this.historyFilterType === 'order_deduct' ? 'selected' : ''}>Penjualan Kasir (Order Deduct)</option>
+                            <option value="void_restore" ${this.historyFilterType === 'void_restore' ? 'selected' : ''}>Pengembalian Void</option>
                         </select>
                     </div>
 
                     <div class="stock-hist-select-wrap">
                         <select id="stockHistFilterAuthor" class="stock-hist-filter-select" onchange="inventoryManager.handleHistoryFilterAuthor(this.value)">
-                            <option value="all" ${this.historyFilterAuthor === 'all' ? 'selected' : ''}>👤 Semua Petugas / Kasir</option>
+                            <option value="all" ${this.historyFilterAuthor === 'all' ? 'selected' : ''}>Semua Petugas / Kasir</option>
                             ${authors.map(a => `
                                 <option value="${a}" ${this.historyFilterAuthor.toLowerCase() === a.toLowerCase() ? 'selected' : ''}>
-                                    👤 ${a}
+                                    ${a}
                                 </option>
                             `).join('')}
                         </select>
@@ -1852,7 +1791,7 @@ class InventoryManager {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="9" style="text-align: center; padding: 40px 20px; color: #64748B;">
-                        <div style="font-size: 28px; margin-bottom: 8px;">📭</div>
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.75" style="margin-bottom: 8px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                         <div style="font-weight: 700; font-size: 14px; color: #334155;">Belum Ada Riwayat Perubahan Stok Sesuai Filter</div>
                         <div style="font-size: 12px; margin-top: 4px;">Setiap kali Anda menambah, mengurangi, atau menjual porsi menu, riwayatnya akan otomatis tercatat di sini.</div>
                     </td>
@@ -1879,19 +1818,19 @@ class InventoryManager {
             let typeBadge = '';
             switch (log.changeType) {
                 case 'add':
-                    typeBadge = `<span class="badge-stock-type badge-stock-add">➕ Tambah</span>`;
+                    typeBadge = `<span class="badge-stock-type badge-stock-add">Tambah</span>`;
                     break;
                 case 'reduce':
-                    typeBadge = `<span class="badge-stock-type badge-stock-reduce">➖ Kurang</span>`;
+                    typeBadge = `<span class="badge-stock-type badge-stock-reduce">Kurang</span>`;
                     break;
                 case 'set':
-                    typeBadge = `<span class="badge-stock-type badge-stock-set">📝 Set Opname</span>`;
+                    typeBadge = `<span class="badge-stock-type badge-stock-set">Set Opname</span>`;
                     break;
                 case 'order_deduct':
-                    typeBadge = `<span class="badge-stock-type badge-stock-order">🛒 Kasir / PO</span>`;
+                    typeBadge = `<span class="badge-stock-type badge-stock-order">Kasir / PO</span>`;
                     break;
                 case 'void_restore':
-                    typeBadge = `<span class="badge-stock-type badge-stock-restore">↩️ Void Batal</span>`;
+                    typeBadge = `<span class="badge-stock-type badge-stock-restore">Void Batal</span>`;
                     break;
                 default:
                     typeBadge = `<span class="badge-stock-type">${log.changeType || 'Update'}</span>`;
@@ -1900,7 +1839,7 @@ class InventoryManager {
             const isPositive = amt > 0;
             const amtColor = isPositive ? '#16A34A' : (amt < 0 ? '#DC2626' : '#475569');
 
-            const itemTypeLabel = log.itemType === 'direct_product' ? '🥤 Barang Jadi' : '🌾 Bahan Baku';
+            const itemTypeLabel = log.itemType === 'direct_product' ? 'Barang Jadi' : 'Bahan Baku';
 
             return `
                 <tr>
@@ -1910,7 +1849,7 @@ class InventoryManager {
                     </td>
                     <td style="white-space: nowrap;">
                         <span class="stock-hist-author-pill">
-                            👤 <strong>${log.author || 'Kasir'}</strong>
+                            <strong>${log.author || 'Kasir'}</strong>
                         </span>
                     </td>
                     <td style="white-space: nowrap; min-width: 190px;">
@@ -1999,7 +1938,7 @@ class InventoryManager {
                 this.renderStockHistoryTab(contentEl);
             }
             if (typeof showPosToast === 'function') {
-                showPosToast('🔄 Riwayat stok berhasil diperbarui', 2000);
+                showPosToast('Riwayat stok berhasil diperbarui', 2000);
             }
         } catch (e) {
             alert('Gagal merefresh riwayat stok: ' + e.message);

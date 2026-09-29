@@ -118,13 +118,59 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    // 6. Pencarian Produk
+    // 6. Pencarian Produk (Desktop & Mobile Thumbnail)
     const searchInput = document.getElementById('searchMenuInput');
+    const searchClearBtn = document.getElementById('btnSearchClear');
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
-            productManager.setSearch(e.target.value);
+            const val = e.target.value;
+            productManager.setSearch(val);
+            if (searchClearBtn) {
+                searchClearBtn.style.display = val.trim() ? 'inline-flex' : 'none';
+            }
         });
     }
+
+    window.toggleMobileSearch = function(e) {
+        if (e) e.stopPropagation();
+        const box = document.getElementById('searchBoxExpandable');
+        const input = document.getElementById('searchMenuInput');
+        if (!box) return;
+        const isOpen = box.classList.contains('is-open');
+        if (isOpen) {
+            box.classList.remove('is-open');
+        } else {
+            box.classList.add('is-open');
+            if (input) {
+                setTimeout(() => input.focus(), 60);
+            }
+        }
+    };
+
+    window.closeMobileSearch = function(e) {
+        if (e) e.stopPropagation();
+        const box = document.getElementById('searchBoxExpandable');
+        const input = document.getElementById('searchMenuInput');
+        const clearBtn = document.getElementById('btnSearchClear');
+        if (box) box.classList.remove('is-open');
+        if (input && input.value) {
+            input.value = '';
+            if (typeof productManager !== 'undefined') productManager.setSearch('');
+        }
+        if (clearBtn) clearBtn.style.display = 'none';
+    };
+
+    window.clearSearchMenu = function(e) {
+        if (e) e.stopPropagation();
+        const input = document.getElementById('searchMenuInput');
+        const clearBtn = document.getElementById('btnSearchClear');
+        if (input) {
+            input.value = '';
+            input.focus();
+            if (typeof productManager !== 'undefined') productManager.setSearch('');
+        }
+        if (clearBtn) clearBtn.style.display = 'none';
+    };
 
     // 7. Input Pembayaran Tunai
     const cashInput = document.getElementById('cashInput');
@@ -207,7 +253,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             this.classList.add('active');
             currentDiscMode = this.dataset.mode;
             if (discValInput) {
-                discValInput.placeholder = currentDiscMode === 'percent' ? 'Diskon (%) misal: 10' : 'Diskon (Rp) misal: 5000';
+                discValInput.placeholder = currentDiscMode === 'percent' ? 'Diskon (%)' : 'Diskon (Rp)';
             }
             if (discValInput && discValInput.value) {
                 cartManager.setFinalDiscount(currentDiscMode, discValInput.value, discNoteInput ? discNoteInput.value : '');
@@ -619,24 +665,24 @@ function renderHistoryTableRows(orders) {
 
         let statusTagHtml = '';
         if (isVoid) {
-            statusTagHtml = '<div class="tag-void-mini">⚠️ VOID</div>';
+            statusTagHtml = '<div class="tag-void-mini">VOID</div>';
         } else if (isUnpaid) {
-            statusTagHtml = '<div class="tag-unpaid-mini">🕒 BELUM BAYAR</div>';
+            statusTagHtml = '<div class="tag-unpaid-mini">BELUM BAYAR</div>';
         } else if (isPendingPo) {
-            statusTagHtml = '<div class="tag-po-mini">📦 MENUNGGU PICKUP</div>';
+            statusTagHtml = '<div class="tag-po-mini">MENUNGGU PICKUP</div>';
         } else {
             // Selesai / Lunas
             if (o.orderType === 'take_away') {
                 const isDelivery = o.pickupMethod === 'ojol' || o.pickupMethod === 'delivery';
                 if (isDelivery) {
                     const timeInfo = o.pickedUpAt ? ` (${formatDateTime(o.pickedUpAt)})` : '';
-                    statusTagHtml = `<div class="tag-completed-mini" title="Pesanan telah selesai dan dikirim via ${o.pickupMethod === 'ojol' ? 'Ojol / Kurir' : 'Kurir Toko'}${timeInfo}">🛵 SUDAH KIRIM</div>`;
+                    statusTagHtml = `<div class="tag-completed-mini" title="Pesanan telah selesai dan dikirim via ${o.pickupMethod === 'ojol' ? 'Ojol / Kurir' : 'Kurir Toko'}${timeInfo}">SUDAH KIRIM</div>`;
                 } else {
                     const timeInfo = o.pickedUpAt ? ` (${formatDateTime(o.pickedUpAt)})` : '';
-                    statusTagHtml = `<div class="tag-completed-mini" title="Pesanan telah selesai diambil di toko${timeInfo}">🏪 SUDAH DIAMBIL</div>`;
+                    statusTagHtml = `<div class="tag-completed-mini" title="Pesanan telah selesai diambil di toko${timeInfo}">SUDAH DIAMBIL</div>`;
                 }
             } else {
-                statusTagHtml = '<div class="tag-completed-mini">✅ SELESAI</div>';
+                statusTagHtml = '<div class="tag-completed-mini">SELESAI</div>';
             }
         }
 
@@ -657,7 +703,7 @@ function renderHistoryTableRows(orders) {
                 <td class="col-invoice-cell">
                     <div class="invoice-num-text"><strong>${o.invoiceNo}</strong></div>
                     ${statusTagHtml}
-                    ${o.resiPrintedAt ? `<div class="badge-resi-printed-tag" title="Resi dicetak: ${formatDateTime(o.resiPrintedAt)}">🖨️ Resi Dicetak</div>` : ''}
+                    ${o.resiPrintedAt ? `<div class="badge-resi-printed-tag" title="Resi dicetak: ${formatDateTime(o.resiPrintedAt)}">Resi Dicetak</div>` : ''}
                     <div class="invoice-cashier-text">Kasir: <strong>${cashierName}</strong></div>
                 </td>
                 <td class="col-time-cell" style="white-space: nowrap;">${formatDateTime(o.createdAt)}</td>
@@ -666,13 +712,13 @@ function renderHistoryTableRows(orders) {
                     <div class="customer-type-row">
                         <span class="order-badge ${o.orderType === 'dine_in' ? 'badge-dine-in' : 'badge-take-away'}">${o.orderType === 'dine_in' ? 'Dine In' : 'Take Away (PO)'}</span>
                     </div>
-                    ${o.notes ? `<div class="customer-notes-mini" title="${o.notes}">📝 <em>${o.notes}</em></div>` : ''}
+                    ${o.notes ? `<div class="customer-notes-mini" title="${o.notes}"><em>${o.notes}</em></div>` : ''}
                 </td>
                 <td class="col-schedule-cell" style="white-space: nowrap;">
                     ${o.orderType === 'take_away' && o.pickupDate ? `
-                        <div class="schedule-date-text">⏰ <strong>${o.pickupDate}</strong> ${o.pickupTime ? `(${o.pickupTime})` : ''}</div>
-                        <div class="schedule-method-text">${o.pickupMethod === 'ojol' ? '🛵 Ojol / Kurir' : (o.pickupMethod === 'delivery' ? '🚚 Diantar' : '🏪 Ambil Toko')}</div>
-                        ${o.pickupAddress ? `<div class="schedule-addr-text" title="${o.pickupAddress}">📍 ${o.pickupAddress}</div>` : ''}
+                        <div class="schedule-date-text"><strong>${o.pickupDate}</strong> ${o.pickupTime ? `(${o.pickupTime})` : ''}</div>
+                        <div class="schedule-method-text">${o.pickupMethod === 'ojol' ? 'Ojol / Kurir' : (o.pickupMethod === 'delivery' ? 'Diantar' : 'Ambil di Toko')}</div>
+                        ${o.pickupAddress ? `<div class="schedule-addr-text" title="${o.pickupAddress}">${o.pickupAddress}</div>` : ''}
                     ` : `
                         <span style="color: #94A3B8; font-size: 11px;">-</span>
                     `}
@@ -721,41 +767,52 @@ function renderHistoryTableRows(orders) {
                     <div class="table-action-btns-row">
                         ${isVoid ? `
                             <button type="button" class="btn-table-reprint" onclick="reprintOrder('${o.invoiceNo}')" title="Cetak Ulang Struk">
-                                🖨️ Struk
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                                <span>Struk</span>
                             </button>
                             <button type="button" class="btn-table-resi ${o.resiPrintedAt ? 'is-printed' : ''}" onclick="activeOrdersManager.printSingleResi('${o.invoiceNo}')" title="${o.resiPrintedAt ? 'Resi sudah dicetak (' + formatDateTime(o.resiPrintedAt) + '). Klik cetak ulang.' : 'Cetak Resi Label 58mm'}">
-                                ${o.resiPrintedAt ? '✅ Resi' : '🏷️ Resi'}
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                                <span>${o.resiPrintedAt ? 'Resi (OK)' : 'Resi'}</span>
                             </button>
                             <span class="badge-void" style="width: 68px;">VOID</span>
                         ` : (isUnpaid ? `
                             <button type="button" class="btn-table-pay" onclick="activeOrdersManager.proceedPayment('${o.invoiceNo}')" title="Bayar & Selesaikan Sekarang">
-                                💳 Bayar
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                                <span>Bayar</span>
                             </button>
                             <button type="button" class="btn-table-reprint" onclick="reprintOrder('${o.invoiceNo}')" title="Cetak Struk / Tagihan">
-                                🖨️ Struk
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                                <span>Struk</span>
                             </button>
-                            <button type="button" class="btn-table-del" onclick="activeOrdersManager.cancelOrder('${o.invoiceNo}')" title="Hapus Tagihan (Delete Transaction)">
-                                🗑️ Hapus
+                            <button type="button" class="btn-table-del" onclick="activeOrdersManager.cancelOrder('${o.invoiceNo}')" title="Hapus Tagihan">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                <span>Hapus</span>
                             </button>
                         ` : (isPendingPo ? `
                             <button type="button" class="btn-table-pickup" onclick="activeOrdersManager.markPickedUp('${o.invoiceNo}')" title="Tandai Sudah Diambil">
-                                ✅ Diambil
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                <span>Diambil</span>
                             </button>
                             <button type="button" class="btn-table-reprint" onclick="reprintOrder('${o.invoiceNo}')" title="Cetak Ulang Struk">
-                                🖨️ Struk
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                                <span>Struk</span>
                             </button>
                             <button type="button" class="btn-table-void" onclick="openVoidModal('${o.invoiceNo}')" title="Batalkan Transaksi (Void)">
-                                ⚠️ Void
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                                <span>Void</span>
                             </button>
                         ` : `
                             <button type="button" class="btn-table-reprint" onclick="reprintOrder('${o.invoiceNo}')" title="Cetak Ulang Struk">
-                                🖨️ Struk
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                                <span>Struk</span>
                             </button>
                             <button type="button" class="btn-table-resi ${o.resiPrintedAt ? 'is-printed' : ''}" onclick="activeOrdersManager.printSingleResi('${o.invoiceNo}')" title="${o.resiPrintedAt ? 'Resi sudah dicetak (' + formatDateTime(o.resiPrintedAt) + '). Klik cetak ulang.' : 'Cetak Resi Label 58mm'}">
-                                ${o.resiPrintedAt ? '✅ Resi' : '🏷️ Resi'}
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                                <span>${o.resiPrintedAt ? 'Resi (OK)' : 'Resi'}</span>
                             </button>
                             <button type="button" class="btn-table-void" onclick="openVoidModal('${o.invoiceNo}')" title="Batalkan Transaksi (Void)">
-                                ⚠️ Void
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                                <span>Void</span>
                             </button>
                         `))}
                     </div>
@@ -1493,12 +1550,12 @@ class ActiveOrdersManager {
                                     : '<span class="text-muted-mini">-</span>';
                                 return `
                                     <tr class="active-order-row row-unpaid ${isSelected ? 'is-selected-bulk' : ''}" id="orderRow_${o.invoiceNo}">
-                                        <td style="text-align: center;">
+                                        <td class="cell-check" style="text-align: center;">
                                             <input type="checkbox" class="order-row-checkbox" value="${o.invoiceNo}" 
                                                    ${isSelected ? 'checked' : ''} 
                                                    onchange="activeOrdersManager.toggleOrder('${o.invoiceNo}', this.checked)">
                                         </td>
-                                        <td>
+                                        <td class="cell-inv">
                                             <div class="active-inv-num">${o.invoiceNo}</div>
                                             <div class="active-badge-status status-unpaid">🕒 Belum Bayar</div>
                                             ${o.resiPrintedAt ? `
@@ -1512,43 +1569,52 @@ class ActiveOrdersManager {
                                             `}
                                             <div class="active-time-text">${formatDateTime(o.createdAt)}</div>
                                         </td>
-                                        <td>
+                                        <td class="cell-cust" onclick="activeOrdersManager.toggleDetails('${o.invoiceNo}')">
                                             <div class="active-cust-name">👤 ${o.customerName || 'Pelanggan'}</div>
                                             <div class="active-cust-meta">
                                                 <span class="order-badge ${o.orderType === 'dine_in' ? 'badge-dine-in' : 'badge-take-away'}">${o.orderType === 'dine_in' ? 'Dine In' : 'Take Away (PO)'}</span>
                                             </div>
                                             ${o.notes ? `<div class="active-notes-tag">📝 <em>${o.notes}</em></div>` : ''}
                                         </td>
-                                        <td>
+                                        <td class="cell-sched">
                                             ${o.orderType === 'take_away' && o.pickupDate ? `
-                                                <div class="active-sched-date">📅 <strong>${o.pickupDate}</strong> ${o.pickupTime ? `(${o.pickupTime})` : ''}</div>
-                                                <div class="active-sched-method">${o.pickupMethod === 'ojol' ? '🛵 Ojol / Kurir' : (o.pickupMethod === 'delivery' ? '🚚 Diantar Toko' : '🏪 Ambil di Toko')}</div>
-                                                ${o.pickupAddress ? `<div class="active-sched-addr" title="${o.pickupAddress}">📍 ${o.pickupAddress}</div>` : ''}
+                                                <div class="active-sched-box">
+                                                    <div class="active-sched-date">📅 <strong>${o.pickupDate}</strong> ${o.pickupTime ? `(${o.pickupTime})` : ''}</div>
+                                                    <div class="active-sched-method">${o.pickupMethod === 'ojol' ? '🛵 Ojol / Kurir' : (o.pickupMethod === 'delivery' ? '🚚 Diantar Toko' : '🏪 Ambil di Toko')}</div>
+                                                    ${o.pickupAddress ? `<div class="active-sched-addr" title="${o.pickupAddress}">📍 ${o.pickupAddress}</div>` : ''}
+                                                </div>
                                             ` : `<span class="text-muted-mini">${o.orderType === 'dine_in' ? 'Makan di Tempat' : '-'}</span>`}
                                         </td>
-                                        <td>
+                                        <td class="cell-items">
                                             ${itemsHtml}
                                         </td>
-                                        <td style="text-align: right;">
+                                        <td class="cell-total" style="text-align: right;" onclick="activeOrdersManager.toggleDetails('${o.invoiceNo}')">
                                             <div class="active-total-num">${formatRupiah(o.totalAmount)}</div>
                                         </td>
-                                        <td style="text-align: center;">
+                                        <td class="cell-actions" style="text-align: center;">
                                             <div class="active-table-actions">
-                                                <button type="button" class="btn-act-table btn-active-pay" onclick="activeOrdersManager.proceedPayment('${o.invoiceNo}')" title="Bayar / Lunasi">
-                                                    💳 Bayar
-                                                </button>
-                                                <button type="button" class="btn-act-table btn-active-edit" onclick="activeOrdersManager.editOrder('${o.invoiceNo}')" title="Edit Pesanan">
-                                                    ✏️ Edit
-                                                </button>
-                                                <button type="button" class="btn-act-table btn-active-resi ${o.resiPrintedAt ? 'is-printed' : ''}" onclick="activeOrdersManager.printSingleResi('${o.invoiceNo}')" title="${o.resiPrintedAt ? 'Resi sudah dicetak (' + formatDateTime(o.resiPrintedAt) + '). Klik cetak ulang.' : 'Cetak / Unduh Resi Label 58mm'}">
-                                                    ${o.resiPrintedAt ? '✅ Resi' : '🏷️ Resi'}
-                                                </button>
-                                                <button type="button" class="btn-act-table btn-active-bill" onclick="activeOrdersManager.printBillForOrder('${o.invoiceNo}')" title="Cetak Bill Sementara">
-                                                    🧾 Bill
-                                                </button>
-                                                <button type="button" class="btn-act-table btn-active-del" onclick="activeOrdersManager.cancelOrder('${o.invoiceNo}')" title="Hapus Tagihan">
-                                                    🗑️
-                                                </button>
+                                                <div class="active-primary-actions">
+                                                    <button type="button" class="btn-act-table btn-active-pay" onclick="activeOrdersManager.proceedPayment('${o.invoiceNo}')" title="Bayar / Lunasi">
+                                                        💳 Bayar
+                                                    </button>
+                                                    <button type="button" class="btn-act-table btn-active-del" onclick="activeOrdersManager.cancelOrder('${o.invoiceNo}')" title="Hapus Tagihan">
+                                                        🗑️
+                                                    </button>
+                                                    <button type="button" class="btn-act-table btn-active-toggle-details" onclick="activeOrdersManager.toggleDetails('${o.invoiceNo}')" title="Rincian & Aksi Lain">
+                                                        <span class="chevron-arrow">▼</span>
+                                                    </button>
+                                                </div>
+                                                <div class="active-secondary-actions">
+                                                    <button type="button" class="btn-act-table btn-active-edit" onclick="activeOrdersManager.editOrder('${o.invoiceNo}')" title="Edit Pesanan">
+                                                        ✏️ Edit
+                                                    </button>
+                                                    <button type="button" class="btn-act-table btn-active-resi ${o.resiPrintedAt ? 'is-printed' : ''}" onclick="activeOrdersManager.printSingleResi('${o.invoiceNo}')" title="${o.resiPrintedAt ? 'Resi sudah dicetak (' + formatDateTime(o.resiPrintedAt) + '). Klik cetak ulang.' : 'Cetak / Unduh Resi Label 58mm'}">
+                                                        ${o.resiPrintedAt ? '✅ Resi' : '🏷️ Resi'}
+                                                    </button>
+                                                    <button type="button" class="btn-act-table btn-active-bill" onclick="activeOrdersManager.printBillForOrder('${o.invoiceNo}')" title="Cetak Bill Sementara">
+                                                        🧾 Bill
+                                                    </button>
+                                                </div>
                                             </div>
                                         </td>
                                     </tr>
@@ -1595,54 +1661,57 @@ class ActiveOrdersManager {
                                     : '<span class="text-muted-mini">-</span>';
                                 return `
                                     <tr class="active-order-row row-po ${isSelected ? 'is-selected-bulk' : ''}" id="orderRow_${o.invoiceNo}">
-                                        <td style="text-align: center;">
+                                        <td class="cell-check" style="text-align: center;">
                                             <input type="checkbox" class="order-row-checkbox" value="${o.invoiceNo}" 
                                                    ${isSelected ? 'checked' : ''} 
                                                    onchange="activeOrdersManager.toggleOrder('${o.invoiceNo}', this.checked)">
                                         </td>
-                                        <td>
-                                            <div class="active-inv-num">${o.invoiceNo}</div>
-                                            <div class="active-badge-status status-po">📦 Menunggu Pickup</div>
+                                        <td class="cell-inv">
+                                            <span class="active-inv-num">#${o.invoiceNo}</span>
+                                            <span class="active-time-text">• ${formatDateTime(o.createdAt)}</span>
                                             ${o.resiPrintedAt ? `
-                                                <div class="badge-resi-printed-tag" title="Resi telah dicetak (${formatDateTime(o.resiPrintedAt)}) - Siap diproses dapur!">
-                                                    🖨️ Resi Sudah Dicetak
-                                                </div>
+                                                <span class="badge-resi-printed-tag" title="Resi dicetak (${formatDateTime(o.resiPrintedAt)})">Resi Dicetak</span>
                                             ` : `
-                                                <div class="badge-resi-unprinted-tag" title="Resi belum dicetak">
-                                                    ⏳ Belum Cetak Resi
-                                                </div>
+                                                <span class="badge-resi-unprinted-tag" title="Resi belum dicetak">Belum Cetak Resi</span>
                                             `}
-                                            <div class="active-time-text">${formatDateTime(o.createdAt)}</div>
                                         </td>
-                                        <td>
+                                        <td class="cell-cust" onclick="activeOrdersManager.toggleDetails('${o.invoiceNo}')">
                                             <div class="active-cust-name">👤 ${o.customerName || 'Pelanggan'}</div>
                                             <div class="active-cust-meta">
                                                 <span class="badge-method badge-${o.paymentMethod}">LUNAS (${(o.paymentMethod || 'cash').toUpperCase()})</span>
                                             </div>
                                             ${o.notes ? `<div class="active-notes-tag">📝 <em>${o.notes}</em></div>` : ''}
                                         </td>
-                                        <td>
-                                            <div class="active-sched-date po-date-highlight">⏰ <strong>${o.pickupDate || '-'}</strong> ${o.pickupTime ? `(${o.pickupTime})` : ''}</div>
-                                            <div class="active-sched-method">${o.pickupMethod === 'ojol' ? '🛵 Ojol / Kurir' : (o.pickupMethod === 'delivery' ? '🚚 Diantar Toko' : '🏪 Ambil di Toko')}</div>
-                                            ${o.pickupAddress ? `<div class="active-sched-addr" title="${o.pickupAddress}">📍 ${o.pickupAddress}</div>` : ''}
+                                        <td class="cell-sched">
+                                            <div class="active-sched-box">
+                                                <span class="active-sched-date po-date-highlight">⏰ <strong>${o.pickupDate || '-'}</strong> ${o.pickupTime ? `(${o.pickupTime})` : ''}</span>
+                                                <span class="active-sched-sep">•</span>
+                                                <span class="active-sched-method">${o.pickupMethod === 'ojol' ? '🛵 Ojol/Kurir' : (o.pickupMethod === 'delivery' ? '🚚 Diantar' : '🏪 Ambil di Toko')}</span>
+                                                ${o.pickupAddress ? `<span class="active-sched-addr" title="${o.pickupAddress}">📍 ${o.pickupAddress}</span>` : ''}
+                                            </div>
                                         </td>
-                                        <td>
+                                        <td class="cell-items">
                                             ${itemsHtml}
                                         </td>
-                                        <td style="text-align: right;">
+                                        <td class="cell-total" style="text-align: right;" onclick="activeOrdersManager.toggleDetails('${o.invoiceNo}')">
                                             <div class="active-total-num text-success">${formatRupiah(o.totalAmount)}</div>
                                         </td>
-                                        <td style="text-align: center;">
+                                        <td class="cell-actions" style="text-align: center;">
                                             <div class="active-table-actions">
-                                                <button type="button" class="btn-act-table btn-active-complete" onclick="activeOrdersManager.markPickedUp('${o.invoiceNo}')" title="Tandai Sudah Diambil (Selesai)">
-                                                    ✅ Selesai Diambil
-                                                </button>
-                                                <button type="button" class="btn-act-table btn-active-resi ${o.resiPrintedAt ? 'is-printed' : ''}" onclick="activeOrdersManager.printSingleResi('${o.invoiceNo}')" title="${o.resiPrintedAt ? 'Resi sudah dicetak (' + formatDateTime(o.resiPrintedAt) + '). Klik cetak ulang.' : 'Cetak / Unduh Resi Label 58mm'}">
-                                                    ${o.resiPrintedAt ? '✅ Resi' : '🏷️ Resi'}
-                                                </button>
-                                                <button type="button" class="btn-act-table btn-active-reprint" onclick="reprintOrder('${o.invoiceNo}')" title="Cetak Struk Transaksi">
-                                                    🖨️ Struk
-                                                </button>
+                                                <div class="active-primary-actions">
+                                                    <button type="button" class="btn-act-table btn-active-complete" onclick="activeOrdersManager.markPickedUp('${o.invoiceNo}')" title="Tandai Sudah Diambil (Selesai)">
+                                                        ✅ Selesai
+                                                    </button>
+                                                    <button type="button" class="btn-act-table btn-active-reprint" onclick="reprintOrder('${o.invoiceNo}')" title="Cetak Struk Transaksi">
+                                                        🖨️ Struk
+                                                    </button>
+                                                    <button type="button" class="btn-act-table btn-active-resi ${o.resiPrintedAt ? 'is-printed' : ''}" onclick="activeOrdersManager.printSingleResi('${o.invoiceNo}')" title="${o.resiPrintedAt ? 'Resi sudah dicetak (' + formatDateTime(o.resiPrintedAt) + '). Klik cetak ulang.' : 'Cetak / Unduh Resi Label 58mm'}">
+                                                        ${o.resiPrintedAt ? '✅ Resi' : '🏷️ Resi'}
+                                                    </button>
+                                                    <button type="button" class="btn-act-table btn-active-toggle-details" onclick="activeOrdersManager.toggleDetails('${o.invoiceNo}')" title="Rincian & Aksi Lain">
+                                                        <span class="chevron-arrow">▼</span>
+                                                    </button>
+                                                </div>
                                             </div>
                                         </td>
                                     </tr>
@@ -1668,6 +1737,14 @@ class ActiveOrdersManager {
             el.classList.toggle('is-selected-bulk', isChecked);
         }
         this.updateBulkToolbar();
+    }
+
+    // Toggle expand/collapse rincian order di HP
+    toggleDetails(invoiceNo) {
+        const el = document.getElementById(`orderRow_${invoiceNo}`);
+        if (el) {
+            el.classList.toggle('is-expanded');
+        }
     }
 
     // Toggle pilih semua order yang tampil
@@ -1882,33 +1959,55 @@ class ActiveOrdersManager {
         if (countEl) countEl.textContent = count;
         if (unprintedEl) unprintedEl.textContent = unprintedCount;
         
-        if (btnSelectUnprinted) btnSelectUnprinted.style.display = unprintedCount > 0 ? 'inline-flex' : 'none';
+        if (btnSelectUnprinted) {
+            btnSelectUnprinted.style.display = unprintedCount > 0 ? 'inline-flex' : 'none';
+            btnSelectUnprinted.classList.toggle('is-hidden', unprintedCount === 0);
+        }
         if (badge) badge.style.display = count > 0 ? 'inline-block' : 'none';
-        if (btnCancel) btnCancel.style.display = count > 0 ? 'inline-flex' : 'none';
+        if (btnCancel) {
+            btnCancel.style.display = count > 0 ? 'inline-flex' : 'none';
+            btnCancel.classList.toggle('is-hidden', count === 0);
+        }
         if (btnPdf) btnPdf.disabled = count === 0;
         if (btnPrint) btnPrint.disabled = count === 0;
+
+        const iconCheck = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+        const iconCard = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>`;
+        const iconTrash = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
 
         // Atur Perintah Massal sesuai tab yang sedang aktif
         if (this.currentTab === 'po') {
             if (btnPickup) {
                 btnPickup.style.display = 'inline-flex';
+                btnPickup.classList.remove('is-hidden');
                 btnPickup.disabled = (total === 0);
-                btnPickup.innerHTML = count > 0 ? `✅ Selesai Diambil (${count})` : `✅ Selesai Diambil Semua`;
+                btnPickup.innerHTML = count > 0 ? `${iconCheck}<span class="bulk-btn-text"> Selesai</span> (${count})` : `${iconCheck}<span class="bulk-btn-text"> Selesai Semua</span>`;
             }
-            if (btnPay) btnPay.style.display = 'none';
-            if (btnDelete) btnDelete.style.display = 'none';
+            if (btnPay) {
+                btnPay.style.display = 'none';
+                btnPay.classList.add('is-hidden');
+            }
+            if (btnDelete) {
+                btnDelete.style.display = 'none';
+                btnDelete.classList.add('is-hidden');
+            }
         } else {
             // Tab Unpaid (Tagihan Sementara Belum Lunas)
-            if (btnPickup) btnPickup.style.display = 'none';
+            if (btnPickup) {
+                btnPickup.style.display = 'none';
+                btnPickup.classList.add('is-hidden');
+            }
             if (btnPay) {
                 btnPay.style.display = 'inline-flex';
+                btnPay.classList.remove('is-hidden');
                 btnPay.disabled = (total === 0);
-                btnPay.innerHTML = count > 0 ? `💳 Bayar (${count})` : `💳 Bayar Semua`;
+                btnPay.innerHTML = count > 0 ? `${iconCard}<span class="bulk-btn-text"> Bayar</span> (${count})` : `${iconCard}<span class="bulk-btn-text"> Bayar Semua</span>`;
             }
             if (btnDelete) {
                 btnDelete.style.display = 'inline-flex';
+                btnDelete.classList.remove('is-hidden');
                 btnDelete.disabled = (total === 0);
-                btnDelete.innerHTML = count > 0 ? `🗑️ Batal (${count})` : `🗑️ Batal Semua`;
+                btnDelete.innerHTML = count > 0 ? `${iconTrash}<span class="bulk-btn-text"> Batal</span> (${count})` : `${iconTrash}<span class="bulk-btn-text"> Batal Semua</span>`;
             }
         }
 

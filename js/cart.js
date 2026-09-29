@@ -622,7 +622,7 @@ class CartManager {
 
         const totalQty = this.getTotalItemsCount();
         if (countBadge) countBadge.textContent = `${totalQty} item`;
-        if (clearBtn) clearBtn.style.display = this.cart.length > 0 ? 'inline-flex' : 'none';
+        if (clearBtn) clearBtn.style.display = 'none';
 
         // Update Floating Cart Bar untuk tampilan Mobile dengan deteksi posisi akurat
         this.updateFloatingBarVisibility();
@@ -643,53 +643,50 @@ class CartManager {
             const itemTotal = item.priceLocked * item.qty;
             const normalPrice = item.normalPriceLocked || item.priceNormal || item.priceLocked;
             const hasPromoDiscount = item.isPromo && normalPrice > item.priceLocked;
-            const totalItemSavings = (normalPrice - item.priceLocked) * item.qty;
 
             const promoBadge = item.isPromo 
                 ? `<span class="cart-promo-badge">PROMO</span>` 
-                : `<span class="cart-normal-badge">NORMAL</span>`;
-
-            const variantBadge = item.variantName 
-                ? `<span class="cart-variant-tag">✨ ${item.variantName}</span>` 
                 : '';
 
             const safeVariantId = item.variantId || '';
+            const showUnitDetail = item.qty > 1 || hasPromoDiscount;
 
             return `
                 <div class="cart-item">
-                    <div class="item-main">
-                        <div class="item-title-row">
+                    <!-- Baris 1: Nama Paket SEBARIS Penuh & Badge Promo (jika promo) -->
+                    <div class="cart-item-top-row">
+                        <div class="cart-item-name-wrap">
                             <span class="item-emoji">${item.emoji}</span>
                             <span class="item-name">${item.name}</span>
-                            ${promoBadge}
                         </div>
-                        ${variantBadge ? `<div style="margin-top: 2px;">${variantBadge}</div>` : ''}
-                        <div class="item-price-meta">
-                            <div class="item-price-calc-wrap">
-                                ${hasPromoDiscount ? `
-                                    <span class="cart-item-old-price"><del>${formatRupiah(normalPrice)}</del></span>
-                                    <span class="cart-item-promo-price">@${formatRupiah(item.priceLocked)}</span>
-                                    <span class="cart-item-saving-pill">Hemat ${formatRupiah(totalItemSavings)}</span>
-                                ` : `
-                                    <span>@${formatRupiah(item.priceLocked)}</span>
-                                `}
-                            </div>
-                            <span class="item-subtotal-meta">Total: <strong>${formatRupiah(itemTotal)}</strong></span>
-                        </div>
+                        ${promoBadge}
                     </div>
 
-                    <div class="item-controls">
-                        <div class="qty-stepper">
-                            <button type="button" class="qty-btn" onclick="cartManager.changeQty('${item.id}', '${safeVariantId}', ${item.priceLocked}, ${item.isPromo}, -1)" title="Kurangi">-</button>
-                            <span class="qty-display">${item.qty}</span>
-                            <button type="button" class="qty-btn" onclick="cartManager.changeQty('${item.id}', '${safeVariantId}', ${item.priceLocked}, ${item.isPromo}, 1)" title="Tambah">+</button>
+                    <!-- Baris 2: Harga Jelas di Kiri, Stepper di Kanan -->
+                    <div class="cart-item-bottom-row">
+                        <div class="cart-item-price-col">
+                            <div class="cart-item-total-price">${formatRupiah(itemTotal)}</div>
+                            ${showUnitDetail ? `
+                                <div class="cart-item-unit-detail">
+                                    <span>@${formatRupiah(item.priceLocked)}</span>
+                                    ${hasPromoDiscount ? `<span class="cart-item-strikethrough">${formatRupiah(normalPrice)}</span>` : ''}
+                                </div>
+                            ` : ''}
                         </div>
-                        <button type="button" class="remove-btn" onclick="cartManager.removeItem('${item.id}', '${safeVariantId}', ${item.priceLocked}, ${item.isPromo})" title="Hapus dari pesanan">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="3 6 5 6 21 6"></polyline>
-                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                            </svg>
-                        </button>
+
+                        <div class="item-controls">
+                            <div class="qty-stepper">
+                                <button type="button" class="qty-btn" onclick="cartManager.changeQty('${item.id}', '${safeVariantId}', ${item.priceLocked}, ${item.isPromo}, -1)" title="Kurangi">-</button>
+                                <span class="qty-display">${item.qty}</span>
+                                <button type="button" class="qty-btn" onclick="cartManager.changeQty('${item.id}', '${safeVariantId}', ${item.priceLocked}, ${item.isPromo}, 1)" title="Tambah">+</button>
+                            </div>
+                            <button type="button" class="remove-btn" onclick="cartManager.removeItem('${item.id}', '${safeVariantId}', ${item.priceLocked}, ${item.isPromo})" title="Hapus dari pesanan">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -718,6 +715,13 @@ class CartManager {
 
         if (subtotalEl) subtotalEl.textContent = formatRupiah(subtotal);
         if (grandTotalEl) grandTotalEl.textContent = formatRupiah(grandTotal);
+
+        // Hilangkan tampilan dobel membingungkan: subtotal hanya muncul jika ada diskon atau ongkir
+        const subtotalRow = document.querySelector('.subtotal-row');
+        const hasBreakdown = (totalPromoSavings > 0) || (discAmount > 0) || (Number(this.deliveryFee) > 0);
+        if (subtotalRow) {
+            subtotalRow.style.display = hasBreakdown ? 'flex' : 'none';
+        }
 
         if (promoRow && promoDisplay) {
             if (totalPromoSavings > 0) {
@@ -767,34 +771,51 @@ class CartManager {
         this.updateFloatingBarVisibility();
     }
 
+    // Perbarui visibilitas tombol floating bar (Lihat Keranjang & Kembali ke Menu)
     updateFloatingBarVisibility() {
         const mFloatingBar = document.getElementById('mobileFloatingCartBar');
-        if (!mFloatingBar) return;
+        const backToMenuBtn = document.getElementById('btnBackToMenuFloat');
 
-        // 1. Desktop (> 860px) atau keranjang kosong: SELALU sembunyikan
-        if (window.innerWidth > 860 || !this.cart || this.cart.length === 0) {
-            mFloatingBar.style.display = 'none';
+        // 1. Desktop (> 860px): SELALU sembunyikan semua floating mobile
+        if (window.innerWidth > 860) {
+            if (mFloatingBar) mFloatingBar.style.display = 'none';
+            if (backToMenuBtn) backToMenuBtn.style.display = 'none';
             return;
         }
 
         // 2. Mobile (<= 860px): Cek posisi cart container (.cart-container)
         const cartEl = document.querySelector('.cart-container');
+        let inCartArea = false;
         if (cartEl) {
             const rect = cartEl.getBoundingClientRect();
-            // Jika area keranjang sudah mulai terlihat di layar (mendekati viewport), sembunyikan floating bar seketika!
-            if (rect.top < window.innerHeight - 40) {
-                mFloatingBar.style.display = 'none';
-                return;
+            // Jika area keranjang sudah mulai terlihat di layar (mendekati viewport)
+            if (rect.top < window.innerHeight * 0.75) {
+                inCartArea = true;
             }
         }
 
-        // 3. Pengguna masih berada di atas melihat daftar menu: tampilkan floating bar
-        const totalQty = this.getTotalItemsCount();
-        const mCount = document.getElementById('mCartItemCount');
-        const mTotal = document.getElementById('mCartGrandTotal');
-        if (mCount) mCount.textContent = totalQty;
-        if (mTotal) mTotal.textContent = formatRupiah(this.getGrandTotal());
-        mFloatingBar.style.display = 'flex';
+        if (inCartArea) {
+            // Kasir berada di area Keranjang / Checkout:
+            // Sembunyikan Floating Bar Checkout, tampilkan Floating Button "Kembali ke Menu"
+            if (mFloatingBar) mFloatingBar.style.display = 'none';
+            if (backToMenuBtn) backToMenuBtn.style.display = 'inline-flex';
+        } else {
+            // Kasir berada di atas (Katalog Menu):
+            // Sembunyikan tombol "Kembali ke Menu", tampilkan Floating Bar Keranjang jika ada item
+            if (backToMenuBtn) backToMenuBtn.style.display = 'none';
+            if (mFloatingBar) {
+                if (this.cart && this.cart.length > 0) {
+                    const totalQty = this.getTotalItemsCount();
+                    const mCount = document.getElementById('mCartItemCount');
+                    const mTotal = document.getElementById('mCartGrandTotal');
+                    if (mCount) mCount.textContent = totalQty;
+                    if (mTotal) mTotal.textContent = formatRupiah(this.getGrandTotal());
+                    mFloatingBar.style.display = 'flex';
+                } else {
+                    mFloatingBar.style.display = 'none';
+                }
+            }
+        }
     }
 
     // Scroll otomatis ke keranjang di perangkat mobile
@@ -806,6 +827,16 @@ class CartManager {
         const cart = document.querySelector('.cart-container');
         if (cart) {
             cart.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+
+    // Scroll otomatis kembali ke menu teratas di perangkat mobile
+    scrollToMenu() {
+        const menu = document.getElementById('menuContainer') || document.querySelector('.menu-container');
+        if (menu) {
+            menu.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     }
 }

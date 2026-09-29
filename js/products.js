@@ -163,8 +163,14 @@ class ProductManager {
                     </div>
 
                     <div class="card-body-content">
-                        <div class="product-name" title="${product.name}">${product.name}</div>
-                        <div class="product-desc">${product.desc || '-'}</div>
+                        <div class="product-name-row">
+                            <div class="product-name" title="${product.name}">${product.name}</div>
+                            ${product.desc ? `
+                                <button class="btn-product-info" type="button" onclick="productManager.showProductInfo(event, '${product.id}')" title="${product.name}: ${product.desc}" aria-label="Info ${product.name}">
+                                    <span class="info-ascii">i</span>
+                                </button>
+                            ` : ''}
+                        </div>
 
                         ${isDiscounted ? `
                             <div class="price-row-promo">
@@ -174,7 +180,6 @@ class ProductManager {
                         ` : ''}
 
                         <div class="card-footer-row">
-                            <span class="category-badge cat-${product.category}">${product.category.toUpperCase()}</span>
                             <div class="product-price ${this.isPromoMode ? 'promo-text' : ''}">
                                 ${formatRupiah(currentPrice)}
                             </div>
@@ -191,6 +196,22 @@ class ProductManager {
                 </div>
             `;
         }).join('');
+    }
+
+    // Tampilkan informasi menu via pop up / toast saat ikon (i) ditekan di HP atau hover di PC
+    showProductInfo(event, productId) {
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+        const product = this.getProductById(productId);
+        if (!product) return;
+        const desc = product.desc || 'Menu spesial DIASAP';
+        if (typeof showPosToast === 'function') {
+            showPosToast(`[i] <strong>${product.name}</strong><div style="font-size:12px;margin-top:2px;opacity:0.95;">${desc}</div>`, 4000);
+        } else {
+            alert(`${product.name}: ${desc}`);
+        }
     }
 
     getProductById(id) {
